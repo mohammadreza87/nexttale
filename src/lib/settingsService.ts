@@ -1,4 +1,4 @@
-const SETTINGS_KEY = 'mina_user_settings';
+const SETTINGS_KEY = 'nexttale_user_settings';
 
 export interface UserSettings {
   autoNarration: boolean;

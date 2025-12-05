@@ -1,5 +1,5 @@
 /**
- * Google Analytics 4 Integration for Mina
+ * Google Analytics 4 Integration for Next Tale
  *
  * This module provides a professional GA4 implementation with:
  * - Automatic page view tracking
@@ -95,7 +95,7 @@ export function trackStoryView(storyId: string, storyTitle: string, creatorId?: 
       item_id: storyId,
       item_name: storyTitle,
       item_category: 'story',
-      item_brand: creatorId || 'mina',
+      item_brand: creatorId || 'nexttale',
     }],
   });
 

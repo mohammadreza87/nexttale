@@ -53,6 +53,6 @@ describe('storyStreamService cache helpers', () => {
     const cached = getCachedResponse('expired');
 
     expect(cached).toBeNull();
-    expect(globalThis.localStorage.getItem('mina_story_cache_expired')).toBeNull();
+    expect(globalThis.localStorage.getItem('nexttale_story_cache_expired')).toBeNull();
   });
 });

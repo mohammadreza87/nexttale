@@ -298,6 +298,22 @@ export function StoryLibrary({ onSelectStory, onViewProfile, userId, isPro = fal
                       <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
                     </div>
                   </div>
+                ) : story.cover_video_url ? (
+                  <video
+                    src={story.cover_video_url}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    poster={story.cover_image_url || undefined}
+                    onError={(e) => {
+                      const target = e.target as HTMLVideoElement;
+                      target.style.display = 'none';
+                      const fallback = target.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'block';
+                    }}
+                  />
                 ) : story.cover_image_url ? (
                   <img
                     src={story.cover_image_url}
@@ -311,7 +327,7 @@ export function StoryLibrary({ onSelectStory, onViewProfile, userId, isPro = fal
                     }}
                   />
                 ) : null}
-                <div className={`absolute inset-0 flex items-center justify-center ${story.cover_image_url ? 'hidden' : ''}`}>
+                <div className={`absolute inset-0 flex items-center justify-center ${story.cover_image_url || story.cover_video_url ? 'hidden' : ''}`}>
                   <Book className="w-16 h-16 text-white opacity-80" />
                 </div>
                 {story.generation_status && story.generation_status !== 'fully_generated' && story.generation_progress !== undefined && story.generation_progress < 100 && !story.is_user_generated && (

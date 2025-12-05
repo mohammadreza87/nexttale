@@ -354,13 +354,25 @@ export function StoryDetail({ storyId, userId, onBack, onStartStory, onViewProfi
         </button>
 
         <div className="bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-800">
-          {story.cover_image_url && (
+          {(story.cover_image_url || story.cover_video_url) && (
             <div className="h-64 md:h-96 overflow-hidden relative">
-              <img
-                src={story.cover_image_url}
-                alt={story.title}
-                className="w-full h-full object-cover"
-              />
+              {story.cover_video_url ? (
+                <video
+                  src={story.cover_video_url}
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  poster={story.cover_image_url || undefined}
+                />
+              ) : (
+                <img
+                  src={story.cover_image_url!}
+                  alt={story.title}
+                  className="w-full h-full object-cover"
+                />
+              )}
               {/* Creator overlay */}
               {story.creator && (
                 <button

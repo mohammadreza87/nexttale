@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
     return new Response("Story not found", { status: 404 });
   }
 
-  const siteUrl = "https://heymina.app";
+  const siteUrl = "https://nexttale.app";
   const storyUrl = `${siteUrl}?story=${story.id}`;
   const coverImage = story.cover_image_url || `${siteUrl}/android-chrome-512x512.png`;
   const description = story.description?.slice(0, 160) || "An interactive story adventure";
@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>${escapeHtml(story.title)} - Mina</title>
+  <title>${escapeHtml(story.title)} - Next Tale</title>
   <meta name="description" content="${escapeHtml(description)}">
 
   <!-- Open Graph / Facebook -->
@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
   <meta property="og:title" content="${escapeHtml(story.title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:image" content="${coverImage}">
-  <meta property="og:site_name" content="Mina - Interactive Stories">
+  <meta property="og:site_name" content="Next Tale - Interactive Stories">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
@@ -94,7 +94,7 @@ Deno.serve(async (req: Request) => {
   <div class="container">
     <h1>${escapeHtml(story.title)}</h1>
     <p>${escapeHtml(description)}</p>
-    <p>Redirecting to <a href="${storyUrl}">Mina</a>...</p>
+    <p>Redirecting to <a href="${storyUrl}">Next Tale</a>...</p>
   </div>
   <script>window.location.href = "${storyUrl}";</script>
 </body>

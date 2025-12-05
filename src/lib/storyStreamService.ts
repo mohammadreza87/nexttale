@@ -93,7 +93,7 @@ export async function generateStoryStream(
 }
 
 // Cache management
-const CACHE_KEY_PREFIX = 'mina_story_cache_';
+const CACHE_KEY_PREFIX = 'nexttale_story_cache_';
 const CACHE_DURATION = 1000 * 60 * 60 * 24; // 24 hours
 
 interface CachedResponse {

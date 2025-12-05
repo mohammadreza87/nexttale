@@ -1725,6 +1725,14 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
                                   .from('story_nodes')
                                   .update({ video_url: videoUrl })
                                   .eq('id', chapter.node.id);
+
+                                // Update story cover_video_url if this is the first chapter
+                                if (chapterIndex === 0 && storyId) {
+                                  await supabase
+                                    .from('stories')
+                                    .update({ cover_video_url: videoUrl })
+                                    .eq('id', storyId);
+                                }
                               }
                             );
                           }

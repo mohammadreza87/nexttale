@@ -139,7 +139,7 @@ function MainLayout() {
 
   // Analytics
   useEffect(() => {
-    analytics.pageView(location.pathname, `${getPageTitle(location.pathname)} - Mina`);
+    analytics.pageView(location.pathname, `${getPageTitle(location.pathname)} - Next Tale`);
   }, [analytics, location.pathname]);
 
   const handleSelectStory = (storyId: string) => navigate(`/story/${storyId}`);
@@ -152,8 +152,8 @@ function MainLayout() {
       {/* Mobile Header */}
       <div className={`lg:hidden fixed top-0 left-0 right-0 text-white px-4 py-3 flex flex-col items-center justify-center z-40 shadow-lg ${isPro ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-gradient-to-r from-blue-500 to-cyan-500'}`}>
         <div className="flex items-center gap-2 mb-1">
-          <img src="/mina-withoutBG.png" alt="Mina" className="w-10 h-10 drop-shadow-lg" />
-          <span className="font-extrabold text-2xl">MINA</span>
+          <img src="/nexttale-logo.png" alt="Next Tale" className="w-10 h-10 drop-shadow-lg" />
+          <span className="font-extrabold text-2xl">NEXT TALE</span>
         </div>
         <p className="text-[9px] font-extrabold tracking-widest">READ, CHOOSE, CREATE MAGIC</p>
       </div>

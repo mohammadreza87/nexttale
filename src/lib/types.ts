@@ -96,6 +96,7 @@ export interface Story {
   title: string;
   description: string;
   cover_image_url: string | null;
+  cover_video_url?: string | null;
   age_range: string;
   estimated_duration: number;
   story_context?: string | null;

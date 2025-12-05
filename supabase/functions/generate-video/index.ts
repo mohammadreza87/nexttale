@@ -15,9 +15,10 @@ interface VideoRequest {
   resolution?: "480" | "720";
 }
 
-interface LeonardoGenerationResponse {
-  sdGenerationJob?: {
+interface LeonardoMotionResponse {
+  motionSvdGenerationJob?: {
     generationId: string;
+    apiCreditCost?: number;
   };
 }
 
@@ -34,9 +35,15 @@ interface LeonardoStatusResponse {
 
 /**
  * Upload an image URL to Leonardo AI and get an image ID
+ * Uses presigned URL with multipart/form-data as per Leonardo docs
  */
 async function uploadImageToLeonardo(imageUrl: string, apiKey: string): Promise<string> {
   console.log(`[Leonardo] Uploading image from URL: ${imageUrl.substring(0, 100)}...`);
+
+  // Determine extension from URL
+  const extension = imageUrl.toLowerCase().includes('.jpg') || imageUrl.toLowerCase().includes('.jpeg')
+    ? 'jpg'
+    : 'png';
 
   // First, get a presigned URL for upload
   const initResponse = await fetch("https://cloud.leonardo.ai/api/rest/v1/init-image", {
@@ -47,7 +54,7 @@ async function uploadImageToLeonardo(imageUrl: string, apiKey: string): Promise<
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      extension: "png",
+      extension: extension,
     }),
   });
 
@@ -60,8 +67,10 @@ async function uploadImageToLeonardo(imageUrl: string, apiKey: string): Promise<
   const initData = await initResponse.json();
   const { uploadInitImage } = initData;
 
-  if (!uploadInitImage?.url || !uploadInitImage?.id) {
-    throw new Error("Leonardo did not return upload URL or image ID");
+  console.log(`[Leonardo] Init response:`, JSON.stringify(uploadInitImage, null, 2));
+
+  if (!uploadInitImage?.url || !uploadInitImage?.id || !uploadInitImage?.fields) {
+    throw new Error("Leonardo did not return required upload fields (url, id, fields)");
   }
 
   console.log(`[Leonardo] Got presigned URL, image ID: ${uploadInitImage.id}`);
@@ -71,21 +80,30 @@ async function uploadImageToLeonardo(imageUrl: string, apiKey: string): Promise<
   if (!imageResponse.ok) {
     throw new Error(`Failed to download source image: ${imageResponse.status}`);
   }
-  const imageBuffer = await imageResponse.arrayBuffer();
+  const imageBlob = await imageResponse.blob();
 
-  // Upload the image to Leonardo's presigned URL
+  // Build multipart form data with all required fields
+  const formData = new FormData();
+
+  // Add all fields from the presigned URL response (order matters for S3)
+  const fields = JSON.parse(uploadInitImage.fields);
+  for (const [key, value] of Object.entries(fields)) {
+    formData.append(key, value as string);
+  }
+
+  // Add the file last (required by S3)
+  formData.append('file', imageBlob, `image.${extension}`);
+
+  // Upload to S3 using POST with multipart/form-data
   const uploadResponse = await fetch(uploadInitImage.url, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "image/png",
-    },
-    body: imageBuffer,
+    method: "POST",
+    body: formData,
   });
 
   if (!uploadResponse.ok) {
     const errorText = await uploadResponse.text();
     console.error("[Leonardo] Upload error:", errorText);
-    throw new Error(`Failed to upload image: ${uploadResponse.status}`);
+    throw new Error(`Failed to upload image: ${uploadResponse.status} - ${errorText}`);
   }
 
   console.log(`[Leonardo] Image uploaded successfully, ID: ${uploadInitImage.id}`);
@@ -93,27 +111,28 @@ async function uploadImageToLeonardo(imageUrl: string, apiKey: string): Promise<
 }
 
 /**
- * Generate a video from an image using Leonardo AI Motion
+ * Generate a video from an image using Leonardo AI Motion SVD
+ * Uses the generations-motion-svd endpoint for uploaded images
  */
 async function generateVideoWithLeonardo(
   imageId: string,
-  prompt: string,
+  _prompt: string,
   apiKey: string,
-  resolution: "480" | "720" = "480"
+  motionStrength: number = 5
 ): Promise<string> {
-  console.log(`[Leonardo] Starting video generation for image: ${imageId}`);
+  console.log(`[Leonardo] Starting Motion SVD video generation for image: ${imageId}`);
 
+  // Motion SVD endpoint parameters
   const requestBody = {
     imageId,
-    imageType: "UPLOADED",
+    isInitImage: true,  // Required for uploaded images
+    motionStrength: motionStrength,  // 1-10, controls animation intensity
     isPublic: false,
-    resolution: resolution === "720" ? "RESOLUTION_720" : "RESOLUTION_480",
-    prompt: prompt || "Subtle cinematic movement, gentle camera motion, atmospheric lighting shifts",
-    frameInterpolation: true,
-    promptEnhance: false,
   };
 
-  const createResponse = await fetch("https://cloud.leonardo.ai/api/rest/v1/generations-image-to-video", {
+  console.log(`[Leonardo] Request body:`, JSON.stringify(requestBody));
+
+  const createResponse = await fetch("https://cloud.leonardo.ai/api/rest/v1/generations-motion-svd", {
     method: "POST",
     headers: {
       "accept": "application/json",
@@ -129,12 +148,18 @@ async function generateVideoWithLeonardo(
     throw new Error(`Leonardo video generation failed (${createResponse.status}): ${errorText}`);
   }
 
-  const createData: LeonardoGenerationResponse = await createResponse.json();
-  const generationId = createData?.sdGenerationJob?.generationId;
+  const createData = await createResponse.json();
+  console.log(`[Leonardo] Full Response:`, JSON.stringify(createData, null, 2));
+
+  // Try multiple possible response paths
+  const generationId = createData?.motionSvdGenerationJob?.generationId
+    || createData?.sdGenerationJob?.generationId
+    || createData?.generationJob?.generationId
+    || createData?.generationId;
 
   if (!generationId) {
-    console.error("[Leonardo] No generation ID in response:", JSON.stringify(createData));
-    throw new Error("Leonardo did not return a generation ID");
+    console.error("[Leonardo] No generation ID found in any response field:", JSON.stringify(createData));
+    throw new Error(`Leonardo Motion API returned unexpected response: ${JSON.stringify(createData)}`);
   }
 
   console.log(`[Leonardo] Video generation started with ID: ${generationId}`);
@@ -257,13 +282,14 @@ Deno.serve(async (req: Request) => {
     // Step 1: Upload the image to Leonardo
     const leonardoImageId = await uploadImageToLeonardo(imageUrl, leonardoApiKey);
 
-    // Step 2: Generate video from the image
-    const videoPrompt = prompt || "Subtle cinematic movement with gentle parallax, atmospheric lighting shifts, soft ambient motion";
+    // Step 2: Generate video from the image using Motion SVD
+    // Motion strength: 1-10, where lower is more subtle
+    const motionStrength = 5; // Medium motion for cinematic effect
     const leonardoVideoUrl = await generateVideoWithLeonardo(
       leonardoImageId,
-      videoPrompt,
+      prompt || "",
       leonardoApiKey,
-      resolution
+      motionStrength
     );
 
     // Step 3: Download and re-upload to our storage
