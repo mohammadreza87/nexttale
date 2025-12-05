@@ -50,6 +50,10 @@ async function callGemini(
         temperature,
         maxOutputTokens,
         responseMimeType,
+        // Disable thinking mode for faster responses and lower token usage
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
       },
     }),
   });
@@ -374,7 +378,7 @@ CRITICAL: Return ONLY the JSON object. No explanations, no markdown code blocks.
         geminiApiKey,
         {
           temperature: attempt === 0 ? 0.6 : 0.4,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 4096,
           responseMimeType: "application/json",
         }
       );
