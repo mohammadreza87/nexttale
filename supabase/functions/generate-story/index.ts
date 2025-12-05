@@ -374,7 +374,7 @@ CRITICAL: Return ONLY the JSON object. No explanations, no markdown code blocks.
         geminiApiKey,
         {
           temperature: attempt === 0 ? 0.6 : 0.4,
-          maxOutputTokens: 4096,
+          maxOutputTokens: 8192,
           responseMimeType: "application/json",
         }
       );
@@ -452,7 +452,7 @@ Return ONLY valid JSON:
       geminiApiKey,
       {
         temperature: attempt === 0 ? 0.5 : 0.35,
-        maxOutputTokens: 800,
+        maxOutputTokens: 4096,
         responseMimeType: "application/json",
       }
     );
@@ -571,7 +571,7 @@ Return ONLY valid JSON:
       geminiApiKey,
       {
         temperature: attempt === 0 ? 0.55 : 0.4,
-        maxOutputTokens: 800,
+        maxOutputTokens: 4096,
         responseMimeType: "application/json",
       }
     );
@@ -895,7 +895,7 @@ Create opening with 2-3 choices in language: ${detectedLanguage}.`;
       geminiApiKey,
       {
         temperature: 0.55,
-        maxOutputTokens: 700,
+        maxOutputTokens: 4096,
         responseMimeType: "application/json",
       }
     );
