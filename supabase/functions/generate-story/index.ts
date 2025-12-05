@@ -374,12 +374,13 @@ CRITICAL: Return ONLY the JSON object. No explanations, no markdown code blocks.
         geminiApiKey,
         {
           temperature: attempt === 0 ? 0.6 : 0.4,
-          maxOutputTokens: 1500,
+          maxOutputTokens: 4096,
           responseMimeType: "application/json",
         }
       );
 
       console.log(`[generateStoryOutline] Raw response length: ${outlineText.length}`);
+      console.log(`[generateStoryOutline] Raw response (first 1000 chars): ${outlineText.slice(0, 1000)}`);
 
       const parsed = parseJsonSafe(outlineText, 'outline');
 
