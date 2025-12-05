@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Sparkles, Loader, User, ThumbsUp, ThumbsDown, Share2, Save, X, Plus, Trash2, Pen, Check, Eye, EyeOff, Film } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Play, Pause, Sparkles, Loader, User, ThumbsUp, ThumbsDown, Share2, Save, X, Plus, Trash2, Pen, Check, Eye, EyeOff, Film, Mic, MicOff } from 'lucide-react';
+import { useVoiceInput, matchVoiceToChoice } from '../hooks/useVoiceInput';
 import UpgradeModal from './UpgradeModal';
 import { getStoryNode, getNodeChoices, saveProgress, updateNodeImage, updateNodeAudio, createStoryNode, createStoryChoice, deleteStoryChoice, toggleChoiceVisibility, getStory, getStoryGenerationStatus, getUserReaction, addReaction, updateReaction, removeReaction } from '../lib/storyService';
 import { trackChapterRead, trackStoryCompletion } from '../lib/pointsService';
@@ -63,6 +64,56 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [customChoiceChapterIndex, setCustomChoiceChapterIndex] = useState<number | null>(null);
   const [storyError, setStoryError] = useState<string | null>(null);
+  const [voiceInputChapterIndex, setVoiceInputChapterIndex] = useState<number | null>(null);
+  const [voiceMatchedChoice, setVoiceMatchedChoice] = useState<string | null>(null);
+
+  // Voice input for choosing story paths
+  const handleVoiceResult = useCallback((transcript: string) => {
+    if (voiceInputChapterIndex === null) return;
+
+    const chapter = chapters[voiceInputChapterIndex];
+    if (!chapter || chapter.selectedChoiceId) return;
+
+    const availableChoices = chapter.choices
+      .filter(c => c.created_by === userId || c.is_public !== false)
+      .map(c => ({ id: c.id, text: c.choice_text }));
+
+    const matched = matchVoiceToChoice(transcript, availableChoices);
+
+    if (matched) {
+      setVoiceMatchedChoice(matched.id);
+      // Auto-select after a brief delay to show the match
+      setTimeout(() => {
+        const choice = chapter.choices.find(c => c.id === matched.id);
+        if (choice) {
+          handleChoice(voiceInputChapterIndex, choice);
+        }
+        setVoiceInputChapterIndex(null);
+        setVoiceMatchedChoice(null);
+      }, 1000);
+    }
+  }, [voiceInputChapterIndex, chapters, userId]);
+
+  const {
+    isListening,
+    isSupported: isVoiceSupported,
+    transcript: voiceTranscript,
+    startListening,
+    stopListening,
+  } = useVoiceInput({
+    onResult: handleVoiceResult,
+    language: story?.language === 'fa' ? 'fa-IR' : story?.language === 'tr' ? 'tr-TR' : 'en-US',
+  });
+
+  const toggleVoiceInput = (chapterIndex: number) => {
+    if (isListening) {
+      stopListening();
+      setVoiceInputChapterIndex(null);
+    } else {
+      setVoiceInputChapterIndex(chapterIndex);
+      startListening();
+    }
+  };
 
   useEffect(() => {
     initializeStory();
@@ -1847,7 +1898,41 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
 
             {chapter.node.id !== 'loading' && chapter.choices.length > 0 && editingChapter !== chapterIndex && (
               <div className="bg-gray-900 rounded-3xl shadow-xl p-6 mb-6 border border-gray-800">
-                <h3 className="text-sm font-semibold text-gray-300 mb-4">What should happen next?</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-gray-300">What should happen next?</h3>
+                  {isVoiceSupported && !chapter.selectedChoiceId && (
+                    <button
+                      onClick={() => toggleVoiceInput(chapterIndex)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        isListening && voiceInputChapterIndex === chapterIndex
+                          ? 'bg-red-500 text-white animate-pulse'
+                          : 'bg-purple-600 text-white hover:bg-purple-700'
+                      }`}
+                    >
+                      {isListening && voiceInputChapterIndex === chapterIndex ? (
+                        <>
+                          <MicOff className="w-3.5 h-3.5" />
+                          <span>Stop</span>
+                        </>
+                      ) : (
+                        <>
+                          <Mic className="w-3.5 h-3.5" />
+                          <span>Speak Choice</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Voice transcript display */}
+                {isListening && voiceInputChapterIndex === chapterIndex && (
+                  <div className="mb-4 p-3 bg-purple-900/30 rounded-xl border border-purple-500/50">
+                    <p className="text-xs text-purple-300 mb-1">Listening... Say a choice or number (1, 2, 3...)</p>
+                    <p className="text-sm text-white font-medium">
+                      {voiceTranscript || '🎤 Speak now...'}
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   {chapter.choices
@@ -1881,6 +1966,8 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
                     const hasButtons = (isOwnChoice && !isDisabled) || (canDelete && !isDisabled);
                     const buttonCount = (isOwnChoice && !isDisabled ? 1 : 0) + (canDelete && !isDisabled ? 1 : 0);
 
+                    const isVoiceMatched = voiceMatchedChoice === choice.id;
+
                     return (
                       <div key={choice.id} className="relative">
                         <button
@@ -1889,7 +1976,9 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
                           className={`group relative w-full bg-gray-800 rounded-xl p-4 text-left transition-all duration-300 shadow-sm ${
                             isOwnChoice ? 'border-2 border-dashed border-purple-500 ' : ''
                           }${
-                            isSelected
+                            isVoiceMatched
+                              ? 'ring-2 ring-purple-500 bg-purple-900/50 shadow-lg animate-pulse'
+                              : isSelected
                               ? 'ring-2 ring-green-500 bg-green-900/30 shadow-md'
                               : isDisabled
                               ? 'opacity-30'
