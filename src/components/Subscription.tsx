@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Crown, Sparkles, Check, Settings, Loader, X, User } from 'lucide-react';
-import { getUserSubscription, createCheckoutSession, createCustomerPortalSession, STRIPE_PRICES } from '../lib/subscriptionService';
+import { Crown, Sparkles, Check, Settings, Loader } from 'lucide-react';
+import {
+  getUserSubscription,
+  createCheckoutSession,
+  createCustomerPortalSession,
+  STRIPE_PRICES,
+} from '../lib/subscriptionService';
 import type { UserProfile } from '../lib/types';
 import { useAuth } from '../lib/authContext';
 import { trackSubscriptionView, trackSubscriptionCheckoutStart } from '../lib/analytics';
@@ -39,7 +44,9 @@ export function Subscription({ userId }: SubscriptionProps) {
 
   const handleUpgrade = async (priceId: string) => {
     if (!priceId || priceId.includes('your_') || priceId.includes('_here')) {
-      alert('Stripe is not configured. Please add your Stripe API keys and price IDs to the .env file.\n\nRequired variables:\n- VITE_STRIPE_PUBLISHABLE_KEY\n- VITE_STRIPE_PRICE_MONTHLY\n- VITE_STRIPE_PRICE_ANNUAL\n\nAlso set STRIPE_SECRET_KEY in Supabase Edge Functions.');
+      alert(
+        'Stripe is not configured. Please add your Stripe price IDs to the .env file.\n\nRequired variables:\n- VITE_STRIPE_PRICE_BASIC_MONTHLY\n- VITE_STRIPE_PRICE_BASIC_ANNUAL\n- VITE_STRIPE_PRICE_PRO_MONTHLY\n- VITE_STRIPE_PRICE_PRO_ANNUAL\n- VITE_STRIPE_PRICE_MAX_MONTHLY\n- VITE_STRIPE_PRICE_MAX_ANNUAL\n\nAlso set STRIPE_SECRET_KEY in Supabase Edge Functions.'
+      );
       return;
     }
 
@@ -53,11 +60,15 @@ export function Subscription({ userId }: SubscriptionProps) {
       if (url) {
         window.location.href = url;
       } else {
-        alert('Failed to start checkout. Please ensure:\n1. Stripe API keys are configured\n2. Price IDs are valid\n3. Stripe webhook is set up');
+        alert(
+          'Failed to start checkout. Please ensure:\n1. Stripe API keys are configured\n2. Price IDs are valid\n3. Stripe webhook is set up'
+        );
       }
     } catch (error) {
       console.error('Upgrade error:', error);
-      alert('Checkout failed. Please check:\n1. Stripe configuration in .env\n2. STRIPE_SECRET_KEY in Supabase\n3. Price IDs are valid');
+      alert(
+        'Checkout failed. Please check:\n1. Stripe configuration in .env\n2. STRIPE_SECRET_KEY in Supabase\n3. Price IDs are valid'
+      );
     } finally {
       setCheckoutLoading(false);
     }
@@ -76,11 +87,20 @@ export function Subscription({ userId }: SubscriptionProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20 flex flex-col items-center justify-center gap-3">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-50 pb-20">
         <div className="flex gap-2">
-          <div className="w-3 h-3 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-3 h-3 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-3 h-3 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-gray-400"
+            style={{ animationDelay: '0ms' }}
+          ></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-gray-400"
+            style={{ animationDelay: '150ms' }}
+          ></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-gray-400"
+            style={{ animationDelay: '300ms' }}
+          ></div>
         </div>
       </div>
     );
@@ -88,10 +108,10 @@ export function Subscription({ userId }: SubscriptionProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="max-w-4xl mx-auto px-4 pt-4 pb-6">
+      <div className="mx-auto max-w-4xl px-4 pb-6 pt-4">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <div className="mb-6 text-center">
+          <h1 className="mb-2 text-3xl font-bold text-gray-800">
             {hasPro ? 'Your Subscription' : 'Choose Your Plan'}
           </h1>
           <p className="text-sm text-gray-600">
@@ -102,37 +122,39 @@ export function Subscription({ userId }: SubscriptionProps) {
         </div>
 
         {hasPro ? (
-          <div className="bg-white rounded-3xl shadow-xl p-6 mb-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 rounded-3xl bg-white p-6 shadow-xl">
+            <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Pro Membership</h2>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full text-sm font-medium">
-                  <Crown className="w-4 h-4" />
+                <h2 className="mb-2 text-xl font-bold text-gray-900">Pro Membership</h2>
+                <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 text-sm font-medium text-white">
+                  <Crown className="h-4 w-4" />
                   <span>Active {subscription?.is_grandfathered && '(Lifetime)'}</span>
                 </div>
               </div>
-              <Sparkles className="w-10 h-10 text-purple-500" />
+              <Sparkles className="h-10 w-10 text-purple-500" />
             </div>
 
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <span className="text-gray-600 text-sm">Status</span>
-                <span className="font-semibold text-green-600 capitalize text-sm">
+            <div className="mb-6 space-y-3">
+              <div className="flex items-center justify-between border-b border-gray-100 py-3">
+                <span className="text-sm text-gray-600">Status</span>
+                <span className="text-sm font-semibold capitalize text-green-600">
                   {subscription?.subscription_status}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <span className="text-gray-600 text-sm">Stories Generated Today</span>
-                <span className="font-semibold text-gray-900 text-sm">Unlimited</span>
+              <div className="flex items-center justify-between border-b border-gray-100 py-3">
+                <span className="text-sm text-gray-600">Stories Generated Today</span>
+                <span className="text-sm font-semibold text-gray-900">Unlimited</span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <span className="text-gray-600 text-sm">Total Stories Created</span>
-                <span className="font-semibold text-gray-900 text-sm">{subscription?.total_stories_generated || 0}</span>
+              <div className="flex items-center justify-between border-b border-gray-100 py-3">
+                <span className="text-sm text-gray-600">Total Stories Created</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {subscription?.total_stories_generated || 0}
+                </span>
               </div>
               {subscription?.subscription_period_end && !subscription?.is_grandfathered && (
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <span className="text-gray-600 text-sm">Renewal Date</span>
-                  <span className="font-semibold text-gray-900 text-sm">
+                <div className="flex items-center justify-between border-b border-gray-100 py-3">
+                  <span className="text-sm text-gray-600">Renewal Date</span>
+                  <span className="text-sm font-semibold text-gray-900">
                     {new Date(subscription.subscription_period_end).toLocaleDateString()}
                   </span>
                 </div>
@@ -142,16 +164,16 @@ export function Subscription({ userId }: SubscriptionProps) {
             {!subscription?.is_grandfathered && subscription?.stripe_customer_id && (
               <button
                 onClick={handleManageSubscription}
-                className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-900 transition-all hover:bg-gray-200"
               >
-                <Settings className="w-5 h-5" />
+                <Settings className="h-5 w-5" />
                 Manage Subscription
               </button>
             )}
 
             {subscription?.is_grandfathered && (
-              <div className="mt-4 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
-                <p className="text-xs text-gray-700 text-center">
+              <div className="mt-4 rounded-xl border border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50 p-3">
+                <p className="text-center text-xs text-gray-700">
                   🎉 You have lifetime Pro access as an early supporter. Thank you!
                 </p>
               </div>
@@ -160,63 +182,63 @@ export function Subscription({ userId }: SubscriptionProps) {
         ) : (
           <>
             {/* Plan Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {/* Free Plan */}
-              <div className="bg-white rounded-3xl shadow-xl p-5 flex flex-col">
+              <div className="flex flex-col rounded-3xl bg-white p-5 shadow-xl">
                 <div className="mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Free</h3>
                   <p className="text-sm text-gray-500">Basic features</p>
                 </div>
-                <div className="space-y-2 mb-4 flex-1">
+                <div className="mb-4 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">2 stories per day</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">Read unlimited stories</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">Basic art styles</span>
                   </div>
                 </div>
-                <div className="py-3 border-2 border-gray-200 text-gray-500 font-semibold rounded-xl text-center text-sm mt-auto">
+                <div className="mt-auto rounded-xl border-2 border-gray-200 py-3 text-center text-sm font-semibold text-gray-500">
                   Current Plan
                 </div>
               </div>
 
               {/* Pro Monthly */}
-              <div className="bg-white rounded-3xl shadow-xl p-5 flex flex-col">
+              <div className="flex flex-col rounded-3xl bg-white p-5 shadow-xl">
                 <div className="mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Pro Monthly</h3>
                   <p className="text-sm text-gray-500">Full access • $20/month</p>
                 </div>
-                <div className="space-y-2 mb-4 flex-1">
+                <div className="mb-4 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">Unlimited stories</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">All art styles</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">AI Narrator</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">Edit mode & Add your option</span>
                   </div>
                 </div>
                 <button
                   onClick={() => handleUpgrade(STRIPE_PRICES.PRO_MONTHLY)}
                   disabled={checkoutLoading}
-                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-auto shadow-lg"
+                  className="mt-auto w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {checkoutLoading ? (
-                    <Loader className="w-4 h-4 animate-spin mx-auto" />
+                    <Loader className="mx-auto h-4 w-4 animate-spin" />
                   ) : (
                     'Try For $20'
                   )}
@@ -224,36 +246,36 @@ export function Subscription({ userId }: SubscriptionProps) {
               </div>
 
               {/* Pro Annual */}
-              <div className="bg-white rounded-3xl shadow-xl p-5 flex flex-col">
+              <div className="flex flex-col rounded-3xl bg-white p-5 shadow-xl">
                 <div className="mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Pro Annual</h3>
                   <p className="text-sm text-gray-500">Best value • $16.67/month</p>
                 </div>
-                <div className="space-y-2 mb-4 flex-1">
+                <div className="mb-4 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">Unlimited stories</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">All art styles</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">AI Narrator</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <Check className="h-4 w-4 flex-shrink-0 text-blue-500" />
                     <span className="text-sm text-gray-700">Edit mode & Add your option</span>
                   </div>
                 </div>
                 <button
                   onClick={() => handleUpgrade(STRIPE_PRICES.PRO_ANNUAL)}
                   disabled={checkoutLoading}
-                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-auto shadow-lg"
+                  className="mt-auto w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {checkoutLoading ? (
-                    <Loader className="w-4 h-4 animate-spin mx-auto" />
+                    <Loader className="mx-auto h-4 w-4 animate-spin" />
                   ) : (
                     'Try For $200'
                   )}
@@ -261,7 +283,7 @@ export function Subscription({ userId }: SubscriptionProps) {
               </div>
             </div>
 
-            <p className="text-center text-xs text-gray-500 mt-4">
+            <p className="mt-4 text-center text-xs text-gray-500">
               Cancel anytime. Secure payment via Stripe.
             </p>
           </>
