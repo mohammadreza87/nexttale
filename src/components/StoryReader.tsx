@@ -1,8 +1,44 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, Sparkles, Loader, User, ThumbsUp, ThumbsDown, Share2, Save, X, Plus, Trash2, Pen, Check, Eye, EyeOff, Film, Mic, MicOff } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  Sparkles,
+  Loader,
+  User,
+  ThumbsUp,
+  ThumbsDown,
+  Share2,
+  Save,
+  X,
+  Plus,
+  Trash2,
+  Pen,
+  Check,
+  Eye,
+  EyeOff,
+  Film,
+  Mic,
+  MicOff,
+} from 'lucide-react';
 import { useVoiceInput, matchVoiceToChoice } from '../hooks/useVoiceInput';
 import UpgradeModal from './UpgradeModal';
-import { getStoryNode, getNodeChoices, saveProgress, updateNodeImage, updateNodeAudio, createStoryNode, createStoryChoice, deleteStoryChoice, toggleChoiceVisibility, getStory, getStoryGenerationStatus, getUserReaction, addReaction, updateReaction, removeReaction } from '../lib/storyService';
+import {
+  getStoryNode,
+  getNodeChoices,
+  saveProgress,
+  updateNodeImage,
+  updateNodeAudio,
+  createStoryNode,
+  createStoryChoice,
+  deleteStoryChoice,
+  toggleChoiceVisibility,
+  getStory,
+  getStoryGenerationStatus,
+  getUserReaction,
+  addReaction,
+  updateReaction,
+  removeReaction,
+} from '../lib/storyService';
 import { trackChapterRead, trackStoryCompletion } from '../lib/pointsService';
 import { supabase, getShareUrl } from '../lib/supabase';
 import { getSubscriptionUsage } from '../lib/subscriptionService';
@@ -33,12 +69,12 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   const [playingChapterId, setPlayingChapterId] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [_isGenerating, setIsGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [story, setStory] = useState<Story | null>(null);
   const [imageStyleReference, setImageStyleReference] = useState<string | null>(null);
-  const [generationProgress, setGenerationProgress] = useState<number>(0);
+  const [_generationProgress, setGenerationProgress] = useState<number>(0);
   const [generationStatus, setGenerationStatus] = useState<string>('');
   const [userReaction, setUserReaction] = useState<StoryReaction | null>(null);
   const [likesCount, setLikesCount] = useState(0);
@@ -51,15 +87,20 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
   const [audioLoadingChapters, setAudioLoadingChapters] = useState<Set<string>>(new Set());
   const [audioReadyChapters, setAudioReadyChapters] = useState<Set<string>>(new Set());
   const audioCache = useRef<Map<string, string>>(new Map());
-  const pendingPlayChapter = useRef<{nodeId: string, text: string} | null>(null);
+  const pendingPlayChapter = useRef<{ nodeId: string; text: string } | null>(null);
   const [autoNarrationEnabled, setAutoNarrationEnabled] = useState(true);
   const autoPlayTriggeredRef = useRef<Set<string>>(new Set()); // Track which chapters we've auto-played
   const [isEditMode, setIsEditMode] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [hasVoiceInput, setHasVoiceInput] = useState(false);
+  const [hasVideoClips, setHasVideoClips] = useState(false);
+  const [hasEditMode, setHasEditMode] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [editingChapter, setEditingChapter] = useState<number | null>(null);
   const [editedContent, setEditedContent] = useState('');
-  const [editingChoices, setEditingChoices] = useState<Array<{id: string, text: string, hint?: string | null}>>([]);
+  const [editingChoices, setEditingChoices] = useState<
+    Array<{ id: string; text: string; hint?: string | null }>
+  >([]);
   const [customChoice, setCustomChoice] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [customChoiceChapterIndex, setCustomChoiceChapterIndex] = useState<number | null>(null);
@@ -68,31 +109,34 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
   const [voiceMatchedChoice, setVoiceMatchedChoice] = useState<string | null>(null);
 
   // Voice input for choosing story paths
-  const handleVoiceResult = useCallback((transcript: string) => {
-    if (voiceInputChapterIndex === null) return;
+  const handleVoiceResult = useCallback(
+    (transcript: string) => {
+      if (voiceInputChapterIndex === null) return;
 
-    const chapter = chapters[voiceInputChapterIndex];
-    if (!chapter || chapter.selectedChoiceId) return;
+      const chapter = chapters[voiceInputChapterIndex];
+      if (!chapter || chapter.selectedChoiceId) return;
 
-    const availableChoices = chapter.choices
-      .filter(c => c.created_by === userId || c.is_public !== false)
-      .map(c => ({ id: c.id, text: c.choice_text }));
+      const availableChoices = chapter.choices
+        .filter((c) => c.created_by === userId || c.is_public !== false)
+        .map((c) => ({ id: c.id, text: c.choice_text }));
 
-    const matched = matchVoiceToChoice(transcript, availableChoices);
+      const matched = matchVoiceToChoice(transcript, availableChoices);
 
-    if (matched) {
-      setVoiceMatchedChoice(matched.id);
-      // Auto-select after a brief delay to show the match
-      setTimeout(() => {
-        const choice = chapter.choices.find(c => c.id === matched.id);
-        if (choice) {
-          handleChoice(voiceInputChapterIndex, choice);
-        }
-        setVoiceInputChapterIndex(null);
-        setVoiceMatchedChoice(null);
-      }, 1000);
-    }
-  }, [voiceInputChapterIndex, chapters, userId]);
+      if (matched) {
+        setVoiceMatchedChoice(matched.id);
+        // Auto-select after a brief delay to show the match
+        setTimeout(() => {
+          const choice = chapter.choices.find((c) => c.id === matched.id);
+          if (choice) {
+            handleChoice(voiceInputChapterIndex, choice);
+          }
+          setVoiceInputChapterIndex(null);
+          setVoiceMatchedChoice(null);
+        }, 1000);
+      }
+    },
+    [voiceInputChapterIndex, chapters, userId]
+  );
 
   const {
     isListening,
@@ -106,6 +150,12 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
   });
 
   const toggleVoiceInput = (chapterIndex: number) => {
+    // Voice input requires Pro or Max plan
+    if (!hasVoiceInput) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     if (isListening) {
       stopListening();
       setVoiceInputChapterIndex(null);
@@ -126,6 +176,9 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
     try {
       const usage = await getSubscriptionUsage(userId);
       setIsPro(usage.isPro);
+      setHasVoiceInput(usage.hasVoiceInput);
+      setHasVideoClips(usage.hasVideoClips);
+      setHasEditMode(usage.hasEditMode);
 
       const storyData = await getStory(storyId);
       setIsOwner(storyData?.created_by === userId);
@@ -166,8 +219,8 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
   // When backend finishes generation, fill any missing images once
   useEffect(() => {
     if (generationStatus === 'fully_generated' && story) {
-      const missing = chapters.filter(ch => !ch.imageUrl && ch.node.id !== 'loading');
-      missing.forEach(chapter => {
+      const missing = chapters.filter((ch) => !ch.imageUrl && ch.node.id !== 'loading');
+      missing.forEach((chapter) => {
         startImageGeneration(
           chapter.node.id,
           chapter.node.content,
@@ -175,16 +228,20 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
             storyTitle: story.title,
             artStyle: story.art_style,
             storyDescription: story.description,
-            styleReference: imageStyleReference
+            styleReference: imageStyleReference,
           },
           async (imageUrl) => {
-            await updateNodeImage(chapter.node.id, imageUrl, chapter.node.content.substring(0, 200));
+            await updateNodeImage(
+              chapter.node.id,
+              imageUrl,
+              chapter.node.content.substring(0, 200)
+            );
             if (chapter.node.node_key === 'start') {
               await supabase
                 .from('stories')
                 .update({ cover_image_url: imageUrl })
                 .eq('id', storyId);
-              setStory(prev => prev ? { ...prev, cover_image_url: imageUrl } : prev);
+              setStory((prev) => (prev ? { ...prev, cover_image_url: imageUrl } : prev));
             }
           }
         );
@@ -226,20 +283,25 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
   // Preload audio for chapters when narrator is enabled
   useEffect(() => {
     if (chapters.length > 0 && story?.narrator_enabled) {
-      chapters.forEach(chapter => {
+      chapters.forEach((chapter) => {
         const nodeId = chapter.node.id;
         const isLoadingNode = nodeId === 'loading' || chapter.node.node_key === 'loading';
         const hasContent = chapter.node.content && chapter.node.content.trim().length > 0;
 
         // Skip if already loaded, loading, or is a loading placeholder
-        if (audioReadyChapters.has(nodeId) || audioLoadingChapters.has(nodeId) || isLoadingNode || !hasContent) {
+        if (
+          audioReadyChapters.has(nodeId) ||
+          audioLoadingChapters.has(nodeId) ||
+          isLoadingNode ||
+          !hasContent
+        ) {
           return;
         }
 
         // If audio already cached in database, mark as ready
         if (chapter.node.audio_url && !chapter.node.audio_url.startsWith('blob:')) {
           audioCache.current.set(nodeId, chapter.node.audio_url);
-          setAudioReadyChapters(prev => new Set(prev).add(nodeId));
+          setAudioReadyChapters((prev) => new Set(prev).add(nodeId));
           return;
         }
 
@@ -261,7 +323,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
     const offsetPosition = elementPosition - headerHeight - padding;
     window.scrollTo({
       top: offsetPosition,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   };
 
@@ -269,9 +331,11 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
     if (latestChapterRef.current && chapters.length > 1) {
       const latestChapter = chapters[chapters.length - 1];
       // Only scroll when we have a real chapter (not loading placeholder) and haven't scrolled to it yet
-      if (latestChapter.node.id !== 'loading' &&
-          latestChapter.node.node_key !== 'loading' &&
-          lastScrolledChapterRef.current !== latestChapter.node.id) {
+      if (
+        latestChapter.node.id !== 'loading' &&
+        latestChapter.node.node_key !== 'loading' &&
+        lastScrolledChapterRef.current !== latestChapter.node.id
+      ) {
         lastScrolledChapterRef.current = latestChapter.node.id;
         scrollToElement(latestChapterRef.current);
       }
@@ -300,39 +364,46 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
         return null;
       }
 
-      const { storyTitle, artStyle, storyDescription, styleReference, storyId: imgStoryId, nodeId, previousPrompt } = options;
+      const {
+        storyTitle,
+        artStyle,
+        storyDescription,
+        styleReference,
+        storyId: imgStoryId,
+        nodeId,
+        previousPrompt,
+      } = options;
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
       console.log('Generating image for story chapter...');
 
       // Prefer user session token; fall back to anon key so images still generate for signed-out readers
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const accessToken = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
       if (!accessToken) {
         console.error('Not authenticated for image generation');
         return null;
       }
 
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/generate-image`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            prompt: nodeContent,
-            styleReference: styleReference ?? imageStyleReference,
-            artStyle: artStyle || story?.art_style || 'fantasy',
-            storyTitle,
-            storyDescription: storyDescription ?? (story?.description || ''),
-            storyId: imgStoryId || story?.id || storyId,
-            nodeId,
-            previousPrompt: previousPrompt ?? imageStyleReference ?? null,
-          }),
-        }
-      );
+      const response = await fetch(`${supabaseUrl}/functions/v1/generate-image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          prompt: nodeContent,
+          styleReference: styleReference ?? imageStyleReference,
+          artStyle: artStyle || story?.art_style || 'fantasy',
+          storyTitle,
+          storyDescription: storyDescription ?? (story?.description || ''),
+          storyId: imgStoryId || story?.id || storyId,
+          nodeId,
+          previousPrompt: previousPrompt ?? imageStyleReference ?? null,
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -371,33 +442,30 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
 
     imageGenerationInProgress.current.add(nodeId);
 
-    setChapters(prev => prev.map(ch =>
-      ch.node.id === nodeId
-        ? { ...ch, generatingImage: true }
-        : ch
-    ));
+    setChapters((prev) =>
+      prev.map((ch) => (ch.node.id === nodeId ? { ...ch, generatingImage: true } : ch))
+    );
 
-    generateNodeImage(nodeContent, options).then(async (imageUrl) => {
-      if (imageUrl) {
-        if (onSuccess) {
-          await onSuccess(imageUrl);
+    generateNodeImage(nodeContent, options)
+      .then(async (imageUrl) => {
+        if (imageUrl) {
+          if (onSuccess) {
+            await onSuccess(imageUrl);
+          }
+          setChapters((prev) =>
+            prev.map((ch) => (ch.node.id === nodeId ? { ...ch, imageUrl } : ch))
+          );
         }
-        setChapters(prev => prev.map(ch =>
-          ch.node.id === nodeId
-            ? { ...ch, imageUrl }
-            : ch
-        ));
-      }
-    }).catch((err) => {
-      console.log('Image generation failed, continuing without image:', err);
-    }).finally(() => {
-      imageGenerationInProgress.current.delete(nodeId);
-      setChapters(prev => prev.map(ch =>
-        ch.node.id === nodeId
-          ? { ...ch, generatingImage: false }
-          : ch
-      ));
-    });
+      })
+      .catch((err) => {
+        console.log('Image generation failed, continuing without image:', err);
+      })
+      .finally(() => {
+        imageGenerationInProgress.current.delete(nodeId);
+        setChapters((prev) =>
+          prev.map((ch) => (ch.node.id === nodeId ? { ...ch, generatingImage: false } : ch))
+        );
+      });
   };
 
   const generateVideoFromImage = async (
@@ -407,7 +475,9 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
   ): Promise<string | null> => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const accessToken = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       if (!accessToken) {
@@ -417,23 +487,20 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
 
       console.log('Generating video for node:', nodeId);
 
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/generate-video`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            imageUrl,
-            prompt: prompt || 'Subtle cinematic movement, gentle camera pan, atmospheric lighting',
-            storyId,
-            nodeId,
-            resolution: '480',
-          }),
-        }
-      );
+      const response = await fetch(`${supabaseUrl}/functions/v1/generate-video`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          imageUrl,
+          prompt: prompt || 'Subtle cinematic movement, gentle camera pan, atmospheric lighting',
+          storyId,
+          nodeId,
+          resolution: '480',
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -460,66 +527,68 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
 
     videoGenerationInProgress.current.add(nodeId);
 
-    setChapters(prev => prev.map(ch =>
-      ch.node.id === nodeId
-        ? { ...ch, generatingVideo: true }
-        : ch
-    ));
+    setChapters((prev) =>
+      prev.map((ch) => (ch.node.id === nodeId ? { ...ch, generatingVideo: true } : ch))
+    );
 
-    generateVideoFromImage(imageUrl, nodeId, prompt).then(async (videoUrl) => {
-      if (videoUrl) {
-        if (onSuccess) {
-          await onSuccess(videoUrl);
+    generateVideoFromImage(imageUrl, nodeId, prompt)
+      .then(async (videoUrl) => {
+        if (videoUrl) {
+          if (onSuccess) {
+            await onSuccess(videoUrl);
+          }
+          setChapters((prev) =>
+            prev.map((ch) => (ch.node.id === nodeId ? { ...ch, videoUrl } : ch))
+          );
         }
-        setChapters(prev => prev.map(ch =>
-          ch.node.id === nodeId
-            ? { ...ch, videoUrl }
-            : ch
-        ));
-      }
-    }).catch((err) => {
-      console.log('Video generation failed, continuing without video:', err);
-    }).finally(() => {
-      videoGenerationInProgress.current.delete(nodeId);
-      setChapters(prev => prev.map(ch =>
-        ch.node.id === nodeId
-          ? { ...ch, generatingVideo: false }
-          : ch
-      ));
-    });
+      })
+      .catch((err) => {
+        console.log('Video generation failed, continuing without video:', err);
+      })
+      .finally(() => {
+        videoGenerationInProgress.current.delete(nodeId);
+        setChapters((prev) =>
+          prev.map((ch) => (ch.node.id === nodeId ? { ...ch, generatingVideo: false } : ch))
+        );
+      });
   };
 
-  const generateStory = async (storyContext: string, userChoice?: string, previousContent?: string): Promise<any> => {
+  const generateStory = async (
+    storyContext: string,
+    userChoice?: string,
+    previousContent?: string
+  ): Promise<any> => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const realChapterCount = chapters.filter(ch => ch.node.id !== 'loading' && ch.node.node_key !== 'loading').length;
+      const realChapterCount = chapters.filter(
+        (ch) => ch.node.id !== 'loading' && ch.node.node_key !== 'loading'
+      ).length;
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/generate-story`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          signal: controller.signal,
-          body: JSON.stringify({
-            storyContext,
-            userChoice,
-            previousContent,
-            storyTitle: story?.title,
-            chapterCount: realChapterCount
-          }),
-        }
-      );
+      const response = await fetch(`${supabaseUrl}/functions/v1/generate-story`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          storyContext,
+          userChoice,
+          previousContent,
+          storyTitle: story?.title,
+          chapterCount: realChapterCount,
+        }),
+      });
 
       clearTimeout(timeout);
 
@@ -540,7 +609,11 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
     }
   };
 
-  const waitForNodeResolution = async (nodeId: string, timeoutMs: number = 12000, intervalMs: number = 1500) => {
+  const waitForNodeResolution = async (
+    nodeId: string,
+    timeoutMs: number = 12000,
+    intervalMs: number = 1500
+  ) => {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
       const { data: node } = await supabase
@@ -553,12 +626,16 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
         return node as StoryNode;
       }
 
-      await new Promise(resolve => setTimeout(resolve, intervalMs));
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
     return null;
   };
 
-  const loadStoryNode = async (nodeKey: string, previousContent?: string, storyOverride?: Story) => {
+  const loadStoryNode = async (
+    nodeKey: string,
+    previousContent?: string,
+    storyOverride?: Story
+  ) => {
     const currentStory = storyOverride || story;
     try {
       setLoading(true);
@@ -612,7 +689,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           node,
           choices: placeholderChoices,
           imageUrl: currentStory.cover_image_url,
-          generatingImage: false
+          generatingImage: false,
         };
 
         setChapters([chapter]);
@@ -642,7 +719,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
         node,
         choices: nodeChoices,
         imageUrl: shouldUseCoverImage ? currentStory.cover_image_url : existingNodeImage,
-        generatingImage: false // Don't show loading state, just show content immediately
+        generatingImage: false, // Don't show loading state, just show content immediately
       };
 
       console.log('Setting chapter with choices:', chapter.choices.length);
@@ -655,7 +732,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           .update({ cover_image_url: existingNodeImage })
           .eq('id', storyId);
 
-        setStory(prev => prev ? { ...prev, cover_image_url: existingNodeImage } : prev);
+        setStory((prev) => (prev ? { ...prev, cover_image_url: existingNodeImage } : prev));
       }
 
       await trackChapterRead(userId, storyId, node.id, currentStory?.created_by || null);
@@ -675,7 +752,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
             styleReference: imageStyleReference || node.image_prompt,
             storyId,
             nodeId: node.id,
-            previousPrompt: node.image_prompt || imageStyleReference
+            previousPrompt: node.image_prompt || imageStyleReference,
           },
           async (imageUrl) => {
             await updateNodeImage(node.id, imageUrl, node.content.substring(0, 200));
@@ -728,11 +805,11 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           image_url: null,
           image_prompt: null,
           audio_url: null,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         },
         choices: [],
         imageUrl: null,
-        generatingImage: false
+        generatingImage: false,
       };
 
       const baseChapters = [...updatedChapters];
@@ -749,19 +826,13 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           const newPath = [...pathTaken, resolvedNode.node_key];
           setPathTaken(newPath);
 
-          await saveProgress(
-            userId,
-            storyId,
-            resolvedNode.id,
-            newPath,
-            resolvedNode.is_ending
-          );
+          await saveProgress(userId, storyId, resolvedNode.id, newPath, resolvedNode.is_ending);
 
           const newChapter: StoryChapter = {
             node: resolvedNode,
             choices: nextChoices,
             imageUrl: resolvedNode.image_url,
-            generatingImage: false
+            generatingImage: false,
           };
 
           setChapters([...baseChapters, newChapter]);
@@ -784,10 +855,14 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
                 styleReference: imageStyleReference || resolvedNode.image_prompt,
                 storyId,
                 nodeId: resolvedNode.id,
-                previousPrompt: resolvedNode.image_prompt || imageStyleReference
+                previousPrompt: resolvedNode.image_prompt || imageStyleReference,
               },
               async (imageUrl) => {
-                await updateNodeImage(resolvedNode.id, imageUrl, resolvedNode.content.substring(0, 200));
+                await updateNodeImage(
+                  resolvedNode.id,
+                  imageUrl,
+                  resolvedNode.content.substring(0, 200)
+                );
               }
             );
           }
@@ -813,10 +888,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           choice.id
         );
 
-        await supabase
-          .from('story_choices')
-          .update({ to_node_id: newNode.id })
-          .eq('id', choice.id);
+        await supabase.from('story_choices').update({ to_node_id: newNode.id }).eq('id', choice.id);
 
         const newChoices = [];
         if (!generatedStory.isEnding) {
@@ -851,19 +923,13 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
         const newPath = [...pathTaken, newNodeKey];
         setPathTaken(newPath);
 
-        await saveProgress(
-          userId,
-          storyId,
-          newNode.id,
-          newPath,
-          generatedStory.isEnding
-        );
+        await saveProgress(userId, storyId, newNode.id, newPath, generatedStory.isEnding);
 
         const newChapter: StoryChapter = {
           node: newNode,
           choices: newChoices,
           imageUrl: null,
-          generatingImage: false // Show content immediately
+          generatingImage: false, // Show content immediately
         };
 
         setChapters([...baseChapters, newChapter]);
@@ -887,7 +953,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
               styleReference: imageStyleReference,
               storyId,
               nodeId: newNode.id,
-              previousPrompt: imageStyleReference
+              previousPrompt: imageStyleReference,
             },
             async (imageUrl) => {
               await updateNodeImage(newNode.id, imageUrl, newNode.content.substring(0, 200));
@@ -896,29 +962,23 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
         }
       } catch (error) {
         console.error('Error generating next chapter:', error);
-        setStoryError(error instanceof Error ? error.message : 'Story generation failed. Please try again.');
-        setChapters(baseChapters.map((chapter, idx) =>
-          idx === chapterIndex
-            ? { ...chapter, selectedChoiceId: undefined }
-            : chapter
-        ));
+        setStoryError(
+          error instanceof Error ? error.message : 'Story generation failed. Please try again.'
+        );
+        setChapters(
+          baseChapters.map((chapter, idx) =>
+            idx === chapterIndex ? { ...chapter, selectedChoiceId: undefined } : chapter
+          )
+        );
         setIsGenerating(false);
       }
     } else {
       const newPath = [...pathTaken, choice.to_node.node_key];
       setPathTaken(newPath);
 
-      await saveProgress(
-        userId,
-        storyId,
-        choice.to_node.id,
-        newPath,
-        choice.to_node.is_ending
-      );
+      await saveProgress(userId, storyId, choice.to_node.id, newPath, choice.to_node.is_ending);
 
-      const nextChoices = choice.to_node.is_ending
-        ? []
-        : await getNodeChoices(choice.to_node.id);
+      const nextChoices = choice.to_node.is_ending ? [] : await getNodeChoices(choice.to_node.id);
 
       if (!choice.to_node.is_ending && nextChoices.length === 0 && story?.story_context) {
         console.log('Node has no choices, generating them dynamically...');
@@ -963,7 +1023,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
             node: choice.to_node,
             choices: newChoices,
             imageUrl: existingImageUrl,
-            generatingImage: false
+            generatingImage: false,
           };
 
           setChapters([...updatedChapters, newChapter]);
@@ -972,12 +1032,15 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           console.error('Error generating choices for node:', error);
           setIsGenerating(false);
           const existingImageUrl = choice.to_node.image_url;
-          setChapters([...updatedChapters, {
-            node: choice.to_node,
-            choices: [],
-            imageUrl: existingImageUrl,
-            generatingImage: false
-          }]);
+          setChapters([
+            ...updatedChapters,
+            {
+              node: choice.to_node,
+              choices: [],
+              imageUrl: existingImageUrl,
+              generatingImage: false,
+            },
+          ]);
         }
       } else {
         const existingImageUrl = choice.to_node.image_url;
@@ -985,7 +1048,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           node: choice.to_node,
           choices: nextChoices,
           imageUrl: existingImageUrl,
-          generatingImage: false
+          generatingImage: false,
         };
 
         setChapters([...updatedChapters, newChapter]);
@@ -1010,10 +1073,14 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
             styleReference: imageStyleReference,
             storyId,
             nodeId: choice.to_node.id,
-            previousPrompt: imageStyleReference
+            previousPrompt: imageStyleReference,
           },
           async (imageUrl) => {
-            await updateNodeImage(choice.to_node.id, imageUrl, choice.to_node.content.substring(0, 200));
+            await updateNodeImage(
+              choice.to_node.id,
+              imageUrl,
+              choice.to_node.content.substring(0, 200)
+            );
           }
         );
       } else if (choice.to_node.image_url) {
@@ -1026,26 +1093,39 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
     try {
       await deleteStoryChoice(choiceId);
       // Remove the choice from the local state
-      setChapters(prev => prev.map((ch, idx) =>
-        idx === chapterIndex
-          ? { ...ch, choices: ch.choices.filter(c => c.id !== choiceId) }
-          : ch
-      ));
+      setChapters((prev) =>
+        prev.map((ch, idx) =>
+          idx === chapterIndex
+            ? { ...ch, choices: ch.choices.filter((c) => c.id !== choiceId) }
+            : ch
+        )
+      );
     } catch (error) {
       console.error('Error deleting choice:', error);
     }
   };
 
-  const handleToggleChoiceVisibility = async (chapterIndex: number, choiceId: string, currentVisibility: boolean) => {
+  const handleToggleChoiceVisibility = async (
+    chapterIndex: number,
+    choiceId: string,
+    currentVisibility: boolean
+  ) => {
     try {
       const newVisibility = !currentVisibility;
       await toggleChoiceVisibility(choiceId, newVisibility);
       // Update the local state
-      setChapters(prev => prev.map((ch, idx) =>
-        idx === chapterIndex
-          ? { ...ch, choices: ch.choices.map(c => c.id === choiceId ? { ...c, is_public: newVisibility } : c) }
-          : ch
-      ));
+      setChapters((prev) =>
+        prev.map((ch, idx) =>
+          idx === chapterIndex
+            ? {
+                ...ch,
+                choices: ch.choices.map((c) =>
+                  c.id === choiceId ? { ...c, is_public: newVisibility } : c
+                ),
+              }
+            : ch
+        )
+      );
     } catch (error) {
       console.error('Error toggling choice visibility:', error);
     }
@@ -1092,7 +1172,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
     const updatedChapters = [...chapters];
     const newChoice = {
       ...customChoiceRecord,
-      to_node: customPlaceholderNode
+      to_node: customPlaceholderNode,
     };
     updatedChapters[chapterIndex].choices = [...updatedChapters[chapterIndex].choices, newChoice];
     updatedChapters[chapterIndex].selectedChoiceId = customChoiceRecord.id;
@@ -1110,11 +1190,11 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
         image_url: null,
         image_prompt: null,
         audio_url: null,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       },
       choices: [],
       imageUrl: null,
-      generatingImage: false
+      generatingImage: false,
     };
 
     setChapters([...updatedChapters, loadingChapter]);
@@ -1174,19 +1254,13 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
       const newPath = [...pathTaken, newNodeKey];
       setPathTaken(newPath);
 
-      await saveProgress(
-        userId,
-        storyId,
-        newNode.id,
-        newPath,
-        generatedStory.isEnding
-      );
+      await saveProgress(userId, storyId, newNode.id, newPath, generatedStory.isEnding);
 
       const newChapter: StoryChapter = {
         node: newNode,
         choices: newChoices,
         imageUrl: null,
-        generatingImage: false
+        generatingImage: false,
       };
 
       setChapters([...updatedChapters, newChapter]);
@@ -1210,7 +1284,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
             styleReference: imageStyleReference,
             storyId,
             nodeId: newNode.id,
-            previousPrompt: imageStyleReference
+            previousPrompt: imageStyleReference,
           },
           async (imageUrl) => {
             await updateNodeImage(newNode.id, imageUrl, newNode.content.substring(0, 200));
@@ -1220,13 +1294,13 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
     } catch (error) {
       console.error('Error generating custom chapter:', error);
       // Remove the loading chapter and keep the custom choice visible but unselected
-      setChapters(prev => {
-        const withoutLoading = prev.filter(ch => ch.node.id !== 'loading');
+      setChapters((prev) => {
+        const withoutLoading = prev.filter((ch) => ch.node.id !== 'loading');
         // Unselect the custom choice so user can try again or select another
         if (withoutLoading[chapterIndex]) {
           withoutLoading[chapterIndex] = {
             ...withoutLoading[chapterIndex],
-            selectedChoiceId: undefined
+            selectedChoiceId: undefined,
           };
         }
         return withoutLoading;
@@ -1238,31 +1312,28 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
   const preloadAudio = async (text: string, nodeId: string) => {
     try {
       // Mark as loading
-      setAudioLoadingChapters(prev => new Set(prev).add(nodeId));
+      setAudioLoadingChapters((prev) => new Set(prev).add(nodeId));
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/text-to-speech`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            text,
-            voice: 'coral',
-            speed: 0.85,
-          }),
-        }
-      );
+      const response = await fetch(`${supabaseUrl}/functions/v1/text-to-speech`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          text,
+          voice: 'coral',
+          speed: 0.85,
+        }),
+      });
 
       if (!response.ok) {
         // Silently fail for billing issues - TTS is optional
         if (response.status === 400 || response.status === 429) {
           console.warn('Text-to-speech unavailable (billing inactive)');
-          setAudioLoadingChapters(prev => {
+          setAudioLoadingChapters((prev) => {
             const newSet = new Set(prev);
             newSet.delete(nodeId);
             return newSet;
@@ -1285,17 +1356,17 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
       await updateNodeAudio(nodeId, data.audio);
 
       // Mark as ready
-      setAudioLoadingChapters(prev => {
+      setAudioLoadingChapters((prev) => {
         const newSet = new Set(prev);
         newSet.delete(nodeId);
         return newSet;
       });
-      setAudioReadyChapters(prev => new Set(prev).add(nodeId));
+      setAudioReadyChapters((prev) => new Set(prev).add(nodeId));
 
       console.log('Audio preloaded for node:', nodeId);
     } catch (error) {
       console.error('Error preloading audio:', error);
-      setAudioLoadingChapters(prev => {
+      setAudioLoadingChapters((prev) => {
         const newSet = new Set(prev);
         newSet.delete(nodeId);
         return newSet;
@@ -1469,7 +1540,13 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
       speakText(text, nodeId);
     }
     // If audio is paused on the same chapter, resume it
-    else if (audioRef.current && audioRef.current.src && audioRef.current.currentTime > 0 && currentWordIndex >= 0 && playingChapterId === nodeId) {
+    else if (
+      audioRef.current &&
+      audioRef.current.src &&
+      audioRef.current.currentTime > 0 &&
+      currentWordIndex >= 0 &&
+      playingChapterId === nodeId
+    ) {
       resumeSpeech();
     }
     // Start new audio - if audio is ready, play it
@@ -1503,9 +1580,9 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
     if (chapters.length === 0 || isSpeaking) return;
 
     // Get the latest real chapter (not loading placeholder)
-    const latestChapter = chapters.filter(ch =>
-      ch.node.id !== 'loading' && ch.node.node_key !== 'loading'
-    ).pop();
+    const latestChapter = chapters
+      .filter((ch) => ch.node.id !== 'loading' && ch.node.node_key !== 'loading')
+      .pop();
 
     if (!latestChapter) return;
 
@@ -1538,7 +1615,9 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
     const chapter = chapters[chapterIndex];
     setEditingChapter(chapterIndex);
     setEditedContent(chapter.node.content);
-    setEditingChoices(chapter.choices.map(c => ({ id: c.id, text: c.choice_text, hint: c.hint })));
+    setEditingChoices(
+      chapter.choices.map((c) => ({ id: c.id, text: c.choice_text, hint: c.hint }))
+    );
   };
 
   const cancelEdit = () => {
@@ -1567,10 +1646,10 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
       updatedChapters[chapterIndex] = {
         ...chapter,
         node: { ...chapter.node, content: editedContent, audio_url: null },
-        choices: chapter.choices.map(c => {
-          const edited = editingChoices.find(ec => ec.id === c.id);
+        choices: chapter.choices.map((c) => {
+          const edited = editingChoices.find((ec) => ec.id === c.id);
           return edited ? { ...c, choice_text: edited.text, hint: edited.hint } : c;
-        })
+        }),
       };
       setChapters(updatedChapters);
 
@@ -1597,11 +1676,20 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 pb-20 flex flex-col items-center justify-center gap-3">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-950 pb-20">
         <div className="flex gap-2">
-          <div className="w-3 h-3 rounded-full bg-gray-600 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-3 h-3 rounded-full bg-gray-600 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-3 h-3 rounded-full bg-gray-600 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-gray-600"
+            style={{ animationDelay: '0ms' }}
+          ></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-gray-600"
+            style={{ animationDelay: '150ms' }}
+          ></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-gray-600"
+            style={{ animationDelay: '300ms' }}
+          ></div>
         </div>
       </div>
     );
@@ -1613,42 +1701,50 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Sticky Header */}
-      <div ref={stickyHeaderRef} className="sticky top-0 z-20 bg-gray-950 pt-4 pb-2">
-        <div className="max-w-2xl mx-auto px-4 space-y-4">
+      <div ref={stickyHeaderRef} className="sticky top-0 z-20 bg-gray-950 pb-2 pt-4">
+        <div className="mx-auto max-w-2xl space-y-4 px-4">
           {/* Title */}
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-white mb-2">{story?.title || 'Reading Story'}</h1>
+            <h1 className="mb-2 text-3xl font-bold text-white">
+              {story?.title || 'Reading Story'}
+            </h1>
             <p className="text-sm text-gray-400">{story?.description || 'Your adventure awaits'}</p>
           </div>
 
           {/* Chapter Progress Card */}
-          <div className="bg-gray-900 rounded-3xl shadow-xl p-3 sm:p-4 border border-gray-800">
+          <div className="rounded-3xl border border-gray-800 bg-gray-900 p-3 shadow-xl sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
-              <span className="text-xs sm:text-sm font-semibold text-gray-300 shrink-0">Chapter</span>
-              <div className="flex items-center flex-wrap gap-y-2">
-                {chapters.filter(ch => ch.node.id !== 'loading').map((_, idx, arr) => (
-                  <div key={idx} className="flex items-center">
-                    <button
-                      onClick={() => {
-                        const element = document.getElementById(`chapter-${idx}`);
-                        if (element) scrollToElement(element);
-                      }}
-                      className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-white text-[10px] sm:text-xs font-bold shadow-md hover:scale-110 transition-transform ${isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-blue-600 to-cyan-600'}`}
-                    >
-                      {idx + 1}
-                    </button>
-                    {idx < arr.length - 1 && (
-                      <div className={`w-2 sm:w-3 h-0.5 ${isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-blue-600 to-cyan-600'}`}></div>
-                    )}
-                  </div>
-                ))}
-                {chapters.some(ch => ch.node.id === 'loading') && (
+              <span className="shrink-0 text-xs font-semibold text-gray-300 sm:text-sm">
+                Chapter
+              </span>
+              <div className="flex flex-wrap items-center gap-y-2">
+                {chapters
+                  .filter((ch) => ch.node.id !== 'loading')
+                  .map((_, idx, arr) => (
+                    <div key={idx} className="flex items-center">
+                      <button
+                        onClick={() => {
+                          const element = document.getElementById(`chapter-${idx}`);
+                          if (element) scrollToElement(element);
+                        }}
+                        className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-md transition-transform hover:scale-110 sm:h-6 sm:w-6 sm:text-xs ${isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-blue-600 to-cyan-600'}`}
+                      >
+                        {idx + 1}
+                      </button>
+                      {idx < arr.length - 1 && (
+                        <div
+                          className={`h-0.5 w-2 sm:w-3 ${isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-blue-600 to-cyan-600'}`}
+                        ></div>
+                      )}
+                    </div>
+                  ))}
+                {chapters.some((ch) => ch.node.id === 'loading') && (
                   <>
-                    {chapters.filter(ch => ch.node.id !== 'loading').length > 0 && (
-                      <div className="w-2 sm:w-3 h-0.5 bg-gray-700"></div>
+                    {chapters.filter((ch) => ch.node.id !== 'loading').length > 0 && (
+                      <div className="h-0.5 w-2 bg-gray-700 sm:w-3"></div>
                     )}
-                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-800 flex items-center justify-center">
-                      <Loader className="w-3 h-3 animate-spin text-gray-400" />
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-800 sm:h-6 sm:w-6">
+                      <Loader className="h-3 w-3 animate-spin text-gray-400" />
                     </div>
                   </>
                 )}
@@ -1658,651 +1754,733 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-6">
+      <div className="mx-auto max-w-2xl px-4 pb-6 pt-4">
         {error && (
-          <div className="mb-6 bg-red-900/30 border border-red-500/50 rounded-2xl p-4 flex items-start gap-3">
-            <div className="text-red-400 font-semibold">Audio Error:</div>
-            <div className="text-red-300 flex-1">{error}</div>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-400 hover:text-red-300"
-            >
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-500/50 bg-red-900/30 p-4">
+            <div className="font-semibold text-red-400">Audio Error:</div>
+            <div className="flex-1 text-red-300">{error}</div>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">
               ✕
             </button>
           </div>
         )}
 
         <div className="space-y-6">
-        {storyError && (
-          <div className="mb-4 bg-red-900/30 border border-red-500/50 rounded-2xl p-4 flex items-start gap-3">
-            <div className="text-red-400 font-semibold">Story Error:</div>
-            <div className="text-red-300 flex-1">{storyError}</div>
-            <button
-              onClick={() => setStoryError(null)}
-              className="text-red-400 hover:text-red-300"
+          {storyError && (
+            <div className="mb-4 flex items-start gap-3 rounded-2xl border border-red-500/50 bg-red-900/30 p-4">
+              <div className="font-semibold text-red-400">Story Error:</div>
+              <div className="flex-1 text-red-300">{storyError}</div>
+              <button
+                onClick={() => setStoryError(null)}
+                className="text-red-400 hover:text-red-300"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {chapters.map((chapter, chapterIndex) => (
+            <div
+              key={chapterIndex}
+              id={`chapter-${chapterIndex}`}
+              ref={chapterIndex === chapters.length - 1 ? latestChapterRef : null}
             >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {chapters.map((chapter, chapterIndex) => (
-          <div
-            key={chapterIndex}
-            id={`chapter-${chapterIndex}`}
-            ref={chapterIndex === chapters.length - 1 ? latestChapterRef : null}
-          >
-            {chapter.node.id === 'loading' ? (
-              <div className="bg-gray-900 rounded-3xl shadow-xl p-6 mb-6 border border-gray-800">
-                <div className="flex flex-col items-center justify-center min-h-[200px] gap-4">
-                  <div className="text-center space-y-1">
-                    <h3 className="text-lg font-bold text-white">Crafting your story...</h3>
-                    <p className="text-sm text-gray-400">The AI is writing what happens next</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <div className={`w-2 h-2 rounded-full animate-bounce ${isPro ? 'bg-purple-500' : 'bg-blue-500'}`} style={{ animationDelay: '0ms' }}></div>
-                    <div className={`w-2 h-2 rounded-full animate-bounce ${isPro ? 'bg-pink-500' : 'bg-cyan-500'}`} style={{ animationDelay: '150ms' }}></div>
-                    <div className={`w-2 h-2 rounded-full animate-bounce ${isPro ? 'bg-purple-500' : 'bg-blue-500'}`} style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-gray-900 rounded-3xl shadow-xl mb-6 overflow-hidden border border-gray-800">
-                <div className="p-6">
-
-                {/* Image placeholder - always shown */}
-                <div className="mb-6 rounded-2xl overflow-hidden relative aspect-[4/3]">
-                  {/* Gradient placeholder background */}
-                  <div className={`absolute inset-0 flex flex-col items-center justify-center ${isPro ? 'bg-gradient-to-br from-purple-900/50 to-pink-900/50' : 'bg-gradient-to-br from-blue-900/50 to-cyan-900/50'}`}>
-                    {chapter.generatingImage ? (
-                      <>
-                        <Loader className={`w-6 h-6 animate-spin ${isPro ? 'text-purple-400' : 'text-blue-400'}`} />
-                        <span className={`text-sm font-medium mt-2 ${isPro ? 'text-purple-300' : 'text-blue-300'}`}>Creating illustration...</span>
-                      </>
-                    ) : !chapter.imageUrl && (
-                      <Sparkles className={`w-10 h-10 ${isPro ? 'text-purple-500' : 'text-blue-500'}`} />
-                    )}
-                  </div>
-                  {/* Actual image - shown when available */}
-                  {chapter.imageUrl && (
-                    <img
-                      src={chapter.imageUrl}
-                      alt={`Chapter ${chapterIndex + 1} illustration`}
-                      className="w-full h-full object-cover relative z-[1]"
-                      onError={(e) => {
-                        console.error('Image failed to load:', chapter.imageUrl);
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  )}
-                  {/* Chapter number badge */}
-                  <div className={`absolute top-3 left-3 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg z-10 ${isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-blue-600 to-cyan-600'}`}>
-                    {chapterIndex + 1}
-                  </div>
-                </div>
-
-                {/* Video section - Pro users only, shown at end of chapters */}
-                {isPro && story?.video_enabled && chapter.imageUrl && (
-                  <div className="mb-6">
-                    {chapter.videoUrl || chapter.node.video_url ? (
-                      <div className="rounded-2xl overflow-hidden">
-                        <video
-                          src={chapter.videoUrl || chapter.node.video_url || undefined}
-                          className="w-full aspect-video object-cover"
-                          controls
-                          playsInline
-                          loop
-                          muted
-                          poster={chapter.imageUrl}
-                        />
-                      </div>
-                    ) : chapter.generatingVideo ? (
-                      <div className="rounded-2xl bg-gradient-to-br from-purple-900/50 to-pink-900/50 aspect-video flex flex-col items-center justify-center">
-                        <Film className="w-8 h-8 text-purple-400 mb-2" />
-                        <Loader className="w-5 h-5 animate-spin text-purple-400 mb-2" />
-                        <span className="text-sm font-medium text-purple-300">Creating video clip...</span>
-                        <span className="text-xs text-purple-400 mt-1">This may take a few minutes</span>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          if (chapter.imageUrl) {
-                            startVideoGeneration(
-                              chapter.node.id,
-                              chapter.imageUrl,
-                              `Cinematic scene from ${story?.title || 'story'}: ${chapter.node.content.substring(0, 100)}`,
-                              async (videoUrl) => {
-                                await supabase
-                                  .from('story_nodes')
-                                  .update({ video_url: videoUrl })
-                                  .eq('id', chapter.node.id);
-
-                                // Update story cover_video_url if this is the first chapter
-                                if (chapterIndex === 0 && storyId) {
-                                  await supabase
-                                    .from('stories')
-                                    .update({ cover_video_url: videoUrl })
-                                    .eq('id', storyId);
-                                }
-                              }
-                            );
-                          }
-                        }}
-                        className="w-full rounded-2xl bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-2 border-dashed border-purple-500/50 aspect-video flex flex-col items-center justify-center hover:bg-purple-900/40 transition-all group"
-                      >
-                        <Film className="w-10 h-10 text-purple-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-sm font-medium text-purple-300 mt-2">Generate Video Clip</span>
-                        <span className="text-xs text-purple-400">Pro feature</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {editingChapter === chapterIndex ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Chapter Content</label>
-                      <textarea
-                        value={editedContent}
-                        onChange={(e) => setEditedContent(e.target.value)}
-                        className="w-full h-48 p-4 border-2 border-gray-700 bg-gray-800 rounded-xl focus:border-purple-500 focus:outline-none text-lg text-white"
-                        placeholder="Enter chapter content..."
-                      />
+              {chapter.node.id === 'loading' ? (
+                <div className="mb-6 rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl">
+                  <div className="flex min-h-[200px] flex-col items-center justify-center gap-4">
+                    <div className="space-y-1 text-center">
+                      <h3 className="text-lg font-bold text-white">Crafting your story...</h3>
+                      <p className="text-sm text-gray-400">The AI is writing what happens next</p>
                     </div>
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => saveChapterEdit(chapterIndex)}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                      >
-                        <Save className="w-4 h-4" />
-                        Save
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                        Cancel
-                      </button>
+                      <div
+                        className={`h-2 w-2 animate-bounce rounded-full ${isPro ? 'bg-purple-500' : 'bg-blue-500'}`}
+                        style={{ animationDelay: '0ms' }}
+                      ></div>
+                      <div
+                        className={`h-2 w-2 animate-bounce rounded-full ${isPro ? 'bg-pink-500' : 'bg-cyan-500'}`}
+                        style={{ animationDelay: '150ms' }}
+                      ></div>
+                      <div
+                        className={`h-2 w-2 animate-bounce rounded-full ${isPro ? 'bg-purple-500' : 'bg-blue-500'}`}
+                        style={{ animationDelay: '300ms' }}
+                      ></div>
                     </div>
                   </div>
-                ) : (
-                  <>
-                    <div className="prose max-w-none">
-                      <p className="text-base leading-relaxed text-gray-300">
-                        {chapter.node.content.split(/\s+/).map((word, index) => (
-                          <span key={index}>
+                </div>
+              ) : (
+                <div className="mb-6 overflow-hidden rounded-3xl border border-gray-800 bg-gray-900 shadow-xl">
+                  <div className="p-6">
+                    {/* Image placeholder - always shown */}
+                    <div className="relative mb-6 aspect-[4/3] overflow-hidden rounded-2xl">
+                      {/* Gradient placeholder background */}
+                      <div
+                        className={`absolute inset-0 flex flex-col items-center justify-center ${isPro ? 'bg-gradient-to-br from-purple-900/50 to-pink-900/50' : 'bg-gradient-to-br from-blue-900/50 to-cyan-900/50'}`}
+                      >
+                        {chapter.generatingImage ? (
+                          <>
+                            <Loader
+                              className={`h-6 w-6 animate-spin ${isPro ? 'text-purple-400' : 'text-blue-400'}`}
+                            />
                             <span
-                              className={`transition-all duration-200 ${
-                                playingChapterId === chapter.node.id && index === currentWordIndex
-                                  ? 'bg-yellow-300 text-gray-900 px-1 rounded font-semibold'
-                                  : ''
-                              }`}
+                              className={`mt-2 text-sm font-medium ${isPro ? 'text-purple-300' : 'text-blue-300'}`}
                             >
-                              {word}
+                              Creating illustration...
                             </span>
-                            {' '}
-                          </span>
-                        ))}
-                      </p>
+                          </>
+                        ) : (
+                          !chapter.imageUrl && (
+                            <Sparkles
+                              className={`h-10 w-10 ${isPro ? 'text-purple-500' : 'text-blue-500'}`}
+                            />
+                          )
+                        )}
+                      </div>
+                      {/* Actual image - shown when available */}
+                      {chapter.imageUrl && (
+                        <img
+                          src={chapter.imageUrl}
+                          alt={`Chapter ${chapterIndex + 1} illustration`}
+                          className="relative z-[1] h-full w-full object-cover"
+                          onError={(e) => {
+                            console.error('Image failed to load:', chapter.imageUrl);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                      {/* Chapter number badge */}
+                      <div
+                        className={`absolute left-3 top-3 z-10 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white shadow-lg ${isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-blue-600 to-cyan-600'}`}
+                      >
+                        {chapterIndex + 1}
+                      </div>
                     </div>
-                    {/* Action buttons at bottom */}
-                    <div className="mt-4 flex items-center justify-end gap-2">
-                      {isOwner && (
+
+                    {/* Video section - Max plan users only, shown at end of chapters */}
+                    {hasVideoClips && story?.video_enabled && chapter.imageUrl && (
+                      <div className="mb-6">
+                        {chapter.videoUrl || chapter.node.video_url ? (
+                          <div className="overflow-hidden rounded-2xl">
+                            <video
+                              src={chapter.videoUrl || chapter.node.video_url || undefined}
+                              className="aspect-video w-full object-cover"
+                              controls
+                              playsInline
+                              loop
+                              muted
+                              poster={chapter.imageUrl}
+                            />
+                          </div>
+                        ) : chapter.generatingVideo ? (
+                          <div className="flex aspect-video flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-purple-900/50 to-pink-900/50">
+                            <Film className="mb-2 h-8 w-8 text-purple-400" />
+                            <Loader className="mb-2 h-5 w-5 animate-spin text-purple-400" />
+                            <span className="text-sm font-medium text-purple-300">
+                              Creating video clip...
+                            </span>
+                            <span className="mt-1 text-xs text-purple-400">
+                              This may take a few minutes
+                            </span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (chapter.imageUrl) {
+                                startVideoGeneration(
+                                  chapter.node.id,
+                                  chapter.imageUrl,
+                                  `Cinematic scene from ${story?.title || 'story'}: ${chapter.node.content.substring(0, 100)}`,
+                                  async (videoUrl) => {
+                                    await supabase
+                                      .from('story_nodes')
+                                      .update({ video_url: videoUrl })
+                                      .eq('id', chapter.node.id);
+
+                                    // Update story cover_video_url if this is the first chapter
+                                    if (chapterIndex === 0 && storyId) {
+                                      await supabase
+                                        .from('stories')
+                                        .update({ cover_video_url: videoUrl })
+                                        .eq('id', storyId);
+                                    }
+                                  }
+                                );
+                              }
+                            }}
+                            className="group flex aspect-video w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-purple-500/50 bg-gradient-to-br from-purple-900/30 to-pink-900/30 transition-all hover:bg-purple-900/40"
+                          >
+                            <Film className="h-10 w-10 text-purple-400 transition-transform group-hover:scale-110" />
+                            <span className="mt-2 text-sm font-medium text-purple-300">
+                              Generate Video Clip
+                            </span>
+                            <span className="text-xs text-purple-400">Pro feature</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {editingChapter === chapterIndex ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-gray-300">
+                            Chapter Content
+                          </label>
+                          <textarea
+                            value={editedContent}
+                            onChange={(e) => setEditedContent(e.target.value)}
+                            className="h-48 w-full rounded-xl border-2 border-gray-700 bg-gray-800 p-4 text-lg text-white focus:border-purple-500 focus:outline-none"
+                            placeholder="Enter chapter content..."
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => saveChapterEdit(chapterIndex)}
+                            className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700"
+                          >
+                            <Save className="h-4 w-4" />
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="flex items-center gap-2 rounded-lg bg-gray-700 px-4 py-2 text-white transition-colors hover:bg-gray-600"
+                          >
+                            <X className="h-4 w-4" />
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="prose max-w-none">
+                          <p className="text-base leading-relaxed text-gray-300">
+                            {chapter.node.content.split(/\s+/).map((word, index) => (
+                              <span key={index}>
+                                <span
+                                  className={`transition-all duration-200 ${
+                                    playingChapterId === chapter.node.id &&
+                                    index === currentWordIndex
+                                      ? 'rounded bg-yellow-300 px-1 font-semibold text-gray-900'
+                                      : ''
+                                  }`}
+                                >
+                                  {word}
+                                </span>{' '}
+                              </span>
+                            ))}
+                          </p>
+                        </div>
+                        {/* Action buttons at bottom */}
+                        <div className="mt-4 flex items-center justify-end gap-2">
+                          {isOwner && (
+                            <button
+                              onClick={() => {
+                                if (hasEditMode) {
+                                  setIsEditMode(true);
+                                  startEditingChapter(chapterIndex);
+                                } else {
+                                  setShowUpgradeModal(true);
+                                }
+                              }}
+                              className={`rounded-full p-2 transition-colors ${hasEditMode ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:opacity-90' : 'border-2 border-dashed border-blue-500 text-blue-500 hover:bg-blue-900/30'}`}
+                              aria-label="Edit chapter"
+                            >
+                              <Pen className="h-4 w-4" />
+                            </button>
+                          )}
+                          {!isEditMode && story?.narrator_enabled && (
+                            <button
+                              onClick={() => toggleSpeech(chapter.node.content, chapter.node.id)}
+                              className={`rounded-full p-2 text-white shadow-md transition-colors hover:opacity-90 ${
+                                isPro
+                                  ? 'bg-gradient-to-r from-purple-600 to-pink-600'
+                                  : 'bg-gradient-to-r from-blue-600 to-cyan-600'
+                              }`}
+                              aria-label={
+                                playingChapterId === chapter.node.id && isSpeaking
+                                  ? 'Pause'
+                                  : 'Play'
+                              }
+                            >
+                              {audioLoadingChapters.has(chapter.node.id) ? (
+                                <Loader className="h-4 w-4 animate-spin" />
+                              ) : playingChapterId === chapter.node.id && isSpeaking ? (
+                                <Pause className="h-4 w-4" />
+                              ) : (
+                                <Play className="h-4 w-4" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* The End text */}
+                    {chapter.node.is_ending && (
+                      <div className="mt-6 text-center">
+                        <span className="text-base font-extrabold text-white">*THE END*</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {chapter.node.id !== 'loading' &&
+                chapter.choices.length > 0 &&
+                editingChapter !== chapterIndex && (
+                  <div className="mb-6 rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-gray-300">
+                        What should happen next?
+                      </h3>
+                      {isVoiceSupported && !chapter.selectedChoiceId && (
+                        <button
+                          onClick={() => toggleVoiceInput(chapterIndex)}
+                          className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                            isListening && voiceInputChapterIndex === chapterIndex
+                              ? 'animate-pulse bg-red-500 text-white'
+                              : hasVoiceInput
+                                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                                : 'border border-purple-500/50 bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          {isListening && voiceInputChapterIndex === chapterIndex ? (
+                            <>
+                              <MicOff className="h-3.5 w-3.5" />
+                              <span>Stop</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mic className="h-3.5 w-3.5" />
+                              <span>Speak Choice</span>
+                              {!hasVoiceInput && (
+                                <span className="rounded bg-purple-600 px-1.5 py-0.5 text-[10px] font-bold">
+                                  PRO
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Voice transcript display */}
+                    {isListening && voiceInputChapterIndex === chapterIndex && (
+                      <div className="mb-4 rounded-xl border border-purple-500/50 bg-purple-900/30 p-3">
+                        <p className="mb-1 text-xs text-purple-300">
+                          Listening... Say a choice or number (1, 2, 3...)
+                        </p>
+                        <p className="text-sm font-medium text-white">
+                          {voiceTranscript || '🎤 Speak now...'}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      {chapter.choices
+                        // Filter out private choices from other users (show own choices and public choices)
+                        .filter((choice) => {
+                          const isOwnChoice = choice.created_by === userId;
+                          const isPublic = choice.is_public !== false; // Default to public if undefined
+                          return isOwnChoice || isPublic;
+                        })
+                        .map((choice) => {
+                          const isSelected = chapter.selectedChoiceId === choice.id;
+                          const isDisabled = chapter.selectedChoiceId !== undefined;
+                          const isOwnChoice = choice.created_by === userId;
+                          const isAiGenerated = !choice.created_by;
+                          const visibleChoicesCount = chapter.choices.filter((c) => {
+                            const isOwn = c.created_by === userId;
+                            const isPub = c.is_public !== false;
+                            return isOwn || isPub;
+                          }).length;
+                          const hasMinimumChoices = visibleChoicesCount <= 2;
+                          // Allow deletion if:
+                          // 1. AI-generated choices - NO ONE can delete
+                          // 2. User's own choices - can delete on any story
+                          // 3. Other people's choices - story owner can delete them
+                          // Must have more than 2 choices to delete
+                          const isUserCreatedChoice = !isAiGenerated; // Has a created_by value
+                          const canDeleteChoice = isUserCreatedChoice && (isOwnChoice || isOwner);
+                          const canDelete = canDeleteChoice && !hasMinimumChoices;
+                          const isPublic = choice.is_public !== false;
+                          // Calculate right padding based on visible buttons
+                          const hasButtons =
+                            (isOwnChoice && !isDisabled) || (canDelete && !isDisabled);
+                          const buttonCount =
+                            (isOwnChoice && !isDisabled ? 1 : 0) +
+                            (canDelete && !isDisabled ? 1 : 0);
+
+                          const isVoiceMatched = voiceMatchedChoice === choice.id;
+
+                          return (
+                            <div key={choice.id} className="relative">
+                              <button
+                                onClick={() => handleChoice(chapterIndex, choice)}
+                                disabled={isDisabled}
+                                className={`group relative w-full rounded-xl bg-gray-800 p-4 text-left shadow-sm transition-all duration-300 ${
+                                  isOwnChoice ? 'border-2 border-dashed border-purple-500' : ''
+                                }${
+                                  isVoiceMatched
+                                    ? 'animate-pulse bg-purple-900/50 shadow-lg ring-2 ring-purple-500'
+                                    : isSelected
+                                      ? 'bg-green-900/30 shadow-md ring-2 ring-green-500'
+                                      : isDisabled
+                                        ? 'opacity-30'
+                                        : 'hover:bg-gray-700 hover:shadow-md hover:ring-2 hover:ring-purple-500'
+                                }`}
+                              >
+                                <div
+                                  className={`relative ${hasButtons ? `pr-${buttonCount * 10}` : ''}`}
+                                  style={{
+                                    paddingRight: hasButtons
+                                      ? `${buttonCount * 2.5}rem`
+                                      : undefined,
+                                  }}
+                                >
+                                  <p className="mb-1 text-sm font-semibold text-white">
+                                    {choice.choice_text}
+                                  </p>
+                                  {choice.consequence_hint && (
+                                    <p className="text-xs italic text-gray-400">
+                                      💭 {choice.consequence_hint}
+                                    </p>
+                                  )}
+                                </div>
+                              </button>
+                              {/* Action buttons container */}
+                              <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1">
+                                {/* Visibility toggle - only for own choices */}
+                                {isOwnChoice && !isDisabled && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleChoiceVisibility(
+                                        chapterIndex,
+                                        choice.id,
+                                        isPublic
+                                      );
+                                    }}
+                                    className={`rounded-lg p-2 shadow-sm transition-all ${
+                                      isPublic
+                                        ? 'bg-gray-700 text-purple-400 hover:bg-purple-600 hover:text-white'
+                                        : 'bg-purple-900/50 text-purple-400 hover:bg-purple-600 hover:text-white'
+                                    }`}
+                                    aria-label={isPublic ? 'Hide from others' : 'Show to others'}
+                                    title={
+                                      isPublic
+                                        ? 'Visible to others - click to hide'
+                                        : 'Hidden from others - click to show'
+                                    }
+                                  >
+                                    {isPublic ? (
+                                      <Eye className="h-4 w-4" />
+                                    ) : (
+                                      <EyeOff className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                )}
+                                {/* Delete button */}
+                                {canDelete && !isDisabled && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteChoice(chapterIndex, choice.id);
+                                    }}
+                                    className="rounded-lg bg-gray-700 p-2 text-red-400 shadow-sm transition-all hover:bg-red-600 hover:text-white"
+                                    aria-label="Delete choice"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+
+                    {/* Custom Choice Input - Pro Feature */}
+                    {!chapter.selectedChoiceId &&
+                      (customChoiceChapterIndex === chapterIndex ? (
+                        <div className="mt-3 rounded-xl border-2 border-dashed border-purple-500 bg-purple-900/20 p-4">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={customChoice}
+                              onChange={(e) => setCustomChoice(e.target.value)}
+                              placeholder="Write your own choice"
+                              className="flex-1 rounded-xl border-2 border-gray-700 bg-gray-800 p-3 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+                              maxLength={100}
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleCustomChoice(chapterIndex)}
+                              disabled={!customChoice.trim()}
+                              className="rounded-xl bg-gray-700 p-3 text-green-400 shadow-md transition-all hover:bg-green-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-gray-700 disabled:hover:text-green-400"
+                            >
+                              <Check className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCustomChoiceChapterIndex(null);
+                                setCustomChoice('');
+                              }}
+                              className="rounded-xl bg-gray-700 p-3 text-red-400 shadow-md transition-all hover:bg-red-600 hover:text-white"
+                            >
+                              <X className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
                         <button
                           onClick={() => {
-                            if (isPro) {
-                              setIsEditMode(true);
-                              startEditingChapter(chapterIndex);
+                            if (hasEditMode) {
+                              setCustomChoiceChapterIndex(chapterIndex);
                             } else {
                               setShowUpgradeModal(true);
                             }
                           }}
-                          className={`p-2 rounded-full transition-colors ${isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90 shadow-md' : 'border-2 border-dashed border-blue-500 text-blue-500 hover:bg-blue-900/30'}`}
-                          aria-label="Edit chapter"
+                          className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-medium transition-all ${hasEditMode ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:opacity-90' : 'border-2 border-dashed border-blue-500 text-blue-400 hover:bg-blue-900/30'}`}
                         >
-                          <Pen className="w-4 h-4" />
+                          <Pen className="h-5 w-5" />
+                          <span>Write your own choice</span>
                         </button>
-                      )}
-                      {!isEditMode && story?.narrator_enabled && (
-                        <button
-                          onClick={() => toggleSpeech(chapter.node.content, chapter.node.id)}
-                          className={`p-2 rounded-full transition-colors text-white hover:opacity-90 shadow-md ${
-                            isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-blue-600 to-cyan-600'
-                          }`}
-                          aria-label={playingChapterId === chapter.node.id && isSpeaking ? "Pause" : "Play"}
-                        >
-                          {audioLoadingChapters.has(chapter.node.id) ? (
-                            <Loader className="w-4 h-4 animate-spin" />
-                          ) : playingChapterId === chapter.node.id && isSpeaking ? (
-                            <Pause className="w-4 h-4" />
-                          ) : (
-                            <Play className="w-4 h-4" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </>
-                )}
-
-
-                {/* The End text */}
-                {chapter.node.is_ending && (
-                  <div className="mt-6 text-center">
-                    <span className="text-base font-extrabold text-white">*THE END*</span>
+                      ))}
                   </div>
                 )}
-              </div>
-            </div>
-            )}
 
-            {chapter.node.id !== 'loading' && chapter.choices.length > 0 && editingChapter !== chapterIndex && (
-              <div className="bg-gray-900 rounded-3xl shadow-xl p-6 mb-6 border border-gray-800">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-300">What should happen next?</h3>
-                  {isVoiceSupported && !chapter.selectedChoiceId && (
+              {editingChapter === chapterIndex && !chapter.node.is_ending && (
+                <div className="mb-8 space-y-4">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-300">Edit Choices</h3>
                     <button
-                      onClick={() => toggleVoiceInput(chapterIndex)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                        isListening && voiceInputChapterIndex === chapterIndex
-                          ? 'bg-red-500 text-white animate-pulse'
-                          : 'bg-purple-600 text-white hover:bg-purple-700'
-                      }`}
+                      onClick={addNewChoice}
+                      className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-700"
                     >
-                      {isListening && voiceInputChapterIndex === chapterIndex ? (
-                        <>
-                          <MicOff className="w-3.5 h-3.5" />
-                          <span>Stop</span>
-                        </>
-                      ) : (
-                        <>
-                          <Mic className="w-3.5 h-3.5" />
-                          <span>Speak Choice</span>
-                        </>
-                      )}
+                      <Plus className="h-4 w-4" />
+                      Add Choice
                     </button>
-                  )}
-                </div>
+                  </div>
 
-                {/* Voice transcript display */}
-                {isListening && voiceInputChapterIndex === chapterIndex && (
-                  <div className="mb-4 p-3 bg-purple-900/30 rounded-xl border border-purple-500/50">
-                    <p className="text-xs text-purple-300 mb-1">Listening... Say a choice or number (1, 2, 3...)</p>
-                    <p className="text-sm text-white font-medium">
-                      {voiceTranscript || '🎤 Speak now...'}
+                  <div className="space-y-4">
+                    {editingChoices.map((choice, idx) => (
+                      <div key={choice.id} className="rounded-xl bg-gray-800 p-4">
+                        <div className="mb-3 flex items-start gap-2">
+                          <div className="flex-1 space-y-2">
+                            <input
+                              type="text"
+                              value={choice.text}
+                              onChange={(e) => updateChoice(idx, 'text', e.target.value)}
+                              className="w-full rounded-lg border-2 border-gray-700 bg-gray-900 p-2 text-white focus:border-purple-500 focus:outline-none"
+                              placeholder="Choice text..."
+                            />
+                            <input
+                              type="text"
+                              value={choice.hint || ''}
+                              onChange={(e) => updateChoice(idx, 'hint', e.target.value)}
+                              className="w-full rounded-lg border-2 border-gray-700 bg-gray-900 p-2 text-sm text-white focus:border-purple-500 focus:outline-none"
+                              placeholder="Hint (optional)..."
+                            />
+                          </div>
+                          <button
+                            onClick={() => removeChoice(idx)}
+                            className="rounded-lg bg-red-600 p-2 text-white transition-colors hover:bg-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {isStoryEnded && (
+          <>
+            {/* Main Card Container - same width as chapters */}
+            <div className="mt-6 space-y-4 rounded-3xl border border-gray-800 bg-gray-900 p-4 shadow-xl">
+              {/* Creator Card - Clickable with shadow */}
+              {story?.creator && (
+                <button
+                  onClick={() => {
+                    if (story.created_by && onViewProfile) {
+                      onViewProfile(story.created_by);
+                    }
+                  }}
+                  className="flex w-full items-center gap-4 rounded-2xl bg-gray-800 p-4 shadow-md transition-all hover:bg-gray-700 hover:shadow-lg"
+                >
+                  {story.creator.avatar_url ? (
+                    <img
+                      src={story.creator.avatar_url}
+                      alt={getSafeDisplayName(story.creator.display_name, 'Creator')}
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className={`flex h-12 w-12 items-center justify-center rounded-full ${isPro ? 'bg-gradient-to-br from-purple-900 to-pink-900' : 'bg-gradient-to-br from-blue-900 to-cyan-900'}`}
+                    >
+                      <User className="h-6 w-6 text-gray-300" />
+                    </div>
+                  )}
+                  <div className="flex-1 text-left">
+                    <p className="text-xs text-gray-400">Created by</p>
+                    <p className="text-base font-bold text-white">
+                      {getSafeDisplayName(story.creator.display_name, 'Anonymous')}
                     </p>
                   </div>
-                )}
+                  <div className="text-gray-500">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+                </button>
+              )}
 
-                <div className="space-y-3">
-                  {chapter.choices
-                    // Filter out private choices from other users (show own choices and public choices)
-                    .filter(choice => {
-                      const isOwnChoice = choice.created_by === userId;
-                      const isPublic = choice.is_public !== false; // Default to public if undefined
-                      return isOwnChoice || isPublic;
-                    })
-                    .map((choice) => {
-                    const isSelected = chapter.selectedChoiceId === choice.id;
-                    const isDisabled = chapter.selectedChoiceId !== undefined;
-                    const isOwnChoice = choice.created_by === userId;
-                    const isAiGenerated = !choice.created_by;
-                    const visibleChoicesCount = chapter.choices.filter(c => {
-                      const isOwn = c.created_by === userId;
-                      const isPub = c.is_public !== false;
-                      return isOwn || isPub;
-                    }).length;
-                    const hasMinimumChoices = visibleChoicesCount <= 2;
-                    // Allow deletion if:
-                    // 1. AI-generated choices - NO ONE can delete
-                    // 2. User's own choices - can delete on any story
-                    // 3. Other people's choices - story owner can delete them
-                    // Must have more than 2 choices to delete
-                    const isUserCreatedChoice = !isAiGenerated; // Has a created_by value
-                    const canDeleteChoice = isUserCreatedChoice && (isOwnChoice || isOwner);
-                    const canDelete = canDeleteChoice && !hasMinimumChoices;
-                    const isPublic = choice.is_public !== false;
-                    // Calculate right padding based on visible buttons
-                    const hasButtons = (isOwnChoice && !isDisabled) || (canDelete && !isDisabled);
-                    const buttonCount = (isOwnChoice && !isDisabled ? 1 : 0) + (canDelete && !isDisabled ? 1 : 0);
-
-                    const isVoiceMatched = voiceMatchedChoice === choice.id;
-
-                    return (
-                      <div key={choice.id} className="relative">
-                        <button
-                          onClick={() => handleChoice(chapterIndex, choice)}
-                          disabled={isDisabled}
-                          className={`group relative w-full bg-gray-800 rounded-xl p-4 text-left transition-all duration-300 shadow-sm ${
-                            isOwnChoice ? 'border-2 border-dashed border-purple-500 ' : ''
-                          }${
-                            isVoiceMatched
-                              ? 'ring-2 ring-purple-500 bg-purple-900/50 shadow-lg animate-pulse'
-                              : isSelected
-                              ? 'ring-2 ring-green-500 bg-green-900/30 shadow-md'
-                              : isDisabled
-                              ? 'opacity-30'
-                              : 'hover:ring-2 hover:ring-purple-500 hover:bg-gray-700 hover:shadow-md'
-                          }`}
-                        >
-                          <div className={`relative ${hasButtons ? `pr-${buttonCount * 10}` : ''}`} style={{ paddingRight: hasButtons ? `${buttonCount * 2.5}rem` : undefined }}>
-                            <p className="text-sm font-semibold text-white mb-1">
-                              {choice.choice_text}
-                            </p>
-                            {choice.consequence_hint && (
-                              <p className="text-xs text-gray-400 italic">
-                                💭 {choice.consequence_hint}
-                              </p>
-                            )}
-                          </div>
-                        </button>
-                        {/* Action buttons container */}
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                          {/* Visibility toggle - only for own choices */}
-                          {isOwnChoice && !isDisabled && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleChoiceVisibility(chapterIndex, choice.id, isPublic);
-                              }}
-                              className={`p-2 rounded-lg transition-all shadow-sm ${
-                                isPublic
-                                  ? 'bg-gray-700 text-purple-400 hover:bg-purple-600 hover:text-white'
-                                  : 'bg-purple-900/50 text-purple-400 hover:bg-purple-600 hover:text-white'
-                              }`}
-                              aria-label={isPublic ? "Hide from others" : "Show to others"}
-                              title={isPublic ? "Visible to others - click to hide" : "Hidden from others - click to show"}
-                            >
-                              {isPublic ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                            </button>
-                          )}
-                          {/* Delete button */}
-                          {canDelete && !isDisabled && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteChoice(chapterIndex, choice.id);
-                              }}
-                              className="p-2 rounded-lg bg-gray-700 text-red-400 hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                              aria-label="Delete choice"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Custom Choice Input - Pro Feature */}
-                {!chapter.selectedChoiceId && (
-                  customChoiceChapterIndex === chapterIndex ? (
-                    <div className="mt-3 border-2 border-dashed border-purple-500 rounded-xl p-4 bg-purple-900/20">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={customChoice}
-                          onChange={(e) => setCustomChoice(e.target.value)}
-                          placeholder="Write your own choice"
-                          className="flex-1 p-3 border-2 border-gray-700 rounded-xl focus:border-purple-500 focus:outline-none bg-gray-800 text-white placeholder-gray-500"
-                          maxLength={100}
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleCustomChoice(chapterIndex)}
-                          disabled={!customChoice.trim()}
-                          className="p-3 rounded-xl transition-all bg-gray-700 text-green-400 hover:bg-green-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-700 disabled:hover:text-green-400 shadow-md"
-                        >
-                          <Check className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setCustomChoiceChapterIndex(null);
-                            setCustomChoice('');
-                          }}
-                          className="p-3 rounded-xl transition-all bg-gray-700 text-red-400 hover:bg-red-600 hover:text-white shadow-md"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        if (isPro) {
-                          setCustomChoiceChapterIndex(chapterIndex);
-                        } else {
-                          setShowUpgradeModal(true);
-                        }
-                      }}
-                      className={`mt-3 w-full py-4 rounded-xl transition-all flex items-center justify-center gap-2 font-medium ${isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90 shadow-lg' : 'border-2 border-dashed border-blue-500 text-blue-400 hover:bg-blue-900/30'}`}
-                    >
-                      <Pen className="w-5 h-5" />
-                      <span>Write your own choice</span>
-                    </button>
-                  )
-                )}
-              </div>
-            )}
-
-            {editingChapter === chapterIndex && !chapter.node.is_ending && (
-              <div className="space-y-4 mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-gray-300">Edit Choices</h3>
+              {/* Reaction Card */}
+              <div className="rounded-2xl bg-gray-800 p-4">
+                <p className="mb-3 text-center text-sm font-medium text-gray-300">
+                  Did you enjoy this story?
+                </p>
+                <div className="flex items-center justify-center gap-2">
                   <button
-                    onClick={addNewChoice}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                    className={`flex w-16 items-center justify-center gap-1.5 rounded-xl py-2 transition-all ${
+                      userReaction?.reaction_type === 'like'
+                        ? 'bg-green-900/50 text-green-400'
+                        : 'bg-gray-700 text-gray-400 hover:bg-green-900/30'
+                    }`}
+                    onClick={async () => {
+                      if (!userId) {
+                        alert('Please sign in to react to stories');
+                        return;
+                      }
+                      try {
+                        if (userReaction?.reaction_type === 'like') {
+                          await removeReaction(userId, storyId);
+                          setUserReaction(null);
+                          setLikesCount((prev) => prev - 1);
+                        } else {
+                          if (userReaction) {
+                            await updateReaction(userId, storyId, 'like');
+                            setDislikesCount((prev) => prev - 1);
+                            setLikesCount((prev) => prev + 1);
+                          } else {
+                            await addReaction(userId, storyId, 'like');
+                            setLikesCount((prev) => prev + 1);
+                          }
+                          setUserReaction({
+                            user_id: userId,
+                            story_id: storyId,
+                            reaction_type: 'like',
+                            created_at: new Date().toISOString(),
+                          });
+                        }
+                      } catch (error) {
+                        console.error('Error handling reaction:', error);
+                      }
+                    }}
                   >
-                    <Plus className="w-4 h-4" />
-                    Add Choice
+                    <ThumbsUp className="h-4 w-4" />
+                    <span className="text-sm font-medium">{likesCount}</span>
+                  </button>
+
+                  <button
+                    className={`flex w-16 items-center justify-center gap-1.5 rounded-xl py-2 transition-all ${
+                      userReaction?.reaction_type === 'dislike'
+                        ? 'bg-red-900/50 text-red-400'
+                        : 'bg-gray-700 text-gray-400 hover:bg-red-900/30'
+                    }`}
+                    onClick={async () => {
+                      if (!userId) {
+                        alert('Please sign in to react to stories');
+                        return;
+                      }
+                      try {
+                        if (userReaction?.reaction_type === 'dislike') {
+                          await removeReaction(userId, storyId);
+                          setUserReaction(null);
+                          setDislikesCount((prev) => prev - 1);
+                        } else {
+                          if (userReaction) {
+                            await updateReaction(userId, storyId, 'dislike');
+                            setLikesCount((prev) => prev - 1);
+                            setDislikesCount((prev) => prev + 1);
+                          } else {
+                            await addReaction(userId, storyId, 'dislike');
+                            setDislikesCount((prev) => prev + 1);
+                          }
+                          setUserReaction({
+                            user_id: userId,
+                            story_id: storyId,
+                            reaction_type: 'dislike',
+                            created_at: new Date().toISOString(),
+                          });
+                        }
+                      } catch (error) {
+                        console.error('Error handling reaction:', error);
+                      }
+                    }}
+                  >
+                    <ThumbsDown className="h-4 w-4" />
+                    <span className="text-sm font-medium">{dislikesCount}</span>
+                  </button>
+
+                  <button
+                    className="flex w-10 items-center justify-center rounded-xl bg-gray-700 py-2 text-gray-400 transition-all hover:bg-blue-900/30 hover:text-blue-400"
+                    onClick={async () => {
+                      const shareUrl = getShareUrl(storyId);
+                      if (navigator.share) {
+                        try {
+                          await navigator.share({
+                            title: story?.title || 'Story',
+                            text: `Check out this interactive story: ${story?.title}`,
+                            url: shareUrl,
+                          });
+                        } catch (error) {
+                          if ((error as Error).name !== 'AbortError') {
+                            console.error('Error sharing:', error);
+                          }
+                        }
+                      } else {
+                        try {
+                          await navigator.clipboard.writeText(shareUrl);
+                          alert('Link copied to clipboard!');
+                        } catch (error) {
+                          console.error('Error copying to clipboard:', error);
+                        }
+                      }
+                    }}
+                  >
+                    <Share2 className="h-4 w-4" />
                   </button>
                 </div>
-
-                <div className="space-y-4">
-                  {editingChoices.map((choice, idx) => (
-                    <div key={choice.id} className="bg-gray-800 p-4 rounded-xl">
-                      <div className="flex items-start gap-2 mb-3">
-                        <div className="flex-1 space-y-2">
-                          <input
-                            type="text"
-                            value={choice.text}
-                            onChange={(e) => updateChoice(idx, 'text', e.target.value)}
-                            className="w-full p-2 border-2 border-gray-700 bg-gray-900 rounded-lg focus:border-purple-500 focus:outline-none text-white"
-                            placeholder="Choice text..."
-                          />
-                          <input
-                            type="text"
-                            value={choice.hint || ''}
-                            onChange={(e) => updateChoice(idx, 'hint', e.target.value)}
-                            className="w-full p-2 border-2 border-gray-700 bg-gray-900 rounded-lg focus:border-purple-500 focus:outline-none text-sm text-white"
-                            placeholder="Hint (optional)..."
-                          />
-                        </div>
-                        <button
-                          onClick={() => removeChoice(idx)}
-                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {isStoryEnded && (
-        <>
-          {/* Main Card Container - same width as chapters */}
-          <div className="bg-gray-900 rounded-3xl shadow-xl mt-6 p-4 space-y-4 border border-gray-800">
-            {/* Creator Card - Clickable with shadow */}
-            {story?.creator && (
-              <button
-                onClick={() => {
-                  if (story.created_by && onViewProfile) {
-                    onViewProfile(story.created_by);
-                  }
-                }}
-                className="w-full bg-gray-800 rounded-2xl shadow-md p-4 flex items-center gap-4 hover:bg-gray-700 hover:shadow-lg transition-all"
-              >
-                {story.creator.avatar_url ? (
-                  <img
-                    src={story.creator.avatar_url}
-                    alt={getSafeDisplayName(story.creator.display_name, 'Creator')}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isPro ? 'bg-gradient-to-br from-purple-900 to-pink-900' : 'bg-gradient-to-br from-blue-900 to-cyan-900'}`}>
-                    <User className="w-6 h-6 text-gray-300" />
-                  </div>
-                )}
-                <div className="flex-1 text-left">
-                  <p className="text-xs text-gray-400">Created by</p>
-                  <p className="text-base font-bold text-white">
-                    {getSafeDisplayName(story.creator.display_name, 'Anonymous')}
-                  </p>
-                </div>
-                <div className="text-gray-500">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </button>
-            )}
-
-            {/* Reaction Card */}
-            <div className="bg-gray-800 rounded-2xl p-4">
-              <p className="text-sm font-medium text-gray-300 mb-3 text-center">Did you enjoy this story?</p>
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  className={`flex items-center justify-center gap-1.5 w-16 py-2 rounded-xl transition-all ${
-                    userReaction?.reaction_type === 'like'
-                      ? 'bg-green-900/50 text-green-400'
-                      : 'bg-gray-700 text-gray-400 hover:bg-green-900/30'
-                  }`}
-                  onClick={async () => {
-                    if (!userId) {
-                      alert('Please sign in to react to stories');
-                      return;
-                    }
-                    try {
-                      if (userReaction?.reaction_type === 'like') {
-                        await removeReaction(userId, storyId);
-                        setUserReaction(null);
-                        setLikesCount(prev => prev - 1);
-                      } else {
-                        if (userReaction) {
-                          await updateReaction(userId, storyId, 'like');
-                          setDislikesCount(prev => prev - 1);
-                          setLikesCount(prev => prev + 1);
-                        } else {
-                          await addReaction(userId, storyId, 'like');
-                          setLikesCount(prev => prev + 1);
-                        }
-                        setUserReaction({ user_id: userId, story_id: storyId, reaction_type: 'like', created_at: new Date().toISOString() });
-                      }
-                    } catch (error) {
-                      console.error('Error handling reaction:', error);
-                    }
-                  }}
-                >
-                  <ThumbsUp className="w-4 h-4" />
-                  <span className="text-sm font-medium">{likesCount}</span>
-                </button>
-
-                <button
-                  className={`flex items-center justify-center gap-1.5 w-16 py-2 rounded-xl transition-all ${
-                    userReaction?.reaction_type === 'dislike'
-                      ? 'bg-red-900/50 text-red-400'
-                      : 'bg-gray-700 text-gray-400 hover:bg-red-900/30'
-                  }`}
-                  onClick={async () => {
-                    if (!userId) {
-                      alert('Please sign in to react to stories');
-                      return;
-                    }
-                    try {
-                      if (userReaction?.reaction_type === 'dislike') {
-                        await removeReaction(userId, storyId);
-                        setUserReaction(null);
-                        setDislikesCount(prev => prev - 1);
-                      } else {
-                        if (userReaction) {
-                          await updateReaction(userId, storyId, 'dislike');
-                          setLikesCount(prev => prev - 1);
-                          setDislikesCount(prev => prev + 1);
-                        } else {
-                          await addReaction(userId, storyId, 'dislike');
-                          setDislikesCount(prev => prev + 1);
-                        }
-                        setUserReaction({ user_id: userId, story_id: storyId, reaction_type: 'dislike', created_at: new Date().toISOString() });
-                      }
-                    } catch (error) {
-                      console.error('Error handling reaction:', error);
-                    }
-                  }}
-                >
-                  <ThumbsDown className="w-4 h-4" />
-                  <span className="text-sm font-medium">{dislikesCount}</span>
-                </button>
-
-                <button
-                  className="flex items-center justify-center w-10 py-2 rounded-xl transition-all bg-gray-700 text-gray-400 hover:bg-blue-900/30 hover:text-blue-400"
-                  onClick={async () => {
-                    const shareUrl = getShareUrl(storyId);
-                    if (navigator.share) {
-                      try {
-                        await navigator.share({
-                          title: story?.title || 'Story',
-                          text: `Check out this interactive story: ${story?.title}`,
-                          url: shareUrl,
-                        });
-                      } catch (error) {
-                        if ((error as Error).name !== 'AbortError') {
-                          console.error('Error sharing:', error);
-                        }
-                      }
-                    } else {
-                      try {
-                        await navigator.clipboard.writeText(shareUrl);
-                        alert('Link copied to clipboard!');
-                      } catch (error) {
-                        console.error('Error copying to clipboard:', error);
-                      }
-                    }
-                  }}
-                >
-                  <Share2 className="w-4 h-4" />
-                </button>
               </div>
             </div>
-          </div>
 
-          <div className="flex gap-4 mt-6 pb-4">
-            <button
-              onClick={restartStory}
-              className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold rounded-2xl shadow-md hover:shadow-lg transition-all text-sm"
-            >
-              Read Again
-            </button>
-            <button
-              onClick={onComplete}
-              className={`flex-1 py-3 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm ${isPro ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90' : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'}`}
-            >
-              Explore More
-            </button>
-          </div>
-        </>
-      )}
+            <div className="mt-6 flex gap-4 pb-4">
+              <button
+                onClick={restartStory}
+                className="flex-1 rounded-2xl bg-gray-800 py-3 text-sm font-semibold text-gray-300 shadow-md transition-all hover:bg-gray-700 hover:shadow-lg"
+              >
+                Read Again
+              </button>
+              <button
+                onClick={onComplete}
+                className={`flex-1 rounded-2xl py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl ${isPro ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90' : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'}`}
+              >
+                Explore More
+              </button>
+            </div>
+          </>
+        )}
 
-        <UpgradeModal
-          isOpen={showUpgradeModal}
-          onClose={() => setShowUpgradeModal(false)}
-        />
+        <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
       </div>
     </div>
   );

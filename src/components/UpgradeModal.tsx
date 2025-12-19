@@ -1,4 +1,4 @@
-import { X, Check, Loader } from 'lucide-react';
+import { X, Check, Loader, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { createCheckoutSession, STRIPE_PRICES } from '../lib/subscriptionService';
 import { trackSubscriptionCheckoutStart } from '../lib/analytics';
@@ -8,160 +8,283 @@ interface UpgradeModalProps {
   onClose: () => void;
 }
 
+type BillingCycle = 'monthly' | 'annual';
+
+interface PlanFeature {
+  text: string;
+  included: boolean;
+}
+
+interface Plan {
+  name: string;
+  description: string;
+  monthlyPrice: number;
+  annualPrice: number;
+  monthlyPriceId: string;
+  annualPriceId: string;
+  features: PlanFeature[];
+  popular?: boolean;
+  color: 'blue' | 'purple' | 'amber';
+}
+
+const plans: Plan[] = [
+  {
+    name: 'Basic',
+    description: 'Great for getting started',
+    monthlyPrice: 5,
+    annualPrice: 50,
+    monthlyPriceId: STRIPE_PRICES.BASIC_MONTHLY,
+    annualPriceId: STRIPE_PRICES.BASIC_ANNUAL,
+    color: 'blue',
+    features: [
+      { text: '5 stories per day', included: true },
+      { text: 'Basic art styles', included: true },
+      { text: 'Read unlimited stories', included: true },
+      { text: 'AI Narrator', included: false },
+      { text: 'Voice Input for choices', included: false },
+      { text: 'Edit mode & Custom choices', included: false },
+      { text: 'Video clips', included: false },
+      { text: 'Priority support', included: false },
+    ],
+  },
+  {
+    name: 'Pro',
+    description: 'Most popular choice',
+    monthlyPrice: 15,
+    annualPrice: 150,
+    monthlyPriceId: STRIPE_PRICES.PRO_MONTHLY,
+    annualPriceId: STRIPE_PRICES.PRO_ANNUAL,
+    color: 'purple',
+    popular: true,
+    features: [
+      { text: 'Unlimited stories', included: true },
+      { text: 'All art styles', included: true },
+      { text: 'Read unlimited stories', included: true },
+      { text: 'AI Narrator', included: true },
+      { text: 'Voice Input for choices', included: true },
+      { text: 'Edit mode & Custom choices', included: true },
+      { text: 'Video clips', included: false },
+      { text: 'Priority support', included: false },
+    ],
+  },
+  {
+    name: 'Max',
+    description: 'Ultimate experience',
+    monthlyPrice: 30,
+    annualPrice: 300,
+    monthlyPriceId: STRIPE_PRICES.MAX_MONTHLY,
+    annualPriceId: STRIPE_PRICES.MAX_ANNUAL,
+    color: 'amber',
+    features: [
+      { text: 'Unlimited stories', included: true },
+      { text: 'All art styles', included: true },
+      { text: 'Read unlimited stories', included: true },
+      { text: 'AI Narrator', included: true },
+      { text: 'Voice Input for choices', included: true },
+      { text: 'Edit mode & Custom choices', included: true },
+      { text: 'Video clips', included: true },
+      { text: 'Priority support', included: true },
+    ],
+  },
+];
+
+const colorClasses = {
+  blue: {
+    check: 'text-blue-400',
+    button: 'bg-gradient-to-r from-blue-600 to-cyan-600',
+    border: 'border-blue-500/50',
+    badge: 'bg-gradient-to-r from-blue-600 to-cyan-600',
+  },
+  purple: {
+    check: 'text-purple-400',
+    button: 'bg-gradient-to-r from-purple-600 to-pink-600',
+    border: 'border-purple-500/50',
+    badge: 'bg-gradient-to-r from-purple-600 to-pink-600',
+  },
+  amber: {
+    check: 'text-amber-400',
+    button: 'bg-gradient-to-r from-amber-500 to-orange-600',
+    border: 'border-amber-500/50',
+    badge: 'bg-gradient-to-r from-amber-500 to-orange-600',
+  },
+};
+
 export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
 
   if (!isOpen) return null;
 
-  const handleUpgrade = async (priceId: string) => {
+  const handleUpgrade = async (plan: Plan) => {
+    const priceId = billingCycle === 'monthly' ? plan.monthlyPriceId : plan.annualPriceId;
+
     if (!priceId || priceId.includes('your_') || priceId.includes('_here')) {
-      alert('Stripe is not configured. Please add your Stripe API keys and price IDs to the .env file.\n\nRequired variables:\n- VITE_STRIPE_PUBLISHABLE_KEY\n- VITE_STRIPE_PRICE_MONTHLY\n- VITE_STRIPE_PRICE_ANNUAL\n\nAlso set STRIPE_SECRET_KEY in Supabase Edge Functions.');
+      alert(
+        `Stripe is not configured for ${plan.name} plan. Please add your Stripe price IDs to the .env file.`
+      );
       return;
     }
 
-    setCheckoutLoading(true);
-    const plan = priceId === STRIPE_PRICES.PRO_MONTHLY ? 'monthly' : 'annual';
-    trackSubscriptionCheckoutStart(plan);
+    setCheckoutLoading(plan.name);
+    trackSubscriptionCheckoutStart(`${plan.name.toLowerCase()}_${billingCycle}`);
 
     try {
       const url = await createCheckoutSession(priceId);
       if (url) {
         window.location.href = url;
       } else {
-        alert('Failed to start checkout. Please ensure:\n1. Stripe API keys are configured\n2. Price IDs are valid\n3. Stripe webhook is set up');
+        alert(
+          'Failed to start checkout. Please ensure:\n1. Stripe API keys are configured\n2. Price IDs are valid\n3. Stripe webhook is set up'
+        );
       }
     } catch (error) {
       console.error('Upgrade error:', error);
-      alert('Checkout failed. Please check:\n1. Stripe configuration in .env\n2. STRIPE_SECRET_KEY in Supabase\n3. Price IDs are valid');
+      alert(
+        'Checkout failed. Please check:\n1. Stripe configuration in .env\n2. STRIPE_SECRET_KEY in Supabase\n3. Price IDs are valid'
+      );
     } finally {
-      setCheckoutLoading(false);
+      setCheckoutLoading(null);
     }
   };
 
+  const getPrice = (plan: Plan) => {
+    if (billingCycle === 'monthly') {
+      return plan.monthlyPrice;
+    }
+    return Math.round((plan.annualPrice / 12) * 100) / 100;
+  };
+
+  const getSavings = (plan: Plan) => {
+    const monthlyCost = plan.monthlyPrice * 12;
+    const annualCost = plan.annualPrice;
+    return Math.round(((monthlyCost - annualCost) / monthlyCost) * 100);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-800">
-        <div className="sticky top-0 bg-gray-900 px-6 py-4 flex items-center justify-between border-b border-gray-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-gray-800 bg-gray-900">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-800 bg-gray-900 px-6 py-4">
           <div>
             <h2 className="text-2xl font-bold text-white">Choose Your Plan</h2>
-            <p className="text-sm text-gray-400">Unlock unlimited story creation and premium features</p>
+            <p className="text-sm text-gray-400">
+              Unlock unlimited story creation and premium features
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400"
+            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-800"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="p-6">
-          {/* Plan Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Free Plan */}
-            <div className="bg-gray-800 rounded-3xl shadow-xl p-5 flex flex-col border border-gray-700">
-              <div className="mb-4">
-                <h3 className="text-xl font-bold text-white">Free</h3>
-                <p className="text-sm text-gray-400">Basic features</p>
-              </div>
-              <div className="space-y-2 mb-4 flex-1">
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">2 stories per day</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">Read unlimited stories</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">Basic art styles</span>
-                </div>
-              </div>
-              <div className="py-3 border-2 border-gray-600 text-gray-400 font-semibold rounded-xl text-center text-sm mt-auto">
-                Current Plan
-              </div>
-            </div>
-
-            {/* Pro Monthly */}
-            <div className="bg-gray-800 rounded-3xl shadow-xl p-5 flex flex-col border border-gray-700">
-              <div className="mb-4">
-                <h3 className="text-xl font-bold text-white">Pro Monthly</h3>
-                <p className="text-sm text-gray-400">Full access • $20/month</p>
-              </div>
-              <div className="space-y-2 mb-4 flex-1">
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">Unlimited stories</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">All art styles</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">AI Narrator</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">Edit mode & Add your option</span>
-                </div>
-              </div>
+          {/* Billing Cycle Toggle */}
+          <div className="mb-8 flex justify-center">
+            <div className="flex items-center gap-1 rounded-full bg-gray-800 p-1">
               <button
-                onClick={() => handleUpgrade(STRIPE_PRICES.PRO_MONTHLY)}
-                disabled={checkoutLoading}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-auto shadow-lg"
+                onClick={() => setBillingCycle('monthly')}
+                className={`rounded-full px-6 py-2 text-sm font-medium transition-all ${
+                  billingCycle === 'monthly'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
               >
-                {checkoutLoading ? (
-                  <Loader className="w-4 h-4 animate-spin mx-auto" />
-                ) : (
-                  'Try For $20'
-                )}
+                Monthly
               </button>
-            </div>
-
-            {/* Pro Annual */}
-            <div className="bg-gray-800 rounded-3xl shadow-xl p-5 flex flex-col border border-purple-500/50 relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-xs font-bold text-white">
-                BEST VALUE
-              </div>
-              <div className="mb-4">
-                <h3 className="text-xl font-bold text-white">Pro Annual</h3>
-                <p className="text-sm text-gray-400">Best value • $16.67/month</p>
-              </div>
-              <div className="space-y-2 mb-4 flex-1">
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">Unlimited stories</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">All art styles</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">AI Narrator</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-300">Edit mode & Add your option</span>
-                </div>
-              </div>
               <button
-                onClick={() => handleUpgrade(STRIPE_PRICES.PRO_ANNUAL)}
-                disabled={checkoutLoading}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm mt-auto shadow-lg"
+                onClick={() => setBillingCycle('annual')}
+                className={`flex items-center gap-2 rounded-full px-6 py-2 text-sm font-medium transition-all ${
+                  billingCycle === 'annual'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
               >
-                {checkoutLoading ? (
-                  <Loader className="w-4 h-4 animate-spin mx-auto" />
-                ) : (
-                  'Try For $200'
-                )}
+                Annual
+                <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-400">
+                  Save up to 17%
+                </span>
               </button>
             </div>
           </div>
 
-          <p className="text-center text-xs text-gray-500 mt-4">
-            Cancel anytime. Secure payment via Stripe.
+          {/* Plan Cards */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {plans.map((plan) => {
+              const colors = colorClasses[plan.color];
+              const price = getPrice(plan);
+              const savings = getSavings(plan);
+
+              return (
+                <div
+                  key={plan.name}
+                  className={`relative flex flex-col rounded-3xl border bg-gray-800 p-5 shadow-xl ${
+                    plan.popular ? colors.border : 'border-gray-700'
+                  }`}
+                >
+                  {plan.popular && (
+                    <div
+                      className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 ${colors.badge} flex items-center gap-1 rounded-full text-xs font-bold text-white`}
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      MOST POPULAR
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-white">{plan.name}</h3>
+                    <p className="text-sm text-gray-400">{plan.description}</p>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-bold text-white">${price.toFixed(2)}</span>
+                      <span className="text-gray-400">/month</span>
+                    </div>
+                    {billingCycle === 'annual' && (
+                      <p className="mt-1 text-sm text-green-400">
+                        Save {savings}% • Billed ${plan.annualPrice}/year
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mb-6 flex-1 space-y-2">
+                    {plan.features.map((feature, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Check
+                          className={`h-4 w-4 flex-shrink-0 ${
+                            feature.included ? colors.check : 'text-gray-600'
+                          }`}
+                        />
+                        <span
+                          className={`text-sm ${
+                            feature.included ? 'text-gray-300' : 'text-gray-500 line-through'
+                          }`}
+                        >
+                          {feature.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => handleUpgrade(plan)}
+                    disabled={checkoutLoading !== null}
+                    className={`w-full py-3 ${colors.button} mt-auto rounded-xl text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    {checkoutLoading === plan.name ? (
+                      <Loader className="mx-auto h-4 w-4 animate-spin" />
+                    ) : (
+                      `Get ${plan.name}`
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="mt-6 text-center text-xs text-gray-500">
+            Cancel anytime. Secure payment via Stripe. All prices in USD.
           </p>
         </div>
       </div>

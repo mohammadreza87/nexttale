@@ -59,7 +59,10 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['user_story_progress']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Insert: Omit<
+          Database['public']['Tables']['user_story_progress']['Row'],
+          'id' | 'created_at' | 'updated_at'
+        >;
         Update: Partial<Database['public']['Tables']['user_story_progress']['Insert']>;
       };
     };
@@ -129,6 +132,8 @@ export interface StoryReaction {
   created_at: string;
 }
 
+export type SubscriptionPlan = 'basic' | 'pro' | 'max';
+
 export interface UserProfile {
   id: string;
   display_name: string;
@@ -136,6 +141,7 @@ export interface UserProfile {
   avatar_url: string;
   username?: string;
   subscription_tier: 'free' | 'pro';
+  subscription_plan: SubscriptionPlan | null;
   subscription_status: string;
   subscription_period_end: string | null;
   stripe_customer_id: string | null;

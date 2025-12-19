@@ -11,7 +11,28 @@ const stripe = new Stripe(stripeSecret, {
   },
 });
 
-const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
+
+// Price ID to subscription plan mapping
+// These should match your Stripe price IDs
+const PRICE_TO_PLAN: Record<string, 'basic' | 'pro' | 'max'> = {
+  // Basic plan
+  [Deno.env.get('STRIPE_PRICE_BASIC_MONTHLY') || '']: 'basic',
+  [Deno.env.get('STRIPE_PRICE_BASIC_ANNUAL') || '']: 'basic',
+  // Pro plan
+  [Deno.env.get('STRIPE_PRICE_PRO_MONTHLY') || '']: 'pro',
+  [Deno.env.get('STRIPE_PRICE_PRO_ANNUAL') || '']: 'pro',
+  // Max plan
+  [Deno.env.get('STRIPE_PRICE_MAX_MONTHLY') || '']: 'max',
+  [Deno.env.get('STRIPE_PRICE_MAX_ANNUAL') || '']: 'max',
+};
+
+function getPlanFromPriceId(priceId: string): 'basic' | 'pro' | 'max' | null {
+  return PRICE_TO_PLAN[priceId] || null;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -37,7 +58,9 @@ Deno.serve(async (req) => {
       event = await stripe.webhooks.constructEventAsync(body, signature, stripeWebhookSecret);
     } catch (error: any) {
       console.error(`Webhook signature verification failed: ${error.message}`);
-      return new Response(`Webhook signature verification failed: ${error.message}`, { status: 400 });
+      return new Response(`Webhook signature verification failed: ${error.message}`, {
+        status: 400,
+      });
     }
 
     EdgeRuntime.waitUntil(handleEvent(event));
@@ -76,7 +99,9 @@ async function handleEvent(event: Stripe.Event) {
 
       isSubscription = mode === 'subscription';
 
-      console.info(`Processing ${isSubscription ? 'subscription' : 'one-time payment'} checkout session`);
+      console.info(
+        `Processing ${isSubscription ? 'subscription' : 'one-time payment'} checkout session`
+      );
     }
 
     const { mode, payment_status } = stripeData as Stripe.Checkout.Session;
@@ -147,7 +172,7 @@ async function syncCustomerFromStripe(customerId: string) {
         },
         {
           onConflict: 'customer_id',
-        },
+        }
       );
 
       if (noSubError) {
@@ -160,6 +185,7 @@ async function syncCustomerFromStripe(customerId: string) {
           .from('user_profiles')
           .update({
             subscription_tier: 'free',
+            subscription_plan: null,
             subscription_status: 'active',
             stripe_customer_id: customerId,
             stripe_subscription_id: null,
@@ -181,7 +207,8 @@ async function syncCustomerFromStripe(customerId: string) {
         current_period_start: subscription.current_period_start,
         current_period_end: subscription.current_period_end,
         cancel_at_period_end: subscription.cancel_at_period_end,
-        ...(subscription.default_payment_method && typeof subscription.default_payment_method !== 'string'
+        ...(subscription.default_payment_method &&
+        typeof subscription.default_payment_method !== 'string'
           ? {
               payment_method_brand: subscription.default_payment_method.card?.brand ?? null,
               payment_method_last4: subscription.default_payment_method.card?.last4 ?? null,
@@ -191,7 +218,7 @@ async function syncCustomerFromStripe(customerId: string) {
       },
       {
         onConflict: 'customer_id',
-      },
+      }
     );
 
     if (subError) {
@@ -201,11 +228,14 @@ async function syncCustomerFromStripe(customerId: string) {
 
     if (userId) {
       const isActive = subscription.status === 'active' || subscription.status === 'trialing';
+      const priceId = subscription.items.data[0]?.price.id;
+      const subscriptionPlan = priceId ? getPlanFromPriceId(priceId) : null;
 
       await supabase
         .from('user_profiles')
         .update({
           subscription_tier: isActive ? 'pro' : 'free',
+          subscription_plan: isActive ? subscriptionPlan : null,
           subscription_status: subscription.status,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscription.id,
@@ -213,7 +243,9 @@ async function syncCustomerFromStripe(customerId: string) {
         })
         .eq('id', userId);
 
-      console.info(`Updated user profile for user ${userId} with subscription status: ${subscription.status}`);
+      console.info(
+        `Updated user profile for user ${userId} with subscription status: ${subscription.status}, plan: ${subscriptionPlan}`
+      );
     }
 
     console.info(`Successfully synced subscription for customer: ${customerId}`);
