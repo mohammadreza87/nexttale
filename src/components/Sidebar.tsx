@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Home, User, Menu, X, Sparkles, Crown, Target } from 'lucide-react';
+import { Home, User, Menu, X, Sparkles, Crown, Target, Compass } from 'lucide-react';
+
+type ViewKey = 'home' | 'feed' | 'profile' | 'create' | 'subscription' | 'quests';
 
 interface SidebarProps {
-  currentView: 'home' | 'profile' | 'create' | 'subscription' | 'quests';
-  onNavigate: (view: 'home' | 'profile' | 'create' | 'subscription' | 'quests') => void;
+  currentView: ViewKey;
+  onNavigate: (view: ViewKey) => void;
   isPro?: boolean;
 }
 
@@ -12,7 +14,7 @@ export function Sidebar({ currentView, onNavigate, isPro = false }: SidebarProps
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
-  const handleNavigate = (view: 'home' | 'profile' | 'create' | 'subscription' | 'quests') => {
+  const handleNavigate = (view: ViewKey) => {
     onNavigate(view);
     setIsOpen(false);
   };
@@ -22,41 +24,34 @@ export function Sidebar({ currentView, onNavigate, isPro = false }: SidebarProps
       {/* Mobile hamburger button only */}
       <button
         onClick={toggleSidebar}
-        className="lg:hidden fixed top-5 left-5 z-[100] p-3 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-xl hover:shadow-2xl transition-all hover:scale-110 active:scale-95"
+        className="fixed left-5 top-5 z-[100] rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 p-3 shadow-xl transition-all hover:scale-110 hover:shadow-2xl active:scale-95 lg:hidden"
         aria-label="Toggle menu"
       >
-        {isOpen ? (
-          <X className="w-6 h-6 text-white" />
-        ) : (
-          <Menu className="w-6 h-6 text-white" />
-        )}
+        {isOpen ? <X className="h-6 w-6 text-white" /> : <Menu className="h-6 w-6 text-white" />}
       </button>
 
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-70 z-40"
+          className="fixed inset-0 z-40 bg-black bg-opacity-70 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar - Dark theme for Next Tale */}
       <aside
-        className={`fixed top-0 left-0 h-full z-[90] transition-all duration-300 ease-in-out w-64
-          lg:translate-x-0 lg:backdrop-blur-xl lg:bg-gray-900/95 lg:border-r lg:border-gray-800 lg:shadow-xl
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:block bg-gray-900 shadow-2xl`}
+        className={`fixed left-0 top-0 z-[90] h-full w-64 transition-all duration-300 ease-in-out lg:translate-x-0 lg:border-r lg:border-gray-800 lg:bg-gray-900/95 lg:shadow-xl lg:backdrop-blur-xl ${isOpen ? 'translate-x-0' : '-translate-x-full'} bg-gray-900 shadow-2xl lg:block`}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex h-full flex-col">
           {/* Logo Section */}
-          <div className="pt-8 px-6 pb-6 border-b border-gray-800">
+          <div className="border-b border-gray-800 px-6 pb-6 pt-8">
             <div className="flex flex-col items-center gap-3">
-              <img src="/nexttale-logo.png" alt="Next Tale" className="w-16 h-16" />
+              <img src="/nexttale-logo.png" alt="Next Tale" className="h-16 w-16" />
               <div className="text-center">
-                <h2 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
+                <h2 className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-2xl font-extrabold text-transparent">
                   NEXT TALE
                 </h2>
-                <p className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1">
+                <p className="mt-1 text-[10px] font-extrabold tracking-wider text-gray-500">
                   YOUR STORY, YOUR CHOICES
                 </p>
               </div>
@@ -70,14 +65,29 @@ export function Sidebar({ currentView, onNavigate, isPro = false }: SidebarProps
               <li>
                 <button
                   onClick={() => handleNavigate('home')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 transition-all ${
                     currentView === 'home'
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 font-semibold text-white shadow-lg'
                       : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                   }`}
                 >
-                  <Home className="w-5 h-5" />
+                  <Home className="h-5 w-5" />
                   <span>Home</span>
+                </button>
+              </li>
+
+              {/* Explore Feed */}
+              <li>
+                <button
+                  onClick={() => handleNavigate('feed')}
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 transition-all ${
+                    currentView === 'feed'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 font-semibold text-white shadow-lg'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  }`}
+                >
+                  <Compass className="h-5 w-5" />
+                  <span>Explore</span>
                 </button>
               </li>
 
@@ -85,13 +95,13 @@ export function Sidebar({ currentView, onNavigate, isPro = false }: SidebarProps
               <li>
                 <button
                   onClick={() => handleNavigate('quests')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 transition-all ${
                     currentView === 'quests'
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 font-semibold text-white shadow-lg'
                       : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                   }`}
                 >
-                  <Target className="w-5 h-5" />
+                  <Target className="h-5 w-5" />
                   <span>Challenges</span>
                 </button>
               </li>
@@ -100,13 +110,13 @@ export function Sidebar({ currentView, onNavigate, isPro = false }: SidebarProps
               <li>
                 <button
                   onClick={() => handleNavigate('create')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 transition-all ${
                     currentView === 'create'
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 font-semibold text-white shadow-lg'
                       : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                   }`}
                 >
-                  <Sparkles className="w-5 h-5" />
+                  <Sparkles className="h-5 w-5" />
                   <span>Create</span>
                 </button>
               </li>
@@ -116,13 +126,13 @@ export function Sidebar({ currentView, onNavigate, isPro = false }: SidebarProps
                 <li>
                   <button
                     onClick={() => handleNavigate('subscription')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 transition-all ${
                       currentView === 'subscription'
-                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg'
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 font-semibold text-white shadow-lg'
                         : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                     }`}
                   >
-                    <Crown className="w-5 h-5" />
+                    <Crown className="h-5 w-5" />
                     <span>Upgrade to Pro</span>
                   </button>
                 </li>
@@ -132,13 +142,13 @@ export function Sidebar({ currentView, onNavigate, isPro = false }: SidebarProps
               <li>
                 <button
                   onClick={() => handleNavigate('profile')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 transition-all ${
                     currentView === 'profile'
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 font-semibold text-white shadow-lg'
                       : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                   }`}
                 >
-                  <User className="w-5 h-5" />
+                  <User className="h-5 w-5" />
                   <span>Profile</span>
                 </button>
               </li>
@@ -146,14 +156,16 @@ export function Sidebar({ currentView, onNavigate, isPro = false }: SidebarProps
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-800">
-            <p className="text-xs text-gray-500 text-center font-medium mb-2">
-              Your story awaits
-            </p>
+          <div className="border-t border-gray-800 p-4">
+            <p className="mb-2 text-center text-xs font-medium text-gray-500">Your story awaits</p>
             <div className="flex items-center justify-center gap-3 text-[10px] text-gray-600">
-              <a href="/terms" className="hover:text-gray-400 transition-colors">Terms</a>
+              <a href="/terms" className="transition-colors hover:text-gray-400">
+                Terms
+              </a>
               <span>·</span>
-              <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy</a>
+              <a href="/privacy" className="transition-colors hover:text-gray-400">
+                Privacy
+              </a>
             </div>
           </div>
         </div>

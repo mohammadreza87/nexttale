@@ -1,70 +1,95 @@
-import { Home, User, Sparkles, Crown, Target } from 'lucide-react';
+import { Home, User, Sparkles, Crown, Target, Compass } from 'lucide-react';
+
+type ViewKey = 'home' | 'feed' | 'profile' | 'create' | 'subscription' | 'quests';
 
 interface BottomNavProps {
-  currentView: 'home' | 'profile' | 'create' | 'subscription' | 'quests';
-  onNavigate: (view: 'home' | 'profile' | 'create' | 'subscription' | 'quests') => void;
+  currentView: ViewKey;
+  onNavigate: (view: ViewKey) => void;
   isPro?: boolean;
 }
 
 export function BottomNav({ currentView, onNavigate, isPro = false }: BottomNavProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 shadow-lg z-50">
-      <div className="flex items-center justify-around h-16 max-w-md mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-800 bg-gray-900 shadow-lg">
+      <div className="mx-auto flex h-16 max-w-md items-center justify-around">
         {/* Home */}
         <button
           onClick={() => onNavigate('home')}
-          className={`flex flex-col items-center justify-center flex-1 h-full mx-1 my-2 rounded-xl transition-all ${
-            currentView === 'home' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-gray-500'
+          className={`mx-1 my-2 flex h-full flex-1 flex-col items-center justify-center rounded-xl transition-all ${
+            currentView === 'home'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+              : 'text-gray-500'
           }`}
         >
-          <Home className="w-6 h-6" />
-          <span className="text-xs mt-1 font-medium">Home</span>
+          <Home className="h-6 w-6" />
+          <span className="mt-1 text-xs font-medium">Home</span>
+        </button>
+
+        {/* Feed */}
+        <button
+          onClick={() => onNavigate('feed')}
+          className={`mx-1 my-2 flex h-full flex-1 flex-col items-center justify-center rounded-xl transition-all ${
+            currentView === 'feed'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+              : 'text-gray-500'
+          }`}
+        >
+          <Compass className="h-6 w-6" />
+          <span className="mt-1 text-xs font-medium">Explore</span>
         </button>
 
         {/* Challenges */}
         <button
           onClick={() => onNavigate('quests')}
-          className={`flex flex-col items-center justify-center flex-1 h-full mx-1 my-2 rounded-xl transition-all ${
-            currentView === 'quests' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-gray-500'
+          className={`mx-1 my-2 flex h-full flex-1 flex-col items-center justify-center rounded-xl transition-all ${
+            currentView === 'quests'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+              : 'text-gray-500'
           }`}
         >
-          <Target className="w-6 h-6" />
-          <span className="text-xs mt-1 font-medium">Challenges</span>
+          <Target className="h-6 w-6" />
+          <span className="mt-1 text-xs font-medium">Challenges</span>
         </button>
 
         {/* Create */}
         <button
           onClick={() => onNavigate('create')}
-          className={`flex flex-col items-center justify-center flex-1 h-full mx-1 my-2 rounded-xl transition-all ${
-            currentView === 'create' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-gray-500'
+          className={`mx-1 my-2 flex h-full flex-1 flex-col items-center justify-center rounded-xl transition-all ${
+            currentView === 'create'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+              : 'text-gray-500'
           }`}
         >
-          <Sparkles className="w-6 h-6" />
-          <span className="text-xs mt-1 font-medium">Create</span>
+          <Sparkles className="h-6 w-6" />
+          <span className="mt-1 text-xs font-medium">Create</span>
         </button>
 
         {/* Pro - Hidden if user is Pro */}
         {!isPro && (
           <button
             onClick={() => onNavigate('subscription')}
-            className={`flex flex-col items-center justify-center flex-1 h-full mx-1 my-2 rounded-xl transition-all ${
-              currentView === 'subscription' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-gray-500'
+            className={`mx-1 my-2 flex h-full flex-1 flex-col items-center justify-center rounded-xl transition-all ${
+              currentView === 'subscription'
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                : 'text-gray-500'
             }`}
           >
-            <Crown className="w-6 h-6" />
-            <span className="text-xs mt-1 font-medium">Pro</span>
+            <Crown className="h-6 w-6" />
+            <span className="mt-1 text-xs font-medium">Pro</span>
           </button>
         )}
 
         {/* Profile */}
         <button
           onClick={() => onNavigate('profile')}
-          className={`flex flex-col items-center justify-center flex-1 h-full mx-1 my-2 rounded-xl transition-all ${
-            currentView === 'profile' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'text-gray-500'
+          className={`mx-1 my-2 flex h-full flex-1 flex-col items-center justify-center rounded-xl transition-all ${
+            currentView === 'profile'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+              : 'text-gray-500'
           }`}
         >
-          <User className="w-6 h-6" />
-          <span className="text-xs mt-1 font-medium">Profile</span>
+          <User className="h-6 w-6" />
+          <span className="mt-1 text-xs font-medium">Profile</span>
         </button>
       </div>
     </div>

@@ -23,18 +23,24 @@ import { Auth } from './components/Auth';
 import { Quests } from './components/Quests';
 import { LandingPage } from './components/LandingPage';
 import { TermsOfService, PrivacyPolicy } from './components/legal';
+import { TikTokFeed } from './components/feed';
+import { InteractiveCreator, InteractiveViewer, InteractiveDetail } from './components/interactive';
+import { getInteractiveContent } from './lib/interactiveService';
 import { AuthProvider, useAuth } from './lib/authContext';
 import { useAnalytics } from './hooks/useAnalytics';
 import { getSubscriptionUsage } from './lib/subscriptionService';
 
-type ViewKey = 'home' | 'profile' | 'create' | 'subscription' | 'quests';
+type ViewKey = 'home' | 'feed' | 'profile' | 'create' | 'subscription' | 'quests';
 
 type AppOutletContext = {
   userId: string;
   isPro: boolean;
   handleSelectStory: (storyId: string) => void;
   handleStartStory: (storyId: string) => void;
+  handleSelectInteractive: (contentId: string) => void;
+  handleStartInteractive: (contentId: string) => void;
   handleBackToLibrary: () => void;
+  handleBackToFeed: () => void;
   handleViewProfile: (userId: string) => void;
 };
 
@@ -42,6 +48,8 @@ const viewToPath = (view: ViewKey) => {
   switch (view) {
     case 'home':
       return '/';
+    case 'feed':
+      return '/feed';
     case 'create':
       return '/create';
     case 'profile':
@@ -56,6 +64,7 @@ const viewToPath = (view: ViewKey) => {
 };
 
 const pathToView = (pathname: string): ViewKey => {
+  if (pathname.startsWith('/feed')) return 'feed';
   if (pathname.startsWith('/create')) return 'create';
   if (pathname.startsWith('/profile')) return 'profile';
   if (pathname.startsWith('/subscription')) return 'subscription';
@@ -66,7 +75,12 @@ const pathToView = (pathname: string): ViewKey => {
 const getPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/story/') && pathname.includes('/read')) return 'Reading Story';
   if (pathname.startsWith('/story/')) return 'Story Detail';
+  if (pathname.startsWith('/feed')) return 'Feed';
+  if (pathname.startsWith('/create/interactive')) return 'Create Interactive';
   if (pathname.startsWith('/create')) return 'Create Story';
+  if (pathname.startsWith('/interactive/') && pathname.includes('/view'))
+    return 'Interactive Viewer';
+  if (pathname.startsWith('/interactive/')) return 'Interactive Detail';
   if (pathname.startsWith('/subscription')) return 'Subscription';
   if (pathname.startsWith('/quests')) return 'Quests';
   if (pathname.startsWith('/profile')) return 'Profile';
@@ -101,8 +115,8 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent"></div>
+      <div className="flex min-h-screen items-center justify-center bg-gray-950">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
       </div>
     );
   }
@@ -144,22 +158,27 @@ function MainLayout() {
 
   const handleSelectStory = (storyId: string) => navigate(`/story/${storyId}`);
   const handleStartStory = (storyId: string) => navigate(`/story/${storyId}/read`);
+  const handleSelectInteractive = (contentId: string) => navigate(`/interactive/${contentId}`);
+  const handleStartInteractive = (contentId: string) => navigate(`/interactive/${contentId}/view`);
   const handleBackToLibrary = () => navigate('/');
+  const handleBackToFeed = () => navigate('/feed');
   const handleViewProfile = (profileUserId: string) => navigate(`/user/${profileUserId}`);
 
   return (
     <div className="min-h-screen">
       {/* Mobile Header */}
-      <div className={`lg:hidden fixed top-0 left-0 right-0 text-white px-4 py-3 flex flex-col items-center justify-center z-40 shadow-lg ${isPro ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-gradient-to-r from-blue-500 to-cyan-500'}`}>
-        <div className="flex items-center gap-2 mb-1">
-          <img src="/nexttale-logo.png" alt="Next Tale" className="w-10 h-10 drop-shadow-lg" />
-          <span className="font-extrabold text-2xl">NEXT TALE</span>
+      <div
+        className={`fixed left-0 right-0 top-0 z-40 flex flex-col items-center justify-center px-4 py-3 text-white shadow-lg lg:hidden ${isPro ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-gradient-to-r from-blue-500 to-cyan-500'}`}
+      >
+        <div className="mb-1 flex items-center gap-2">
+          <img src="/nexttale-logo.png" alt="Next Tale" className="h-10 w-10 drop-shadow-lg" />
+          <span className="text-2xl font-extrabold">NEXT TALE</span>
         </div>
         <p className="text-[9px] font-extrabold tracking-widest">READ, CHOOSE, CREATE MAGIC</p>
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block fixed left-0 top-0 h-full z-50">
+      <div className="fixed left-0 top-0 z-50 hidden h-full lg:block">
         <Sidebar
           currentView={currentView}
           onNavigate={(view) => navigate(viewToPath(view))}
@@ -167,16 +186,21 @@ function MainLayout() {
         />
       </div>
 
-      <div className="lg:ml-64 pt-20 lg:pt-0 pb-20 lg:pb-0">
+      <div className="pb-20 pt-20 lg:ml-64 lg:pb-0 lg:pt-0">
         <Outlet
-          context={{
-            userId,
-            isPro,
-            handleSelectStory,
-            handleStartStory,
-            handleBackToLibrary,
-            handleViewProfile,
-          } satisfies AppOutletContext}
+          context={
+            {
+              userId,
+              isPro,
+              handleSelectStory,
+              handleStartStory,
+              handleSelectInteractive,
+              handleStartInteractive,
+              handleBackToLibrary,
+              handleBackToFeed,
+              handleViewProfile,
+            } satisfies AppOutletContext
+          }
         />
       </div>
 
@@ -192,7 +216,8 @@ function MainLayout() {
 }
 
 function StoryLibraryRoute() {
-  const { userId, isPro, handleSelectStory, handleViewProfile } = useOutletContext<AppOutletContext>();
+  const { userId, isPro, handleSelectStory, handleViewProfile } =
+    useOutletContext<AppOutletContext>();
   return (
     <StoryLibrary
       onSelectStory={handleSelectStory}
@@ -205,7 +230,8 @@ function StoryLibraryRoute() {
 
 function StoryDetailRoute() {
   const { storyId } = useParams();
-  const { userId, isPro, handleStartStory, handleBackToLibrary, handleViewProfile } = useOutletContext<AppOutletContext>();
+  const { userId, isPro, handleStartStory, handleBackToLibrary, handleViewProfile } =
+    useOutletContext<AppOutletContext>();
 
   if (!storyId) {
     return <Navigate to="/" replace />;
@@ -288,6 +314,79 @@ function LandingRoute() {
   );
 }
 
+function TikTokFeedRoute() {
+  const { userId, handleSelectStory, handleSelectInteractive, handleViewProfile } =
+    useOutletContext<AppOutletContext>();
+  return (
+    <TikTokFeed
+      userId={userId}
+      onSelectStory={handleSelectStory}
+      onSelectInteractive={handleSelectInteractive}
+      onViewProfile={handleViewProfile}
+    />
+  );
+}
+
+function InteractiveCreatorRoute() {
+  const { userId, handleSelectInteractive } = useOutletContext<AppOutletContext>();
+  return <InteractiveCreator userId={userId} onCreated={handleSelectInteractive} />;
+}
+
+function InteractiveDetailRoute() {
+  const { contentId } = useParams();
+  const { userId, isPro, handleStartInteractive, handleBackToFeed, handleViewProfile } =
+    useOutletContext<AppOutletContext>();
+
+  if (!contentId) {
+    return <Navigate to="/feed" replace />;
+  }
+
+  return (
+    <InteractiveDetail
+      contentId={contentId}
+      userId={userId}
+      isPro={isPro}
+      onBack={handleBackToFeed}
+      onStart={() => handleStartInteractive(contentId)}
+      onViewProfile={handleViewProfile}
+    />
+  );
+}
+
+function InteractiveViewerRoute() {
+  const { contentId } = useParams();
+  const { handleBackToFeed } = useOutletContext<AppOutletContext>();
+  const [content, setContent] = useState<{ html_content: string; title: string } | null>(null);
+
+  useEffect(() => {
+    if (contentId) {
+      getInteractiveContent(contentId).then(setContent);
+    }
+  }, [contentId]);
+
+  if (!contentId) {
+    return <Navigate to="/feed" replace />;
+  }
+
+  if (!content) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-950">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  return (
+    <InteractiveViewer
+      htmlContent={content.html_content}
+      title={content.title}
+      onBack={handleBackToFeed}
+      showBackButton
+      className="min-h-screen"
+    />
+  );
+}
+
 function AuthRoute() {
   const { mode } = useParams();
   const navigate = useNavigate();
@@ -312,8 +411,8 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent"></div>
+      <div className="flex min-h-screen items-center justify-center bg-gray-950">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
       </div>
     );
   }
@@ -325,13 +424,24 @@ function AppRoutes() {
       <Route path="/auth/:mode" element={<AuthRoute />} />
       <Route element={<MainLayout />}>
         <Route index element={<StoryLibraryRoute />} />
+        <Route path="feed" element={<TikTokFeedRoute />} />
         <Route path="story/:storyId" element={<StoryDetailRoute />} />
         <Route path="story/:storyId/read" element={<StoryReaderRoute />} />
+        <Route path="interactive/:contentId" element={<InteractiveDetailRoute />} />
+        <Route path="interactive/:contentId/view" element={<InteractiveViewerRoute />} />
         <Route
           path="create"
           element={
             <RequireAuth>
               <StoryCreatorRoute />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="create/interactive"
+          element={
+            <RequireAuth>
+              <InteractiveCreatorRoute />
             </RequireAuth>
           }
         />
