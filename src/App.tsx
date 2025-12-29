@@ -51,7 +51,7 @@ const viewToPath = (view: ViewKey) => {
     case 'feed':
       return '/feed';
     case 'create':
-      return '/create';
+      return '/create/interactive';
     case 'profile':
       return '/profile';
     case 'subscription':
@@ -395,11 +395,11 @@ function AuthRoute() {
   return (
     <Auth
       initialMode={initialMode}
-      onAuthSuccess={() => navigate('/create')}
+      onAuthSuccess={() => navigate('/create/interactive')}
       featurePrompt={
         initialMode === 'signup'
-          ? 'Create your account to start making magical stories'
-          : 'Sign in to continue creating stories'
+          ? 'Create your account to start making interactive content'
+          : 'Sign in to continue creating'
       }
     />
   );

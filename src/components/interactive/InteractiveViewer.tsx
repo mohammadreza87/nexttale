@@ -42,22 +42,65 @@ export function InteractiveViewer({
       );
     }
 
-    // Add base styles if no body styling detected
-    if (!processedHtml.includes('body {') && !processedHtml.includes('body{')) {
-      processedHtml = processedHtml.replace(
-        '</head>',
-        `<style>
-    body {
-      margin: 0;
-      padding: 16px;
-      min-height: 100vh;
+    // Add responsive base styles
+    const responsiveStyles = `<style>
+    *, *::before, *::after {
       box-sizing: border-box;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       -webkit-font-smoothing: antialiased;
+      background: #0a0a0a;
+      color: #fff;
     }
-  </style>
-</head>`
-      );
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: 16px;
+    }
+    /* Make content fill available space */
+    #app, #root, #game, .container, .game-container, main {
+      width: 100%;
+      max-width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Responsive canvas */
+    canvas {
+      max-width: 100%;
+      height: auto;
+      touch-action: manipulation;
+    }
+    /* Touch-friendly buttons */
+    button, .btn, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 12px 24px;
+      font-size: 16px;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+    /* Prevent text selection during gameplay */
+    .no-select {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+  </style>`;
+
+    if (!processedHtml.includes('box-sizing: border-box')) {
+      processedHtml = processedHtml.replace('</head>', `${responsiveStyles}\n</head>`);
     }
 
     const blob = new Blob([processedHtml], { type: 'text/html' });

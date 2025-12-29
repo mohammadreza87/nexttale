@@ -104,14 +104,22 @@ CRITICAL REQUIREMENTS:
    - window.open(), navigation away from page
    - document.cookie
 
-4. DESIGN REQUIREMENTS:
-   - Mobile-first responsive (works on 375px width)
-   - Dark theme: use dark backgrounds (#1a1a2e, #16213e, #0f0f23)
-   - Light text (#ffffff, #e0e0e0, #a0a0a0)
-   - Accent colors for interactivity (purple #8b5cf6, cyan #22d3ee, pink #ec4899)
+4. RESPONSIVE DESIGN (CRITICAL):
+   - Use viewport units (vw, vh, vmin, dvh) for sizing
+   - Container: width: 100%, max-width: min(500px, 95vw)
+   - Game area: Use aspect-ratio or calculate from viewport
+   - Canvas games: Set canvas size dynamically with JavaScript:
+     const size = Math.min(window.innerWidth - 32, window.innerHeight - 150, 500);
+     canvas.width = canvas.height = size;
+   - Use CSS Grid or Flexbox for layouts
+   - Font sizes: clamp(14px, 4vw, 18px) for body, larger for headers
    - Touch-friendly: minimum 44px touch targets
-   - Smooth CSS transitions/animations
-   - No horizontal scrolling
+   - NO fixed pixel widths over 300px
+   - NO horizontal scrolling ever
+   - Center everything: margin: 0 auto
+   - Dark theme: #0a0a0a background, #fff text
+   - Accent: purple #8b5cf6, cyan #22d3ee, pink #ec4899
+   - Add resize listener to redraw canvas games on orientation change
 
 5. ${CONTENT_TYPE_PROMPTS[contentType]}
 

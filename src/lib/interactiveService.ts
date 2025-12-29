@@ -66,7 +66,7 @@ export async function createInteractiveContent(
     .select(
       `
       *,
-      creator:user_profiles!interactive_content_created_by_fkey(display_name, avatar_url)
+      creator:user_profiles(display_name, avatar_url)
     `
     )
     .single();
@@ -81,7 +81,7 @@ export async function getInteractiveContent(id: string): Promise<InteractiveCont
     .select(
       `
       *,
-      creator:user_profiles!interactive_content_created_by_fkey(display_name, avatar_url)
+      creator:user_profiles(display_name, avatar_url)
     `
     )
     .eq('id', id)
@@ -105,7 +105,7 @@ export async function getInteractiveContentPaginated(
     .select(
       `
       *,
-      creator:user_profiles!interactive_content_created_by_fkey(display_name, avatar_url)
+      creator:user_profiles(display_name, avatar_url)
     `
     )
     .eq('is_public', true)
@@ -136,7 +136,7 @@ export async function getUserInteractiveContent(
     .select(
       `
       *,
-      creator:user_profiles!interactive_content_created_by_fkey(display_name, avatar_url)
+      creator:user_profiles(display_name, avatar_url)
     `
     )
     .eq('created_by', userId)

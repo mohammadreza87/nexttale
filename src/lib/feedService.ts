@@ -50,7 +50,7 @@ async function getStoriesFeed(
       cover_image_url, cover_video_url,
       created_by, is_public, likes_count, dislikes_count,
       completion_count, comment_count, created_at, estimated_duration,
-      creator:user_profiles!stories_created_by_fkey(display_name, avatar_url)
+      creator:user_profiles(display_name, avatar_url)
     `
     )
     .eq('is_public', true)
@@ -98,7 +98,7 @@ async function getInteractiveFeed(
       thumbnail_url, preview_gif_url, html_content,
       created_by, is_public, likes_count, dislikes_count,
       view_count, comment_count, created_at, estimated_interaction_time, tags,
-      creator:user_profiles!interactive_content_created_by_fkey(display_name, avatar_url)
+      creator:user_profiles(display_name, avatar_url)
     `
     )
     .eq('is_public', true)
@@ -157,7 +157,7 @@ export async function getTrendingFeed(limit: number = 20): Promise<FeedItem[]> {
         cover_image_url, cover_video_url,
         created_by, is_public, likes_count, dislikes_count,
         completion_count, comment_count, created_at, estimated_duration,
-        creator:user_profiles!stories_created_by_fkey(display_name, avatar_url)
+        creator:user_profiles(display_name, avatar_url)
       `
       )
       .eq('is_public', true)
@@ -173,7 +173,7 @@ export async function getTrendingFeed(limit: number = 20): Promise<FeedItem[]> {
         thumbnail_url, preview_gif_url, html_content,
         created_by, is_public, likes_count, dislikes_count,
         view_count, comment_count, created_at, estimated_interaction_time, tags,
-        creator:user_profiles!interactive_content_created_by_fkey(display_name, avatar_url)
+        creator:user_profiles(display_name, avatar_url)
       `
       )
       .eq('is_public', true)
@@ -259,7 +259,7 @@ export async function getFollowingFeed(
         cover_image_url, cover_video_url,
         created_by, is_public, likes_count, dislikes_count,
         completion_count, comment_count, created_at, estimated_duration,
-        creator:user_profiles!stories_created_by_fkey(display_name, avatar_url)
+        creator:user_profiles(display_name, avatar_url)
       `
       )
       .eq('is_public', true)
@@ -275,7 +275,7 @@ export async function getFollowingFeed(
         thumbnail_url, preview_gif_url, html_content,
         created_by, is_public, likes_count, dislikes_count,
         view_count, comment_count, created_at, estimated_interaction_time, tags,
-        creator:user_profiles!interactive_content_created_by_fkey(display_name, avatar_url)
+        creator:user_profiles(display_name, avatar_url)
       `
       )
       .eq('is_public', true)
