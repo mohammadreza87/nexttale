@@ -27,7 +27,9 @@ const CONTENT_TYPE_PROMPTS: Record<string, string> = {
 - Win/lose conditions with visual feedback
 - Restart functionality
 - Sound effects using Web Audio API (optional beeps/clicks)
-- Touch-friendly controls
+- Touch-friendly controls at bottom of screen
+- LARGE canvas (at least 900x900 pixels) that fills most of the frame
+- NO phone mockup or device border - game fills the entire 1080x1350 frame
 Make it engaging, fun, and immediately playable.`,
 
   tool: `Create a useful utility tool. Include:
@@ -105,9 +107,20 @@ CRITICAL REQUIREMENTS:
    - document.cookie
 
 4. FIXED FRAME DESIGN - ABSOLUTELY CRITICAL (1080x1350 pixels):
-   ⚠️ THE CONTENT MUST FILL THE ENTIRE 1080x1350 FRAME - NO EXCEPTIONS ⚠️
 
-   MANDATORY CSS for html and body:
+   ⛔ FORBIDDEN PATTERN - DO NOT CREATE THIS:
+   - A small rounded rectangle "phone screen" centered on a dark background
+   - Any "device mockup", "phone frame", or "screen border" effect
+   - A game canvas floating in the middle with large black borders around it
+   - Content that looks like a phone screenshot with bezels
+
+   ✅ CORRECT PATTERN - CREATE THIS INSTEAD:
+   - Content that fills edge-to-edge, using the FULL 1080x1350 pixels
+   - Background color/gradient that extends to all edges
+   - Game elements positioned to use maximum available space
+   - No visible "frame within a frame"
+
+   MANDATORY CSS - COPY EXACTLY:
    html, body {
      width: 1080px;
      height: 1350px;
@@ -117,44 +130,37 @@ CRITICAL REQUIREMENTS:
      background: #0a0a0a;
    }
 
-   LAYOUT RULES:
-   - The main container MUST be 1080x1350 and fill the entire frame
-   - DO NOT create a "phone mockup" or "device frame" inside - fill the whole area
-   - DO NOT add large margins/padding that make content appear centered in a smaller box
-   - For games: Canvas should be at least 900x900 pixels, centered in frame
-   - For tools/widgets: Use the FULL width (1080px) and distribute content vertically
-   - Header/title area: max 150px height at top
-   - Main content area: Should fill remaining ~1100-1200px of height
-   - Controls/buttons: Place at bottom, 150-200px area
+   .game-container, .main-container, #app {
+     width: 100%;
+     height: 100%;
+     display: flex;
+     flex-direction: column;
+   }
+
+   FOR GAMES SPECIFICALLY:
+   - Canvas size: width="1000" height="1000" (or similar large size)
+   - Canvas should be centered but LARGE, not a tiny box
+   - Score/title at top (80-100px), canvas in middle, controls at bottom (150px)
+   - NO rounded border around the game area
+   - NO phone-shaped container
+
+   LAYOUT STRUCTURE FOR GAMES:
+   <body>
+     <div class="game-container">
+       <header>Title + Score (80px tall)</header>
+       <main><canvas width="1000" height="1000"></canvas></main>
+       <footer>Touch controls (150px tall)</footer>
+     </div>
+   </body>
 
    TYPOGRAPHY (fixed pixel sizes):
-   - Page title: 48-64px, bold
-   - Section headers: 36-42px
-   - Body text: 24-28px
-   - Button text: 28-32px
-   - Small labels: 20-24px
+   - Title: 48-64px bold
+   - Score: 36-42px
+   - Buttons: 28-32px
 
-   TOUCH TARGETS:
-   - All buttons/interactive elements: minimum 60px height
-   - Adequate spacing between touch targets (20px+)
-
-   COLORS (dark theme):
-   - Background: #0a0a0a
-   - Surface/cards: #1a1a2e or #16213e
-   - Text: #ffffff
-   - Accent: #8b5cf6 (purple), #22d3ee (cyan), #ec4899 (pink)
-
-   ❌ DO NOT:
-   - Use viewport units (vw, vh, vmin, vmax)
-   - Create nested frames or device mockups
-   - Leave large empty black borders around content
-   - Make content smaller than the frame
-
-   ✅ DO:
-   - Fill the entire 1080x1350 canvas
-   - Use absolute/fixed positioning when needed to fill space
-   - Make game canvases large and centered
-   - Use CSS Grid/Flexbox to distribute content across full height
+   COLORS:
+   - Background: #0a0a0a (extends to edges)
+   - Accent: #8b5cf6, #22d3ee, #ec4899
 
 5. ${CONTENT_TYPE_PROMPTS[contentType]}
 
@@ -231,7 +237,7 @@ Return ONLY the JSON object. No markdown, no explanation, no code blocks.`;
   };
 }
 
-// Enforced CSS to ensure content fills the frame
+// Enforced CSS to ensure content fills the frame and remove phone mockup styling
 const ENFORCED_FRAME_CSS = `
 <style id="enforced-frame-styles">
   /* Enforced frame dimensions - injected by system */
@@ -242,6 +248,7 @@ const ENFORCED_FRAME_CSS = `
     padding: 0 !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
+    background: #0a0a0a !important;
   }
   body {
     min-height: 1350px !important;
@@ -260,6 +267,26 @@ const ENFORCED_FRAME_CSS = `
     flex: 1 !important;
     min-height: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  /* Remove phone mockup styling from any container */
+  body > div,
+  body > div > div {
+    border-radius: 0 !important;
+    border: none !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  /* Make canvases large */
+  canvas {
+    max-width: 100% !important;
+    display: block !important;
+    margin: 0 auto !important;
   }
 </style>
 `;
