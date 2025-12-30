@@ -20,6 +20,7 @@ import {
   VolumeX,
   Gamepad2,
   Play,
+  Music,
 } from 'lucide-react';
 import { supabase, getShareUrl } from '../lib/supabase';
 import { useAuth } from '../lib/authContext';
@@ -40,6 +41,8 @@ import {
 } from '../lib/interactiveService';
 import type { Story, UserProfile as _UserProfileType } from '../lib/types';
 import type { InteractiveContent } from '../lib/interactiveTypes';
+import { getUserMusic, deleteMusic, updateMusic } from '../lib/musicService';
+import type { MusicContent } from '../lib/musicTypes';
 import { InteractiveViewer } from './interactive/InteractiveViewer';
 import {
   getUserSubscription,
@@ -78,7 +81,9 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'completed' | 'created' | 'interactive'>('created');
+  const [activeTab, setActiveTab] = useState<'completed' | 'created' | 'interactive' | 'music'>(
+    'created'
+  );
   const [deletingStoryId, setDeletingStoryId] = useState<string | null>(null);
   const [updatingVisibilityId, setUpdatingVisibilityId] = useState<string | null>(null);
   const [followersCount, setFollowersCount] = useState<number>(0);
@@ -112,6 +117,11 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
   >(null);
   const [previewContent, setPreviewContent] = useState<InteractiveContent | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
+
+  // Music content state
+  const [createdMusic, setCreatedMusic] = useState<MusicContent[]>([]);
+  const [deletingMusicId, setDeletingMusicId] = useState<string | null>(null);
+  const [updatingMusicVisibilityId, setUpdatingMusicVisibilityId] = useState<string | null>(null);
 
   const createdLoaderRef = useRef<HTMLDivElement>(null);
   const completedLoaderRef = useRef<HTMLDivElement>(null);
@@ -294,12 +304,23 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
     }
   }, [interactiveLoadingMore, interactiveHasMore, createdInteractive.length, userId]);
 
+  // Music content loading
+  const loadCreatedMusic = async () => {
+    try {
+      const music = await getUserMusic(userId);
+      setCreatedMusic(music);
+    } catch (error) {
+      console.error('Error loading music content:', error);
+    }
+  };
+
   // Initial data load
   useEffect(() => {
     loadProfile();
     loadCompletedStories();
     loadCreatedStories();
     loadCreatedInteractive();
+    loadCreatedMusic();
     loadFollowCounts();
     loadSubscription();
     loadQuestData();
@@ -512,6 +533,39 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
       alert('Failed to update content visibility. Please try again.');
     } finally {
       setUpdatingInteractiveVisibilityId(null);
+    }
+  };
+
+  // Music handlers
+  const handleDeleteMusic = async (musicId: string) => {
+    if (!confirm('Are you sure you want to delete this music? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingMusicId(musicId);
+    try {
+      await deleteMusic(musicId);
+      setCreatedMusic((prev) => prev.filter((m) => m.id !== musicId));
+    } catch (error) {
+      console.error('Error deleting music:', error);
+      alert('Failed to delete music. Please try again.');
+    } finally {
+      setDeletingMusicId(null);
+    }
+  };
+
+  const handleToggleMusicVisibility = async (musicId: string, currentVisibility: boolean) => {
+    setUpdatingMusicVisibilityId(musicId);
+    try {
+      await updateMusic(musicId, { is_public: !currentVisibility });
+      setCreatedMusic((prev) =>
+        prev.map((m) => (m.id === musicId ? { ...m, is_public: !currentVisibility } : m))
+      );
+    } catch (error) {
+      console.error('Error updating music visibility:', error);
+      alert('Failed to update music visibility. Please try again.');
+    } finally {
+      setUpdatingMusicVisibilityId(null);
     }
   };
 
@@ -861,7 +915,20 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
               }`}
             >
               <Gamepad2 className="mx-auto mb-1 h-5 w-5" />
-              <span className="text-xs">Created</span>
+              <span className="text-xs">Games</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('music')}
+              className={`flex-1 rounded-xl px-3 py-3 text-center font-semibold transition-all ${
+                activeTab === 'music'
+                  ? isPro
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-gray-400 shadow-md hover:bg-gray-700'
+              }`}
+            >
+              <Music className="mx-auto mb-1 h-5 w-5" />
+              <span className="text-xs">Music</span>
             </button>
             <button
               onClick={() => setActiveTab('completed')}
@@ -1071,6 +1138,79 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                     )}
                   </div>
                 </>
+              )
+            ) : activeTab === 'music' ? (
+              createdMusic.length === 0 && !loading ? (
+                <div className="p-8 text-center">
+                  <Music className="mx-auto mb-4 h-16 w-16 text-gray-600" />
+                  <h3 className="mb-2 text-xl font-bold text-white">No Music Created Yet</h3>
+                  <p className="text-gray-400">Create AI-generated music to see it here!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {createdMusic.map((music) => (
+                    <div
+                      key={music.id}
+                      className="overflow-hidden rounded-2xl border border-gray-700 bg-gray-800 shadow-md"
+                    >
+                      <div
+                        className={`relative flex aspect-square items-center justify-center ${isPro ? 'bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900' : 'bg-gradient-to-br from-blue-900 via-cyan-900 to-blue-900'}`}
+                      >
+                        <Music className="h-12 w-12 text-white" />
+                        {music.genre && (
+                          <div className="absolute left-2 top-2 rounded-full bg-pink-500 px-2 py-0.5 text-xs font-medium text-white">
+                            {music.genre}
+                          </div>
+                        )}
+                        {music.audio_url && (
+                          <audio
+                            src={music.audio_url}
+                            controls
+                            className="absolute bottom-2 left-2 right-2 h-8"
+                            style={{ opacity: 0.9 }}
+                          />
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <h3 className="mb-2 line-clamp-1 text-sm font-bold text-white">
+                          {music.title}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              handleToggleMusicVisibility(music.id, music.is_public ?? false)
+                            }
+                            disabled={updatingMusicVisibilityId === music.id}
+                            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-700 disabled:opacity-50"
+                            title={
+                              music.is_public ? 'Public (tap to change)' : 'Private (tap to change)'
+                            }
+                          >
+                            {updatingMusicVisibilityId === music.id ? (
+                              <Loader className="h-4 w-4 animate-spin" />
+                            ) : music.is_public ? (
+                              <Globe className="h-4 w-4" />
+                            ) : (
+                              <Lock className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMusic(music.id)}
+                            disabled={deletingMusicId === music.id}
+                            className="rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-900/30 disabled:opacity-50"
+                            title="Delete"
+                          >
+                            {deletingMusicId === music.id ? (
+                              <Loader className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )
             ) : createdStories.length === 0 && !loading ? (
               <div className="p-8 text-center">
