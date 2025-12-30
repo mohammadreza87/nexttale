@@ -19,7 +19,7 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState('');
   const [progressPercent, setProgressPercent] = useState(0);
-  const [isPublic, setIsPublic] = useState(false);
+  const [isPublic, setIsPublic] = useState(true); // Default to public
   const [narratorEnabled, setNarratorEnabled] = useState(false);
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [usage, setUsage] = useState<SubscriptionUsage | null>(null);
@@ -147,6 +147,9 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
       setProgress('Creating story structure...');
       setProgressPercent(40);
 
+      // Free users can only create public content
+      const finalIsPublic = usage?.isPro ? isPublic : true;
+
       const storyInsertData: Record<string, unknown> = {
         title: generatedData.title,
         description: generatedData.description,
@@ -154,7 +157,7 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
         estimated_duration: generatedData.estimatedDuration || 15,
         story_context: generatedData.storyContext,
         created_by: userId,
-        is_public: isPublic,
+        is_public: finalIsPublic,
         is_user_generated: true,
         generation_status: 'first_chapter_ready',
         generation_progress: 10,
@@ -421,21 +424,26 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
             </div>
           </div>
 
-          {/* Visibility */}
+          {/* Visibility - Only Pro users can make private */}
           <div className="rounded-2xl bg-gray-800/50 p-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-gray-300">Story Visibility</label>
+              <div>
+                <label className="text-sm font-semibold text-gray-300">Story Visibility</label>
+                {!usage?.isPro && (
+                  <p className="text-xs text-gray-500">Pro only: make stories private</p>
+                )}
+              </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-400">
                   {isPublic ? 'Public' : 'Private'}
                 </span>
                 <button
                   type="button"
-                  onClick={() => setIsPublic(!isPublic)}
-                  disabled={isGenerating}
+                  onClick={() => usage?.isPro && setIsPublic(!isPublic)}
+                  disabled={isGenerating || !usage?.isPro}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
                     isPublic ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gray-700'
-                  }`}
+                  } ${!usage?.isPro ? 'cursor-not-allowed' : ''}`}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${

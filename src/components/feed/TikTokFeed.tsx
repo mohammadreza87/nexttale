@@ -6,7 +6,7 @@ import {
   useWheelNavigation,
 } from '../../hooks/useSwipeGesture';
 import { getUnifiedFeed } from '../../lib/feedService';
-import { FeedFilters } from './FeedFilters';
+// import { FeedFilters } from './FeedFilters'; // Temporarily disabled
 import { StoryFeedCard } from './StoryFeedCard';
 import { InteractiveFeedCard } from './InteractiveFeedCard';
 import type { FeedItem, FeedFilter } from '../../lib/interactiveTypes';
@@ -28,7 +28,7 @@ export function TikTokFeed({
 }: TikTokFeedProps) {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [filter, setFilter] = useState<FeedFilter>(initialFilter);
+  const [filter] = useState<FeedFilter>(initialFilter); // setFilter temporarily disabled
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -144,12 +144,12 @@ export function TikTokFeed({
 
   return (
     <div className="fixed inset-0 flex w-full flex-col bg-black">
-      {/* Fixed header with filter tabs */}
-      <div className="z-50 w-full shrink-0 bg-black py-2">
+      {/* Fixed header with filter tabs - temporarily disabled */}
+      {/* <div className="z-50 w-full shrink-0 bg-black py-2">
         <div className="mx-auto max-w-[500px]">
           <FeedFilters currentFilter={filter} onFilterChange={setFilter} />
         </div>
-      </div>
+      </div> */}
 
       {/* Feed content area */}
       <div className="flex flex-1 justify-center overflow-hidden">
