@@ -121,7 +121,7 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
   const [progress, setProgress] = useState('');
   const [usage, setUsage] = useState<SubscriptionUsage | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [isPublic, setIsPublic] = useState(false);
+  const [isPublic, setIsPublic] = useState(true); // Default to public
 
   // Image upload state
   const [imageData, setImageData] = useState<string | null>(null);
@@ -338,17 +338,23 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
 
             {/* Preview Actions */}
             <div className="space-y-4 border-t border-gray-800 p-4">
-              {/* Visibility Toggle */}
+              {/* Visibility Toggle - Only Pro users can make private */}
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-300">Visibility</label>
+                <div>
+                  <label className="text-sm font-medium text-gray-300">Visibility</label>
+                  {!usage?.isPro && (
+                    <p className="text-xs text-gray-500">Pro only: make content private</p>
+                  )}
+                </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-400">{isPublic ? 'Public' : 'Private'}</span>
                   <button
                     type="button"
-                    onClick={() => setIsPublic(!isPublic)}
+                    onClick={() => usage?.isPro && setIsPublic(!isPublic)}
+                    disabled={!usage?.isPro}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       isPublic ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gray-700'
-                    }`}
+                    } ${!usage?.isPro ? 'cursor-not-allowed opacity-50' : ''}`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${

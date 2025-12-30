@@ -998,14 +998,22 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleToggleInteractiveVisibility(
-                                  content.id,
-                                  content.is_public ?? false
-                                );
+                                if (isPro) {
+                                  handleToggleInteractiveVisibility(
+                                    content.id,
+                                    content.is_public ?? false
+                                  );
+                                }
                               }}
-                              disabled={updatingInteractiveVisibilityId === content.id}
-                              className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-700 disabled:opacity-50"
-                              title={content.is_public ? 'Public' : 'Private'}
+                              disabled={updatingInteractiveVisibilityId === content.id || !isPro}
+                              className={`rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-700 disabled:opacity-50 ${!isPro ? 'cursor-not-allowed' : ''}`}
+                              title={
+                                isPro
+                                  ? content.is_public
+                                    ? 'Public (tap to change)'
+                                    : 'Private (tap to change)'
+                                  : 'Pro only: change visibility'
+                              }
                             >
                               {updatingInteractiveVisibilityId === content.id ? (
                                 <Loader className="h-4 w-4 animate-spin" />
