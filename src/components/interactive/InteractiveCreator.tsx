@@ -12,8 +12,14 @@ import {
   X,
   ImagePlus,
   Trash2,
+  Pencil,
+  Sparkles,
 } from 'lucide-react';
-import { generateInteractiveContent, createInteractiveContent } from '../../lib/interactiveService';
+import {
+  generateInteractiveContent,
+  createInteractiveContent,
+  editInteractiveContentWithPrompt,
+} from '../../lib/interactiveService';
 import { getSubscriptionUsage, type SubscriptionUsage } from '../../lib/subscriptionService';
 import UsageBadge from '../UsageBadge';
 import UpgradeModal from '../UpgradeModal';
@@ -135,6 +141,11 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
   );
   const [showPreview, setShowPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Edit state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editPrompt, setEditPrompt] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     loadUsage();
@@ -295,6 +306,34 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
     }
   };
 
+  const handleEdit = async () => {
+    if (!editPrompt.trim() || !generatedContent?.html) return;
+
+    setIsEditing(true);
+    setError(null);
+    setProgress('Applying your changes...');
+
+    try {
+      const result = await editInteractiveContentWithPrompt(generatedContent.html, editPrompt);
+
+      setGeneratedContent({
+        ...generatedContent,
+        html: result.html,
+        title: result.title || generatedContent.title,
+        description: result.description || generatedContent.description,
+      });
+
+      setShowEditModal(false);
+      setEditPrompt('');
+      setProgress('Changes applied!');
+    } catch (err) {
+      console.error('Error editing content:', err);
+      setError(err instanceof Error ? err.message : 'Failed to edit. Please try again.');
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
   const currentTypeInfo = CONTENT_TYPES.find((t) => t.type === contentType);
 
   return (
@@ -386,7 +425,7 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
               <div className="flex gap-3">
                 <button
                   onClick={handleRegenerate}
-                  disabled={isSaving || isGenerating}
+                  disabled={isSaving || isGenerating || isEditing}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gray-800 py-3 font-semibold text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
                 >
                   {isGenerating ? (
@@ -402,8 +441,16 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
                   )}
                 </button>
                 <button
+                  onClick={() => setShowEditModal(true)}
+                  disabled={isSaving || isGenerating || isEditing}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gray-800 py-3 font-semibold text-blue-400 transition-colors hover:bg-gray-700 disabled:opacity-50"
+                >
+                  <Pencil className="h-5 w-5" />
+                  Edit
+                </button>
+                <button
                   onClick={handleSave}
-                  disabled={isSaving || isGenerating}
+                  disabled={isSaving || isGenerating || isEditing}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 font-semibold text-white transition-colors hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
                 >
                   {isSaving ? (
@@ -618,6 +665,66 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-400" />
+                <h3 className="text-xl font-bold text-white">Edit with AI</h3>
+              </div>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="mb-4 text-sm text-gray-400">
+              Describe the changes you want to make. The AI will modify the content while keeping
+              everything else intact.
+            </p>
+
+            <textarea
+              value={editPrompt}
+              onChange={(e) => setEditPrompt(e.target.value)}
+              placeholder="e.g., Change the colors to blue and green, add a restart button, make the text larger..."
+              className="mb-4 h-32 w-full resize-none rounded-xl border border-gray-700 bg-gray-800 p-4 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+              disabled={isEditing}
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowEditModal(false)}
+                disabled={isEditing}
+                className="flex-1 rounded-xl border border-gray-700 bg-gray-800 py-3 font-semibold text-gray-300 transition-colors hover:bg-gray-700 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEdit}
+                disabled={isEditing || !editPrompt.trim()}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {isEditing ? (
+                  <>
+                    <Loader className="h-5 w-5 animate-spin" />
+                    Editing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5" />
+                    Apply Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
