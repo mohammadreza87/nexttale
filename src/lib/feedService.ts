@@ -22,14 +22,25 @@ function shuffleArray<T>(array: T[]): T[] {
 export async function getUnifiedFeed(
   filter: FeedFilter = 'all',
   limit: number = 20,
-  offset: number = 0
+  offset: number = 0,
+  excludeIds: string[] = []
 ): Promise<{ data: FeedItem[]; hasMore: boolean }> {
+  const excludeSet = new Set(excludeIds);
+
+  // Helper to filter out excluded IDs
+  const filterExcluded = (items: FeedItem[]): FeedItem[] =>
+    items.filter((item) => !excludeSet.has(item.id));
+
   if (filter === 'story') {
-    return getStoriesFeed(limit, offset, true);
+    const result = await getStoriesFeed(limit + excludeIds.length, offset, true);
+    const filtered = filterExcluded(result.data);
+    return { data: filtered.slice(0, limit), hasMore: result.hasMore || filtered.length > limit };
   }
 
   if (filter === 'music') {
-    return getMusicFeed(limit, offset, true);
+    const result = await getMusicFeed(limit + excludeIds.length, offset, true);
+    const filtered = filterExcluded(result.data);
+    return { data: filtered.slice(0, limit), hasMore: result.hasMore || filtered.length > limit };
   }
 
   // Check if filter is an interactive content type
@@ -41,11 +52,18 @@ export async function getUnifiedFeed(
     'visualization',
   ];
   if (interactiveTypes.includes(filter as InteractiveContentType)) {
-    return getInteractiveFeed(filter as InteractiveContentType, limit, offset, true);
+    const result = await getInteractiveFeed(
+      filter as InteractiveContentType,
+      limit + excludeIds.length,
+      offset,
+      true
+    );
+    const filtered = filterExcluded(result.data);
+    return { data: filtered.slice(0, limit), hasMore: result.hasMore || filtered.length > limit };
   }
 
-  // Mixed feed - get more items and shuffle for variety
-  const fetchLimit = Math.ceil(limit * 1.5); // Fetch more for better randomization
+  // Mixed feed - get more items to account for exclusions and shuffle for variety
+  const fetchLimit = Math.ceil((limit + excludeIds.length) * 1.5);
   const thirdLimit = Math.ceil(fetchLimit / 3);
 
   const [storiesResult, interactiveResult, musicResult] = await Promise.all([
@@ -54,12 +72,10 @@ export async function getUnifiedFeed(
     getMusicFeed(thirdLimit, Math.floor(offset / 3), false),
   ]);
 
-  // Combine and shuffle for random order
-  const combined = shuffleArray([
-    ...storiesResult.data,
-    ...interactiveResult.data,
-    ...musicResult.data,
-  ]);
+  // Combine, filter excluded, and shuffle for random order
+  const combined = shuffleArray(
+    filterExcluded([...storiesResult.data, ...interactiveResult.data, ...musicResult.data])
+  );
 
   return {
     data: combined.slice(0, limit),

@@ -6,6 +6,7 @@ import {
   useWheelNavigation,
 } from '../../hooks/useSwipeGesture';
 import { getUnifiedFeed } from '../../lib/feedService';
+import { getSeenContentIds, markContentAsSeen } from '../../lib/seenContentTracker';
 // import { FeedFilters } from './FeedFilters'; // Temporarily disabled
 import { StoryFeedCard } from './StoryFeedCard';
 import { InteractiveFeedCard } from './InteractiveFeedCard';
@@ -46,13 +47,28 @@ export function TikTokFeed({
       }
 
       try {
-        const result = await getUnifiedFeed(filter, 10, reset ? 0 : items.length);
+        // Get seen content IDs to exclude (only for fresh loads, not when loading more)
+        const seenIds = reset ? getSeenContentIds() : [];
+        // Also exclude items already in the current feed
+        const currentIds = reset ? [] : items.map((item) => item.id);
+        const excludeIds = [...seenIds, ...currentIds];
+
+        const result = await getUnifiedFeed(filter, 10, reset ? 0 : items.length, excludeIds);
 
         if (reset) {
           setItems(result.data);
         } else {
-          setItems((prev) => [...prev, ...result.data]);
+          // Filter out any duplicates that might have slipped through
+          const existingIds = new Set(items.map((item) => item.id));
+          const newItems = result.data.filter((item) => !existingIds.has(item.id));
+          setItems((prev) => [...prev, ...newItems]);
         }
+
+        // Mark newly loaded items as seen
+        if (result.data.length > 0) {
+          markContentAsSeen(result.data.map((item) => item.id));
+        }
+
         setHasMore(result.hasMore);
       } catch (error) {
         console.error('Error loading feed:', error);
@@ -61,7 +77,7 @@ export function TikTokFeed({
         setLoadingMore(false);
       }
     },
-    [filter, items.length]
+    [filter, items]
   );
 
   // Initial load and filter change
