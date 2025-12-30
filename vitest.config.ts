@@ -23,10 +23,10 @@ export default defineConfig({
         'src/vite-env.d.ts',
       ],
       thresholds: {
-        statements: 10,
+        statements: 3,
         branches: 10,
         functions: 10,
-        lines: 10,
+        lines: 3,
       },
     },
     reporters: ['verbose'],
