@@ -8,7 +8,7 @@
  * - Image context management
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // Mock supabase before importing storyMemoryService
 vi.mock('./supabase', () => ({
@@ -30,8 +30,8 @@ vi.mock('./supabase', () => ({
 import type {
   StoryOutline,
   StoryMemory,
-  StoryCharacter,
-  ChapterOutline,
+  StoryCharacter as _StoryCharacter,
+  ChapterOutline as _ChapterOutline,
   ImageContext,
 } from './types';
 import {
@@ -244,7 +244,9 @@ describe('Story Memory Service', () => {
       const updated = resolveThread(memory, 'lost_puppy', 3);
 
       expect(updated.resolvedThreads[0].id).toBe('lost_puppy');
-      expect(updated.resolvedThreads[0].description).toBe('Luna is searching for her lost puppy Max');
+      expect(updated.resolvedThreads[0].description).toBe(
+        'Luna is searching for her lost puppy Max'
+      );
     });
 
     it('should return unchanged memory if thread not found', () => {
@@ -443,7 +445,10 @@ describe('Story Memory Service', () => {
     it('should format character descriptions for image generation', () => {
       const imageContext: ImageContext = {
         characterAppearances: [
-          { name: 'Luna', fullDescription: 'Luna: 8 years old, curly brown hair, wearing red hoodie' },
+          {
+            name: 'Luna',
+            fullDescription: 'Luna: 8 years old, curly brown hair, wearing red hoodie',
+          },
         ],
         settingDescription: 'Enchanted Forest',
         artStyle: 'fantasy',

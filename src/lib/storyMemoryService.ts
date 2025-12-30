@@ -12,8 +12,8 @@ import { supabase } from './supabase';
 import type {
   StoryOutline,
   StoryMemory,
-  StoryCharacter,
-  ChapterOutline,
+  StoryCharacter as _StoryCharacter,
+  ChapterOutline as _ChapterOutline,
   ImageContext,
 } from './types';
 
@@ -41,10 +41,7 @@ export async function getStoryOutline(storyId: string): Promise<StoryOutline | n
 /**
  * Save or update the story outline
  */
-export async function saveStoryOutline(
-  storyId: string,
-  outline: StoryOutline
-): Promise<void> {
+export async function saveStoryOutline(storyId: string, outline: StoryOutline): Promise<void> {
   const { error } = await supabase
     .from('stories')
     .update({ story_outline: outline })
@@ -80,10 +77,7 @@ export async function getStoryMemory(storyId: string): Promise<StoryMemory | nul
 /**
  * Save or update the story memory
  */
-export async function saveStoryMemory(
-  storyId: string,
-  memory: StoryMemory
-): Promise<void> {
+export async function saveStoryMemory(storyId: string, memory: StoryMemory): Promise<void> {
   const { error } = await supabase
     .from('stories')
     .update({ story_memory: memory })
@@ -104,7 +98,7 @@ export function initializeMemoryFromOutline(outline: StoryOutline): StoryMemory 
     characters: outline.characters,
     keyEvents: [],
     currentConflict: outline.chapters[0]?.conflict || '',
-    unresolvedThreads: outline.plotThreads.map(pt => ({
+    unresolvedThreads: outline.plotThreads.map((pt) => ({
       id: pt.id,
       description: pt.description,
       introducedInChapter: pt.introducedInChapter,
@@ -136,10 +130,7 @@ export async function saveChapterSummary(
     updateData.character_states = characterStates;
   }
 
-  const { error } = await supabase
-    .from('story_nodes')
-    .update(updateData)
-    .eq('id', nodeId);
+  const { error } = await supabase.from('story_nodes').update(updateData).eq('id', nodeId);
 
   if (error) {
     console.error('Error saving chapter summary:', error);
@@ -165,7 +156,7 @@ export async function getChapterSummaries(
     return [];
   }
 
-  return (data || []).map(node => ({
+  return (data || []).map((node) => ({
     nodeId: node.id,
     nodeKey: node.node_key,
     summary: node.chapter_summary || '',
@@ -186,7 +177,7 @@ export function buildImageContext(
   previousPrompts: string[] = []
 ): ImageContext {
   return {
-    characterAppearances: memory.characters.map(char => ({
+    characterAppearances: memory.characters.map((char) => ({
       name: char.name,
       fullDescription: `${char.name}: ${char.age ? char.age + ', ' : ''}${char.appearance}, wearing ${char.clothing}`,
     })),
@@ -202,10 +193,7 @@ export function buildImageContext(
 /**
  * Save image context to a story node
  */
-export async function saveImageContext(
-  nodeId: string,
-  imageContext: ImageContext
-): Promise<void> {
+export async function saveImageContext(nodeId: string, imageContext: ImageContext): Promise<void> {
   const { error } = await supabase
     .from('story_nodes')
     .update({ image_context: imageContext })
@@ -237,10 +225,7 @@ export async function getImageContext(nodeId: string): Promise<ImageContext | nu
 /**
  * Get the last N image prompts used for a story
  */
-export async function getRecentImagePrompts(
-  storyId: string,
-  limit: number = 3
-): Promise<string[]> {
+export async function getRecentImagePrompts(storyId: string, limit: number = 3): Promise<string[]> {
   const { data, error } = await supabase
     .from('story_nodes')
     .select('image_prompt')
@@ -255,7 +240,7 @@ export async function getRecentImagePrompts(
   }
 
   return (data || [])
-    .map(node => node.image_prompt)
+    .map((node) => node.image_prompt)
     .filter((prompt): prompt is string => !!prompt)
     .reverse();
 }
@@ -276,19 +261,17 @@ export function buildStoryContext(
 
   // Get key events summary
   const recentEvents = memory.keyEvents
-    .filter(e => e.importance !== 'minor')
+    .filter((e) => e.importance !== 'minor')
     .slice(-5)
-    .map(e => `Ch${e.chapter}: ${e.event}`)
+    .map((e) => `Ch${e.chapter}: ${e.event}`)
     .join('; ');
 
   // Get unresolved threads
-  const unresolvedList = memory.unresolvedThreads
-    .map(t => t.description)
-    .join('; ');
+  const unresolvedList = memory.unresolvedThreads.map((t) => t.description).join('; ');
 
   // Build character context
   const characterContext = memory.characters
-    .map(c => `${c.name} (${c.role}): ${c.appearance}, ${c.clothing}`)
+    .map((c) => `${c.name} (${c.role}): ${c.appearance}, ${c.clothing}`)
     .join('\n');
 
   return `
@@ -316,11 +299,9 @@ Must reference: ${chapterOutline?.mustReference?.join(', ') || 'Previous events'
 /**
  * Build image prompt context for consistent visuals
  */
-export function buildImagePromptContext(
-  imageContext: ImageContext
-): string {
+export function buildImagePromptContext(imageContext: ImageContext): string {
   const characterDescriptions = imageContext.characterAppearances
-    .map(c => `- ${c.fullDescription}`)
+    .map((c) => `- ${c.fullDescription}`)
     .join('\n');
 
   return `
@@ -331,9 +312,11 @@ SETTING: ${imageContext.settingDescription}
 
 CONSISTENT ELEMENTS: ${imageContext.consistentElements.join(', ')}
 
-${imageContext.previousImagePrompts.length > 0
-  ? `STYLE REFERENCE (match these): ${imageContext.previousImagePrompts.slice(-2).join('; ')}`
-  : ''}
+${
+  imageContext.previousImagePrompts.length > 0
+    ? `STYLE REFERENCE (match these): ${imageContext.previousImagePrompts.slice(-2).join('; ')}`
+    : ''
+}
 
 CURRENT SCENE: ${imageContext.currentSceneDescription}
 `.trim();
@@ -366,26 +349,20 @@ export function resolveThread(
   threadId: string,
   resolvedInChapter: number
 ): StoryMemory {
-  const thread = memory.unresolvedThreads.find(t => t.id === threadId);
+  const thread = memory.unresolvedThreads.find((t) => t.id === threadId);
   if (!thread) return memory;
 
   return {
     ...memory,
-    unresolvedThreads: memory.unresolvedThreads.filter(t => t.id !== threadId),
-    resolvedThreads: [
-      ...memory.resolvedThreads,
-      { ...thread, resolvedInChapter },
-    ],
+    unresolvedThreads: memory.unresolvedThreads.filter((t) => t.id !== threadId),
+    resolvedThreads: [...memory.resolvedThreads, { ...thread, resolvedInChapter }],
   };
 }
 
 /**
  * Update current location
  */
-export function updateLocation(
-  memory: StoryMemory,
-  newLocation: string
-): StoryMemory {
+export function updateLocation(memory: StoryMemory, newLocation: string): StoryMemory {
   return {
     ...memory,
     setting: {
@@ -401,10 +378,7 @@ export function updateLocation(
 /**
  * Update current conflict
  */
-export function updateConflict(
-  memory: StoryMemory,
-  newConflict: string
-): StoryMemory {
+export function updateConflict(memory: StoryMemory, newConflict: string): StoryMemory {
   return {
     ...memory,
     currentConflict: newConflict,

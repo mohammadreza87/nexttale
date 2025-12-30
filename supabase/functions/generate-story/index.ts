@@ -1,20 +1,20 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 import {
-  StoryOutline,
-  StoryMemory,
+  type StoryOutline,
+  type StoryMemory,
   initializeMemoryFromOutline,
   buildStoryContextPrompt,
   updateMemory,
-} from "../_shared/storyTypes.ts";
+} from '../_shared/storyTypes.ts';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
 
-const DEFAULT_GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash-lite";
+const DEFAULT_GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') || 'gemini-2.5-flash-lite';
 const MAX_RETRIES = 1;
 
 async function callGemini(
@@ -24,7 +24,7 @@ async function callGemini(
     model = DEFAULT_GEMINI_MODEL,
     temperature = 0.6,
     maxOutputTokens = 1024,
-    responseMimeType = "text/plain",
+    responseMimeType = 'text/plain',
   }: {
     model?: string;
     temperature?: number;
@@ -35,14 +35,14 @@ async function callGemini(
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const response = await fetch(url, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       contents: [
         {
-          role: "user",
+          role: 'user',
           parts: [{ text: prompt }],
         },
       ],
@@ -60,27 +60,30 @@ async function callGemini(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Gemini API error:", errorText);
+    console.error('Gemini API error:', errorText);
     throw new Error(`Gemini request failed with status ${response.status}`);
   }
 
   const data = await response.json();
 
   // Log the response structure for debugging
-  console.log("[callGemini] Response candidates:", data?.candidates?.length || 0);
+  console.log('[callGemini] Response candidates:', data?.candidates?.length || 0);
 
   const text =
     data?.candidates?.[0]?.content?.parts
-      ?.map((part: any) => part?.text || "")
-      .join("")
-      .trim() || "";
+      ?.map((part: any) => part?.text || '')
+      .join('')
+      .trim() || '';
 
   if (!text) {
-    console.error("[callGemini] No text found in response:", JSON.stringify(data, null, 2).slice(0, 500));
-    throw new Error("Gemini returned no content");
+    console.error(
+      '[callGemini] No text found in response:',
+      JSON.stringify(data, null, 2).slice(0, 500)
+    );
+    throw new Error('Gemini returned no content');
   }
 
-  console.log("[callGemini] Text response length:", text.length);
+  console.log('[callGemini] Text response length:', text.length);
   return text;
 }
 
@@ -115,7 +118,11 @@ interface GeneratedStory {
   };
 }
 
-async function detectLanguageWithLLM(text: string | undefined, geminiApiKey: string, fallback: string = 'en'): Promise<string> {
+async function detectLanguageWithLLM(
+  text: string | undefined,
+  geminiApiKey: string,
+  fallback: string = 'en'
+): Promise<string> {
   if (!text || !text.trim()) return fallback;
   try {
     const content = await callGemini(
@@ -128,7 +135,7 @@ async function detectLanguageWithLLM(text: string | undefined, geminiApiKey: str
     if (/^[a-z]{2}$/.test(code)) return code;
     return fallback;
   } catch (err) {
-    console.warn("Language detect error, falling back", err);
+    console.warn('Language detect error, falling back', err);
     return fallback;
   }
 }
@@ -187,7 +194,10 @@ function parseJsonSafe(raw: string, label: string): any {
       console.log(`[parseJsonSafe] Regex match parse succeeded for ${label}`);
       return result;
     } catch (err2) {
-      console.log(`[parseJsonSafe] Regex match parse failed for ${label}:`, (err2 as Error).message);
+      console.log(
+        `[parseJsonSafe] Regex match parse failed for ${label}:`,
+        (err2 as Error).message
+      );
     }
   }
 
@@ -235,20 +245,24 @@ function parseJsonSafe(raw: string, label: string): any {
         console.log(`[parseJsonSafe] Brace extraction parse succeeded for ${label}`);
         return result;
       } catch (err3) {
-        console.log(`[parseJsonSafe] Brace extraction parse failed for ${label}:`, (err3 as Error).message);
+        console.log(
+          `[parseJsonSafe] Brace extraction parse failed for ${label}:`,
+          (err3 as Error).message
+        );
 
         // Attempt 4: Try fixing common issues and parse again
         try {
           const fixed = extracted
-            .replace(/,\s*([}\]])/g, '$1')  // Remove trailing commas
-            .replace(/[\x00-\x1F\x7F]/g, (match) => {
+            .replace(/,\s*([}\]])/g, '$1') // Remove trailing commas
+            // eslint-disable-next-line no-control-regex
+            .replace(/[\x00-\x1f\x7f]/g, (match) => {
               // Keep valid whitespace, replace others with space
               if (match === '\n' || match === '\r' || match === '\t') return match;
               return ' ';
             })
-            .replace(/"\s*\n\s*"/g, '" "')  // Fix broken strings across lines
-            .replace(/([^\\])"/g, '$1"')  // Normalize quotes
-            .replace(/\\'/g, "'");  // Unescape single quotes
+            .replace(/"\s*\n\s*"/g, '" "') // Fix broken strings across lines
+            .replace(/([^\\])"/g, '$1"') // Normalize quotes
+            .replace(/\\'/g, "'"); // Unescape single quotes
           const result = JSON.parse(fixed);
           console.log(`[parseJsonSafe] Fixed parse succeeded for ${label}`);
           return result;
@@ -271,16 +285,20 @@ function parseJsonSafe(raw: string, label: string): any {
         .replace(/```json/gi, '')
         .replace(/```/g, '')
         .replace(/,\s*([}\]])/g, '$1')
-        .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3')  // Quote unquoted keys
-        .replace(/:\s*'([^']*)'/g, ': "$1"')  // Replace single quotes with double quotes
-        .replace(/[\x00-\x1F\x7F]/g, ' ')  // Remove all control characters
+        .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3') // Quote unquoted keys
+        .replace(/:\s*'([^']*)'/g, ': "$1"') // Replace single quotes with double quotes
+        // eslint-disable-next-line no-control-regex
+        .replace(/[\x00-\x1f\x7f]/g, ' ') // Remove all control characters
         .trim();
       const result = JSON.parse(aggressiveCleaned);
       console.log(`[parseJsonSafe] Aggressive cleanup parse succeeded for ${label}`);
       return result;
     }
   } catch (err5) {
-    console.log(`[parseJsonSafe] Aggressive cleanup parse failed for ${label}:`, (err5 as Error).message);
+    console.log(
+      `[parseJsonSafe] Aggressive cleanup parse failed for ${label}:`,
+      (err5 as Error).message
+    );
   }
 
   // Log the raw content for debugging
@@ -379,38 +397,39 @@ CRITICAL: Return ONLY the JSON object. No explanations, no markdown code blocks.
         {
           temperature: attempt === 0 ? 0.6 : 0.4,
           maxOutputTokens: 4096,
-          responseMimeType: "application/json",
+          responseMimeType: 'application/json',
         }
       );
 
       console.log(`[generateStoryOutline] Raw response length: ${outlineText.length}`);
-      console.log(`[generateStoryOutline] Raw response (first 1000 chars): ${outlineText.slice(0, 1000)}`);
+      console.log(
+        `[generateStoryOutline] Raw response (first 1000 chars): ${outlineText.slice(0, 1000)}`
+      );
 
       const parsed = parseJsonSafe(outlineText, 'outline');
 
       // Validate the parsed data has required fields
       if (!parsed.outline || !parsed.title) {
-        throw new Error("Parsed outline missing required fields (outline or title)");
+        throw new Error('Parsed outline missing required fields (outline or title)');
       }
 
       return {
         outline: parsed.outline,
         title: parsed.title,
-        description: parsed.description || "An exciting adventure awaits!",
+        description: parsed.description || 'An exciting adventure awaits!',
       };
-
     } catch (error) {
       console.error(`[generateStoryOutline] Attempt ${attempt + 1} failed:`, error);
       lastError = error instanceof Error ? error : new Error(String(error));
 
       if (attempt < maxRetries) {
         // Wait before retry (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
       }
     }
   }
 
-  throw lastError || new Error("Failed to generate story outline after retries");
+  throw lastError || new Error('Failed to generate story outline after retries');
 }
 
 /**
@@ -457,7 +476,7 @@ Return ONLY valid JSON:
       {
         temperature: attempt === 0 ? 0.5 : 0.35,
         maxOutputTokens: 4096,
-        responseMimeType: "application/json",
+        responseMimeType: 'application/json',
       }
     );
 
@@ -469,7 +488,7 @@ Return ONLY valid JSON:
     }
 
     if (attempt === MAX_RETRIES) {
-      throw new Error("Failed to generate a valid first chapter (choices/summary missing)");
+      throw new Error('Failed to generate a valid first chapter (choices/summary missing)');
     }
   }
 
@@ -488,10 +507,10 @@ function buildContinuationContext(
 ): string {
   const recentEvents = memory.keyEvents
     .slice(-3)
-    .map(e => `Ch${e.chapter}: ${e.event}`)
+    .map((e) => `Ch${e.chapter}: ${e.event}`)
     .join('; ');
 
-  const unresolved = memory.unresolvedThreads.map(t => t.description).join('; ');
+  const unresolved = memory.unresolvedThreads.map((t) => t.description).join('; ');
   const chapterOutline = outline.chapters[targetChapter - 1];
 
   return `
@@ -525,7 +544,13 @@ async function generateContinuationChapter(
 ): Promise<GeneratedStory> {
   const targetChapter = chapterCount + 1;
   const contextPrompt = buildStoryContextPrompt(memory, outline, targetChapter);
-  const continuityContext = buildContinuationContext(outline, memory, userChoice, previousContent, targetChapter);
+  const continuityContext = buildContinuationContext(
+    outline,
+    memory,
+    userChoice,
+    previousContent,
+    targetChapter
+  );
 
   const shouldEnd = targetChapter >= outline.totalChapters;
   const isNearEnd = targetChapter >= outline.totalChapters - 1;
@@ -535,13 +560,19 @@ async function generateContinuationChapter(
 ${contextPrompt}
 ${continuityContext}
 
-${shouldEnd ? `THIS IS THE FINAL CHAPTER. You MUST:
+${
+  shouldEnd
+    ? `THIS IS THE FINAL CHAPTER. You MUST:
 - Resolve the main conflict: ${memory.currentConflict}
 - Wrap up all unresolved threads with meaningful conclusions
 - Deliver a satisfying ending that reflects the reader's choices
 - The ending can be happy, bittersweet, tragic, or ambiguous based on the story
 - Set isEnding=true and endingType appropriately
-- Return empty choices array` : isNearEnd ? `This is near the end. Build toward the climax and start resolving major threads.` : `Continue building tension and developing the story toward its climax.`}
+- Return empty choices array`
+    : isNearEnd
+      ? `This is near the end. Build toward the climax and start resolving major threads.`
+      : `Continue building tension and developing the story toward its climax.`
+}
 
 CRITICAL RULES:
 1. Characters must MATCH their established appearances and personalities EXACTLY
@@ -576,7 +607,7 @@ Return ONLY valid JSON:
       {
         temperature: attempt === 0 ? 0.55 : 0.4,
         maxOutputTokens: 4096,
-        responseMimeType: "application/json",
+        responseMimeType: 'application/json',
       }
     );
 
@@ -585,11 +616,11 @@ Return ONLY valid JSON:
     // Enforce endings and choices
     if (shouldEnd) {
       parsed.isEnding = true;
-      parsed.endingType = parsed.endingType || "happy";
+      parsed.endingType = parsed.endingType || 'happy';
       parsed.choices = [];
     } else if (!parsed.isEnding && (!parsed.choices || parsed.choices.length < 2)) {
       if (attempt === MAX_RETRIES) {
-        throw new Error("Non-ending chapter must have at least 2 choices");
+        throw new Error('Non-ending chapter must have at least 2 choices');
       }
       continue;
     }
@@ -600,20 +631,20 @@ Return ONLY valid JSON:
   // Enforce ending if we're at max chapters
   if (targetChapter >= outline.totalChapters && !parsed.isEnding) {
     parsed.isEnding = true;
-    parsed.endingType = parsed.endingType || "happy";
+    parsed.endingType = parsed.endingType || 'happy';
     parsed.choices = [];
   }
 
   // Ensure non-ending chapters have choices
   if (!parsed.isEnding && (!parsed.choices || parsed.choices.length < 2)) {
-    throw new Error("Non-ending chapter must have at least 2 choices");
+    throw new Error('Non-ending chapter must have at least 2 choices');
   }
 
   return parsed;
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 200,
       headers: corsHeaders,
@@ -621,27 +652,30 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
+    const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "No authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: 'No authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized", details: userError?.message }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: 'Unauthorized', details: userError?.message }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const {
@@ -660,45 +694,50 @@ Deno.serve(async (req: Request) => {
     // Check usage limits for full story generation
     if (generateFullStory) {
       const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("subscription_tier, is_grandfathered, stories_generated_today, last_generation_date")
-        .eq("id", user.id)
+        .from('user_profiles')
+        .select(
+          'subscription_tier, is_grandfathered, stories_generated_today, last_generation_date'
+        )
+        .eq('id', user.id)
         .maybeSingle();
 
       if (profile) {
-        const hasPro = profile.subscription_tier === "pro" || profile.is_grandfathered;
+        const hasPro = profile.subscription_tier === 'pro' || profile.is_grandfathered;
         if (!hasPro) {
           const today = new Date().toISOString().split('T')[0];
-          const todayCount = profile.last_generation_date === today ? profile.stories_generated_today : 0;
+          const todayCount =
+            profile.last_generation_date === today ? profile.stories_generated_today : 0;
           if (todayCount >= 2) {
             return new Response(
               JSON.stringify({
-                error: "daily_limit_reached",
-                message: "You've reached your daily limit of 2 stories. Upgrade to Pro for unlimited stories!",
+                error: 'daily_limit_reached',
+                message:
+                  "You've reached your daily limit of 2 stories. Upgrade to Pro for unlimited stories!",
               }),
-              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+              { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
         }
       }
     }
 
-    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     if (!geminiApiKey) {
-      return new Response(
-        JSON.stringify({ error: "Gemini API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: 'Gemini API key not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // ============================================
     // FULL STORY GENERATION (with outline)
     // ============================================
     if (generateFullStory && userPrompt) {
-      console.log("Generating full story with outline for:", userPrompt);
+      console.log('Generating full story with outline for:', userPrompt);
 
       // Generate the complete story outline
-      const detectedLanguage = language ?? await detectLanguageWithLLM(userPrompt, geminiApiKey, 'en');
+      const detectedLanguage =
+        language ?? (await detectLanguageWithLLM(userPrompt, geminiApiKey, 'en'));
       const { outline, title, description } = await generateStoryOutline(
         userPrompt,
         geminiApiKey,
@@ -709,40 +748,47 @@ Deno.serve(async (req: Request) => {
       const initialMemory = initializeMemoryFromOutline(outline);
 
       // Generate first chapter using outline
-      const firstChapter = await generateFirstChapter(outline, initialMemory, geminiApiKey, detectedLanguage);
+      const firstChapter = await generateFirstChapter(
+        outline,
+        initialMemory,
+        geminiApiKey,
+        detectedLanguage
+      );
 
       // Validate choices
       if (!firstChapter.choices || firstChapter.choices.length < 2) {
-        throw new Error("First chapter must have at least 2 choices");
+        throw new Error('First chapter must have at least 2 choices');
       }
 
       // Update usage counter
       const today = new Date().toISOString().split('T')[0];
       const { data: currentProfile } = await supabase
-        .from("user_profiles")
-        .select("last_generation_date, stories_generated_today, total_stories_generated")
-        .eq("id", user.id)
+        .from('user_profiles')
+        .select('last_generation_date, stories_generated_today, total_stories_generated')
+        .eq('id', user.id)
         .maybeSingle();
 
       const isNewDay = currentProfile?.last_generation_date !== today;
       await supabase
-        .from("user_profiles")
+        .from('user_profiles')
         .update({
-          stories_generated_today: isNewDay ? 1 : (currentProfile?.stories_generated_today || 0) + 1,
+          stories_generated_today: isNewDay
+            ? 1
+            : (currentProfile?.stories_generated_today || 0) + 1,
           last_generation_date: today,
           total_stories_generated: (currentProfile?.total_stories_generated || 0) + 1,
         })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       // Create style guide for images
       const styleGuide = {
-        characters: outline.characters.map(c => ({
+        characters: outline.characters.map((c) => ({
           name: c.name,
           description: `${c.appearance}, wearing ${c.clothing}`,
         })),
-        artStyle: "Cinematic, photorealistic, dramatic lighting",
-        genre: (outline as any).genre || "drama",
-        tone: (outline as any).tone || "atmospheric",
+        artStyle: 'Cinematic, photorealistic, dramatic lighting',
+        genre: (outline as any).genre || 'drama',
+        tone: (outline as any).tone || 'atmospheric',
         setting: outline.setting.location,
         colorPalette: outline.setting.consistentElements,
         atmosphere: outline.setting.atmosphere,
@@ -751,7 +797,7 @@ Deno.serve(async (req: Request) => {
       const response: FullStoryData = {
         title,
         description,
-        ageRange: "18+",
+        ageRange: '18+',
         estimatedDuration: outline.totalChapters * 4,
         storyContext: outline.premise,
         startContent: firstChapter.content,
@@ -762,37 +808,38 @@ Deno.serve(async (req: Request) => {
         initialMemory: {
           ...initialMemory,
           currentChapter: 1,
-          keyEvents: [{
-            chapter: 1,
-            event: firstChapter.chapterSummary,
-            importance: 'major',
-          }],
+          keyEvents: [
+            {
+              chapter: 1,
+              event: firstChapter.chapterSummary,
+              importance: 'major',
+            },
+          ],
         },
         chapterSummary: firstChapter.chapterSummary,
       };
 
-      return new Response(
-        JSON.stringify(response),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // ============================================
     // CONTINUATION GENERATION (with memory)
     // ============================================
     if (storyId && useMemory && userChoice) {
-      console.log("Generating continuation with memory for story:", storyId);
+      console.log('Generating continuation with memory for story:', storyId);
 
       // Fetch story with outline and memory
       const { data: story } = await supabase
-        .from("stories")
-        .select("story_outline, story_memory, title, language")
-        .eq("id", storyId)
+        .from('stories')
+        .select('story_outline, story_memory, title, language')
+        .eq('id', storyId)
         .single();
 
       if (!story?.story_outline || !story?.story_memory) {
         // Fall back to legacy generation if no memory
-        console.log("No memory found, falling back to legacy generation");
+        console.log('No memory found, falling back to legacy generation');
       } else {
         const outline = story.story_outline as StoryOutline;
         const memory = story.story_memory as StoryMemory;
@@ -802,7 +849,7 @@ Deno.serve(async (req: Request) => {
           outline,
           memory,
           userChoice,
-          previousContent || "",
+          previousContent || '',
           chapterCount || memory.currentChapter,
           geminiApiKey,
           storyLanguage
@@ -825,15 +872,11 @@ Deno.serve(async (req: Request) => {
         }
 
         // Save updated memory to database
-        await supabase
-          .from("stories")
-          .update({ story_memory: updatedMemory })
-          .eq("id", storyId);
+        await supabase.from('stories').update({ story_memory: updatedMemory }).eq('id', storyId);
 
-        return new Response(
-          JSON.stringify(result),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     }
 
@@ -841,10 +884,10 @@ Deno.serve(async (req: Request) => {
     // LEGACY GENERATION (backward compatibility)
     // ============================================
     if (!storyContext && !userPrompt) {
-      return new Response(
-        JSON.stringify({ error: "Story context or user prompt is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: 'Story context or user prompt is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const currentChapter = chapterCount || 0;
@@ -854,7 +897,13 @@ Deno.serve(async (req: Request) => {
     const mustEnd = currentChapter >= maximumChapters;
     const shouldEncourageEnding = currentChapter >= 5;
 
-    const detectedLanguage = language ?? await detectLanguageWithLLM(userPrompt || storyContext || previousContent, geminiApiKey, 'en');
+    const detectedLanguage =
+      language ??
+      (await detectLanguageWithLLM(
+        userPrompt || storyContext || previousContent,
+        geminiApiKey,
+        'en'
+      ));
 
     const systemPrompt = `Adult fiction writer for immersive interactive stories (18+). Write ONLY in language: ${detectedLanguage}.
 
@@ -878,8 +927,8 @@ Return ONLY JSON:
 
     let actualUserPrompt;
     if (userChoice && previousContent) {
-      const trimmedPrevious = (previousContent || "").slice(-1200);
-      actualUserPrompt = `Title: ${storyTitle || "Adventure"}
+      const trimmedPrevious = (previousContent || '').slice(-1200);
+      actualUserPrompt = `Title: ${storyTitle || 'Adventure'}
 
 Previous (trimmed):
 ${trimmedPrevious}
@@ -888,46 +937,40 @@ Chosen: "${userChoice}"
 
 Continue ONLY in language: ${detectedLanguage}.`;
     } else {
-      const trimmedContext = (storyContext || "").slice(0, 1200);
+      const trimmedContext = (storyContext || '').slice(0, 1200);
       actualUserPrompt = `Theme: ${trimmedContext}
 
 Create opening with 2-3 choices in language: ${detectedLanguage}.`;
     }
 
-    const content = await callGemini(
-      `${systemPrompt}\n\n${actualUserPrompt}`,
-      geminiApiKey,
-      {
-        temperature: 0.55,
-        maxOutputTokens: 4096,
-        responseMimeType: "application/json",
-      }
-    );
+    const content = await callGemini(`${systemPrompt}\n\n${actualUserPrompt}`, geminiApiKey, {
+      temperature: 0.55,
+      maxOutputTokens: 4096,
+      responseMimeType: 'application/json',
+    });
 
     const storyData = parseJsonSafe(content, 'legacy story');
 
     // Force ending at max chapters
     if (mustEnd && !storyData.isEnding) {
       storyData.isEnding = true;
-      storyData.endingType = storyData.endingType || "happy";
+      storyData.endingType = storyData.endingType || 'happy';
       storyData.choices = [];
     }
 
     // Validate non-ending has choices
     if (!storyData.isEnding && (!storyData.choices || storyData.choices.length < 2)) {
-      throw new Error("Non-ending story must have at least 2 choices");
+      throw new Error('Non-ending story must have at least 2 choices');
     }
 
-    return new Response(
-      JSON.stringify(storyData),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
+    return new Response(JSON.stringify(storyData), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

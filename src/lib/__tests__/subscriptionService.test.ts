@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as subscriptionService from '../subscriptionService';
 
-var profileResult: any = null;
-var profileError: any = null;
+let profileResult: unknown = null;
+let profileError: unknown = null;
 
-var maybeSingleMock: ReturnType<typeof vi.fn>;
-var eqMock: ReturnType<typeof vi.fn>;
-var selectMock: ReturnType<typeof vi.fn>;
-var fromMock: ReturnType<typeof vi.fn>;
+let maybeSingleMock: ReturnType<typeof vi.fn>;
+let eqMock: ReturnType<typeof vi.fn>;
+let selectMock: ReturnType<typeof vi.fn>;
+let fromMock: ReturnType<typeof vi.fn>;
 
 vi.mock('../supabase', () => {
   maybeSingleMock = vi.fn(async () => ({ data: profileResult, error: profileError }));

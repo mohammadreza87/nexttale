@@ -149,7 +149,7 @@ export function initializeMemoryFromOutline(outline: StoryOutline): StoryMemory 
     characters: outline.characters,
     keyEvents: [],
     currentConflict: outline.chapters[0]?.conflict || '',
-    unresolvedThreads: outline.plotThreads.map(pt => ({
+    unresolvedThreads: outline.plotThreads.map((pt) => ({
       id: pt.id,
       description: pt.description,
       introducedInChapter: pt.introducedInChapter,
@@ -172,17 +172,15 @@ export function buildStoryContextPrompt(
   const chapterOutline = outline.chapters[targetChapter - 1];
 
   const recentEvents = memory.keyEvents
-    .filter(e => e.importance !== 'minor')
+    .filter((e) => e.importance !== 'minor')
     .slice(-5)
-    .map(e => `Ch${e.chapter}: ${e.event}`)
+    .map((e) => `Ch${e.chapter}: ${e.event}`)
     .join('; ');
 
-  const unresolvedList = memory.unresolvedThreads
-    .map(t => t.description)
-    .join('; ');
+  const unresolvedList = memory.unresolvedThreads.map((t) => t.description).join('; ');
 
   const characterContext = memory.characters
-    .map(c => `${c.name} (${c.role}): ${c.appearance}, wearing ${c.clothing}`)
+    .map((c) => `${c.name} (${c.role}): ${c.appearance}, wearing ${c.clothing}`)
     .join('\n');
 
   return `
@@ -210,7 +208,7 @@ End state: ${chapterOutline?.endState || 'Lead to next chapter'}
 
 export function buildImageContextPrompt(imageContext: ImageContext): string {
   const characterDescriptions = imageContext.characterAppearances
-    .map(c => `- ${c.fullDescription}`)
+    .map((c) => `- ${c.fullDescription}`)
     .join('\n');
 
   return `
@@ -221,9 +219,11 @@ SETTING: ${imageContext.settingDescription}
 
 CONSISTENT ELEMENTS: ${imageContext.consistentElements.join(', ')}
 
-${imageContext.previousImagePrompts.length > 0
+${
+  imageContext.previousImagePrompts.length > 0
     ? `STYLE REFERENCE (match these): ${imageContext.previousImagePrompts.slice(-2).join('; ')}`
-    : ''}
+    : ''
+}
 
 CURRENT SCENE: ${imageContext.currentSceneDescription}
 `.trim();
@@ -239,20 +239,20 @@ export function updateMemory(
   },
   chapterNumber: number
 ): StoryMemory {
-  let updated = { ...memory, currentChapter: chapterNumber };
+  const updated = { ...memory, currentChapter: chapterNumber };
 
   if (updates.keyEvents) {
     updated.keyEvents = [
       ...updated.keyEvents,
-      ...updates.keyEvents.map(e => ({ ...e, chapter: chapterNumber })),
+      ...updates.keyEvents.map((e) => ({ ...e, chapter: chapterNumber })),
     ];
   }
 
   if (updates.resolvedThreads) {
     for (const threadId of updates.resolvedThreads) {
-      const thread = updated.unresolvedThreads.find(t => t.id === threadId);
+      const thread = updated.unresolvedThreads.find((t) => t.id === threadId);
       if (thread) {
-        updated.unresolvedThreads = updated.unresolvedThreads.filter(t => t.id !== threadId);
+        updated.unresolvedThreads = updated.unresolvedThreads.filter((t) => t.id !== threadId);
         updated.resolvedThreads = [
           ...updated.resolvedThreads,
           { ...thread, resolvedInChapter: chapterNumber },
@@ -264,7 +264,10 @@ export function updateMemory(
   if (updates.newLocation) {
     updated.setting = {
       currentLocation: updates.newLocation,
-      previousLocations: [...updated.setting.previousLocations, updated.setting.currentLocation].slice(-5),
+      previousLocations: [
+        ...updated.setting.previousLocations,
+        updated.setting.currentLocation,
+      ].slice(-5),
     };
   }
 

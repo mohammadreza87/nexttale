@@ -4,7 +4,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { AuthProvider, useAuth } from '../authContext';
 
 let unsubscribeMock: ReturnType<typeof vi.fn>;
-let signOutMock: ReturnType<typeof vi.fn> = vi.fn(async () => ({}));
+const signOutMock: ReturnType<typeof vi.fn> = vi.fn(async () => ({}));
 
 vi.mock('../supabase', () => ({
   supabase: {
@@ -12,12 +12,14 @@ vi.mock('../supabase', () => ({
       getSession: vi.fn(async () => ({
         data: { session: { user: { id: 'user-123' } } },
       })),
-      onAuthStateChange: vi.fn((callback: (event: string, session: { user: { id: string } } | null) => void) => {
-        unsubscribeMock = vi.fn();
-        // Immediately invoke handler with existing session to simulate update
-        callback('SIGNED_IN', { user: { id: 'user-123' } });
-        return { data: { subscription: { unsubscribe: unsubscribeMock } } };
-      }),
+      onAuthStateChange: vi.fn(
+        (callback: (event: string, session: { user: { id: string } } | null) => void) => {
+          unsubscribeMock = vi.fn();
+          // Immediately invoke handler with existing session to simulate update
+          callback('SIGNED_IN', { user: { id: 'user-123' } });
+          return { data: { subscription: { unsubscribe: unsubscribeMock } } };
+        }
+      ),
       signOut: (...args: unknown[]) => signOutMock(...args),
     },
   },

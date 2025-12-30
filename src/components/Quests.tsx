@@ -1,38 +1,41 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, PlusCircle, BookOpen } from 'lucide-react';
-import { getQuests, Quest } from '../lib/questsService';
+import { getQuests, type Quest } from '../lib/questsService';
 
 interface QuestsProps {
   userId: string;
 }
 
-export function Quests({}: QuestsProps) {
+export function Quests(_props: QuestsProps) {
   const [loading, setLoading] = useState(true);
   const [questsData, setQuestsData] = useState<Quest[]>([]);
 
-  const questMeta = useMemo(() => ({
-    read_chapter: {
-      title: 'Read 2 Chapters',
-      description: 'Read any two chapters today.',
-      reward: 10,
-      quest_type: 'daily' as const,
-      target: 2,
-    },
-    create_story: {
-      title: 'Create a Story',
-      description: 'Generate a new story today.',
-      reward: 15,
-      quest_type: 'daily' as const,
-      target: 1,
-    },
-    complete_story: {
-      title: 'Finish a Story',
-      description: 'Reach an ending in any story this week.',
-      reward: 30,
-      quest_type: 'weekly' as const,
-      target: 1,
-    },
-  }), []);
+  const questMeta = useMemo(
+    () => ({
+      read_chapter: {
+        title: 'Read 2 Chapters',
+        description: 'Read any two chapters today.',
+        reward: 10,
+        quest_type: 'daily' as const,
+        target: 2,
+      },
+      create_story: {
+        title: 'Create a Story',
+        description: 'Generate a new story today.',
+        reward: 15,
+        quest_type: 'daily' as const,
+        target: 1,
+      },
+      complete_story: {
+        title: 'Finish a Story',
+        description: 'Reach an ending in any story this week.',
+        reward: 30,
+        quest_type: 'weekly' as const,
+        target: 1,
+      },
+    }),
+    []
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -47,10 +50,18 @@ export function Quests({}: QuestsProps) {
         if (mounted) setLoading(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const displayQuests: (Quest & { title: string; description: string; reward_points: number; quest_type: 'daily' | 'weekly'; target: number })[] = questsData.length
+  const displayQuests: (Quest & {
+    title: string;
+    description: string;
+    reward_points: number;
+    quest_type: 'daily' | 'weekly';
+    target: number;
+  })[] = questsData.length
     ? questsData.map((q) => ({
         ...q,
         title: questMeta[q.task]?.title || q.task,
@@ -76,11 +87,20 @@ export function Quests({}: QuestsProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 pb-20 flex flex-col items-center justify-center gap-3">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-950 pb-20">
         <div className="flex gap-2">
-          <div className="w-3 h-3 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-3 h-3 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-3 h-3 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-purple-500"
+            style={{ animationDelay: '0ms' }}
+          ></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-purple-500"
+            style={{ animationDelay: '150ms' }}
+          ></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-purple-500"
+            style={{ animationDelay: '300ms' }}
+          ></div>
         </div>
       </div>
     );
@@ -88,89 +108,95 @@ export function Quests({}: QuestsProps) {
 
   return (
     <div className="min-h-screen bg-gray-950 pb-20">
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-6">
+      <div className="mx-auto max-w-2xl px-4 pb-6 pt-4">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">Quests</h1>
+        <div className="mb-6 text-center">
+          <h1 className="mb-2 text-3xl font-bold text-white">Quests</h1>
           <p className="text-sm text-gray-400">Complete quests to earn points</p>
         </div>
 
-        <div className="bg-gray-900 rounded-3xl shadow-xl p-6 space-y-4 border border-gray-800">
-          <h2 className="text-xl font-bold text-white mb-2">Daily Quests</h2>
-          {displayQuests.filter(q => q.quest_type === 'daily').map((quest) => {
-            const isDone = (quest.progress || 0) >= quest.target;
-            const pct = Math.min(100, ((quest.progress || 0) / quest.target) * 100);
-            return (
-              <div
-                key={quest.id}
-                className="p-4 rounded-2xl bg-gray-800"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2">
-                    {quest.task === 'read_chapter' ? (
-                      <BookOpen className="w-4 h-4 text-purple-400 mt-0.5" />
-                    ) : (
-                      <PlusCircle className="w-4 h-4 text-purple-400 mt-0.5" />
-                    )}
-                    <div>
-                      <p className="text-sm font-semibold text-white">{quest.title}</p>
-                      <p className="text-xs text-gray-400">{quest.description}</p>
+        <div className="space-y-4 rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl">
+          <h2 className="mb-2 text-xl font-bold text-white">Daily Quests</h2>
+          {displayQuests
+            .filter((q) => q.quest_type === 'daily')
+            .map((quest) => {
+              const _isDone = (quest.progress || 0) >= quest.target;
+              const pct = Math.min(100, ((quest.progress || 0) / quest.target) * 100);
+              return (
+                <div key={quest.id} className="rounded-2xl bg-gray-800 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2">
+                      {quest.task === 'read_chapter' ? (
+                        <BookOpen className="mt-0.5 h-4 w-4 text-purple-400" />
+                      ) : (
+                        <PlusCircle className="mt-0.5 h-4 w-4 text-purple-400" />
+                      )}
+                      <div>
+                        <p className="text-sm font-semibold text-white">{quest.title}</p>
+                        <p className="text-xs text-gray-400">{quest.description}</p>
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold text-emerald-400">
+                      +{quest.reward_points} pts
                     </div>
                   </div>
-                  <div className="text-sm font-semibold text-emerald-400">+{quest.reward_points} pts</div>
-                </div>
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-                    <span>{quest.progress}/{quest.target}</span>
-                    <span>{pct}%</span>
+                  <div className="mt-3">
+                    <div className="mb-1 flex items-center justify-between text-xs text-gray-400">
+                      <span>
+                        {quest.progress}/{quest.target}
+                      </span>
+                      <span>{pct}%</span>
+                    </div>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-gray-700">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-l from-green-400 to-emerald-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2.5 bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-l from-green-400 to-emerald-500 rounded-full"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
 
-        <div className="mt-6 bg-gray-900 rounded-3xl shadow-xl p-6 space-y-4 border border-gray-800">
-          <h2 className="text-xl font-bold text-white mb-2">Weekly Quest</h2>
-          {displayQuests.filter(q => q.quest_type === 'weekly').map((quest) => {
-            const isDone = (quest.progress || 0) >= quest.target;
-            const pct = Math.min(100, ((quest.progress || 0) / quest.target) * 100);
-            return (
-              <div
-                key={quest.id}
-                className="p-4 rounded-2xl bg-gray-800"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-purple-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-semibold text-white">{quest.title}</p>
-                      <p className="text-xs text-gray-400">{quest.description}</p>
+        <div className="mt-6 space-y-4 rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl">
+          <h2 className="mb-2 text-xl font-bold text-white">Weekly Quest</h2>
+          {displayQuests
+            .filter((q) => q.quest_type === 'weekly')
+            .map((quest) => {
+              const _isDone = (quest.progress || 0) >= quest.target;
+              const pct = Math.min(100, ((quest.progress || 0) / quest.target) * 100);
+              return (
+                <div key={quest.id} className="rounded-2xl bg-gray-800 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-purple-400" />
+                      <div>
+                        <p className="text-sm font-semibold text-white">{quest.title}</p>
+                        <p className="text-xs text-gray-400">{quest.description}</p>
+                      </div>
+                    </div>
+                    <div className="text-sm font-semibold text-emerald-400">
+                      +{quest.reward_points} pts
                     </div>
                   </div>
-                  <div className="text-sm font-semibold text-emerald-400">+{quest.reward_points} pts</div>
-                </div>
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-                    <span>{quest.progress}/{quest.target}</span>
-                    <span>{pct}%</span>
+                  <div className="mt-3">
+                    <div className="mb-1 flex items-center justify-between text-xs text-gray-400">
+                      <span>
+                        {quest.progress}/{quest.target}
+                      </span>
+                      <span>{pct}%</span>
+                    </div>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-gray-700">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-l from-green-400 to-emerald-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2.5 bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-l from-green-400 to-emerald-500 rounded-full"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       </div>
     </div>

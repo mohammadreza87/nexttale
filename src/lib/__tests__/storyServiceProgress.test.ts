@@ -3,7 +3,7 @@ import { saveProgress, startStoryGeneration } from '../storyService';
 
 type MockCall = { table: string; action: string; payload?: any; filters?: Record<string, unknown> };
 
-var calls: MockCall[] = [];
+let calls: MockCall[] = [];
 
 function makeChain(result: any) {
   return {
@@ -29,8 +29,8 @@ function makeChain(result: any) {
   };
 }
 
-var fromMock: ReturnType<typeof vi.fn>;
-var fetchMock: ReturnType<typeof vi.fn>;
+let fromMock: ReturnType<typeof vi.fn>;
+let fetchMock: ReturnType<typeof vi.fn>;
 const originalFetch = global.fetch;
 
 vi.mock('../supabase', () => {
@@ -73,7 +73,7 @@ describe('storyService.saveProgress', () => {
 
     await saveProgress('user-1', 'story-1', 'node-1', ['start', 'a'], false);
 
-    const updateCall = calls.find(c => c.action === 'update');
+    const updateCall = calls.find((c) => c.action === 'update');
     expect(updateCall?.payload).toMatchObject({
       user_id: 'user-1',
       story_id: 'story-1',
@@ -108,7 +108,7 @@ describe('storyService.saveProgress', () => {
 
     await saveProgress('user-2', 'story-2', 'node-2', ['start', 'b'], true);
 
-    const insertCall = calls.find(c => c.action === 'insert');
+    const insertCall = calls.find((c) => c.action === 'insert');
     expect(insertCall?.payload).toMatchObject({
       user_id: 'user-2',
       story_id: 'story-2',
@@ -155,7 +155,7 @@ describe('storyService.startStoryGeneration', () => {
 
     await startStoryGeneration('story-123', 'user-123');
 
-    const queueInsert = calls.find(c => c.table === 'generation_queue' && c.action === 'insert');
+    const queueInsert = calls.find((c) => c.table === 'generation_queue' && c.action === 'insert');
     expect(queueInsert?.payload).toMatchObject({
       story_id: 'story-123',
       user_id: 'user-123',
@@ -169,7 +169,7 @@ describe('storyService.startStoryGeneration', () => {
         headers: expect.objectContaining({
           Authorization: 'Bearer anon-key',
         }),
-      }),
+      })
     );
   });
 });

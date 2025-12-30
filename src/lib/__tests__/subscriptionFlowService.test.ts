@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createCheckoutSession, createCustomerPortalSession } from '../subscriptionService';
 
-var getSessionMock: ReturnType<typeof vi.fn>;
-var fetchMock: ReturnType<typeof vi.fn>;
+let getSessionMock: ReturnType<typeof vi.fn>;
+let fetchMock: ReturnType<typeof vi.fn>;
 const originalWindow = globalThis.window;
 
 vi.mock('../supabase', () => {

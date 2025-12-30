@@ -2,7 +2,10 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
 
-const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripe = new Stripe(stripeSecret, {
   appInfo: {
@@ -52,7 +55,7 @@ Deno.serve(async (req) => {
         price_id: 'string',
         success_url: 'string',
         mode: { values: ['payment', 'subscription'] },
-      },
+      }
     );
 
     if (error) {
@@ -122,10 +125,12 @@ Deno.serve(async (req) => {
       }
 
       if (mode === 'subscription') {
-        const { error: createSubscriptionError } = await supabase.from('stripe_subscriptions').insert({
-          customer_id: newCustomer.id,
-          status: 'not_started',
-        });
+        const { error: createSubscriptionError } = await supabase
+          .from('stripe_subscriptions')
+          .insert({
+            customer_id: newCustomer.id,
+            status: 'not_started',
+          });
 
         if (createSubscriptionError) {
           console.error('Failed to save subscription in the database', createSubscriptionError);
@@ -134,7 +139,10 @@ Deno.serve(async (req) => {
           try {
             await stripe.customers.del(newCustomer.id);
           } catch (deleteError) {
-            console.error('Failed to delete Stripe customer after subscription creation error:', deleteError);
+            console.error(
+              'Failed to delete Stripe customer after subscription creation error:',
+              deleteError
+            );
           }
 
           return corsResponse({ error: 'Unable to save the subscription in the database' }, 500);
@@ -156,22 +164,33 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (getSubscriptionError) {
-          console.error('Failed to fetch subscription information from the database', getSubscriptionError);
+          console.error(
+            'Failed to fetch subscription information from the database',
+            getSubscriptionError
+          );
 
           return corsResponse({ error: 'Failed to fetch subscription information' }, 500);
         }
 
         if (!subscription) {
           // Create subscription record for existing customer if missing
-          const { error: createSubscriptionError } = await supabase.from('stripe_subscriptions').insert({
-            customer_id: customerId,
-            status: 'not_started',
-          });
+          const { error: createSubscriptionError } = await supabase
+            .from('stripe_subscriptions')
+            .insert({
+              customer_id: customerId,
+              status: 'not_started',
+            });
 
           if (createSubscriptionError) {
-            console.error('Failed to create subscription record for existing customer', createSubscriptionError);
+            console.error(
+              'Failed to create subscription record for existing customer',
+              createSubscriptionError
+            );
 
-            return corsResponse({ error: 'Failed to create subscription record for existing customer' }, 500);
+            return corsResponse(
+              { error: 'Failed to create subscription record for existing customer' },
+              500
+            );
           }
         }
       }
@@ -204,13 +223,16 @@ Deno.serve(async (req) => {
 type ExpectedType = 'string' | { values: string[] };
 type Expectations<T> = { [K in keyof T]: ExpectedType };
 
-function validateParameters<T extends Record<string, any>>(values: T, expected: Expectations<T>): string | undefined {
+function validateParameters<T extends Record<string, any>>(
+  values: T,
+  expected: Expectations<T>
+): string | undefined {
   for (const parameter in values) {
     const expectation = expected[parameter];
     const value = values[parameter];
 
     if (expectation === 'string') {
-      if (value == null) {
+      if (value === null || value === undefined) {
         return `Missing required parameter ${parameter}`;
       }
       if (typeof value !== 'string') {

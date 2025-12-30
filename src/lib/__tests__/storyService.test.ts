@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStoryChoice } from '../storyService';
 
-var fromMock: ReturnType<typeof vi.fn>;
+let fromMock: ReturnType<typeof vi.fn>;
 
 vi.mock('../supabase', () => {
   fromMock = vi.fn();
@@ -58,7 +58,14 @@ describe('storyService.createStoryChoice', () => {
       },
     }));
 
-    const result = await createStoryChoice('from-node', 'to-node', 'pick me', 'hint', 1, 'creator-id');
+    const result = await createStoryChoice(
+      'from-node',
+      'to-node',
+      'pick me',
+      'hint',
+      1,
+      'creator-id'
+    );
 
     expect(result).toMatchObject({
       id: 'choice-abc',

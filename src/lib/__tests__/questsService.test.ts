@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { progressQuest } from '../questsService';
 
-var fromMock: ReturnType<typeof vi.fn>;
-var getSessionMock: ReturnType<typeof vi.fn>;
+let fromMock: ReturnType<typeof vi.fn>;
+let getSessionMock: ReturnType<typeof vi.fn>;
 
 vi.mock('../supabase', () => {
   fromMock = vi.fn();

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { trackChapterRead } from '../pointsService';
 
-var fromMock: ReturnType<typeof vi.fn>;
+let fromMock: ReturnType<typeof vi.fn>;
 
 vi.mock('../supabase', () => {
   fromMock = vi.fn(() => ({

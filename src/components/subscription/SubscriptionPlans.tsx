@@ -8,7 +8,10 @@ interface SubscriptionPlansProps {
   onSubscriptionChange?: () => void;
 }
 
-export function SubscriptionPlans({ currentPlan, onSubscriptionChange }: SubscriptionPlansProps) {
+export function SubscriptionPlans({
+  currentPlan,
+  onSubscriptionChange: _onSubscriptionChange,
+}: SubscriptionPlansProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleSubscribe = async (priceId: string) => {
@@ -18,9 +21,9 @@ export function SubscriptionPlans({ currentPlan, onSubscriptionChange }: Subscri
         priceId,
         successUrl: `${window.location.origin}/subscription/success`,
         cancelUrl: `${window.location.origin}/subscription`,
-        mode: 'subscription'
+        mode: 'subscription',
       });
-      
+
       if (url) {
         window.location.href = url;
       }
@@ -34,83 +37,87 @@ export function SubscriptionPlans({ currentPlan, onSubscriptionChange }: Subscri
   const isCurrentPlan = (priceId: string) => currentPlan === priceId;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Plan</h1>
-        <p className="text-xl text-gray-600">Unlock unlimited story generation with our Pro plans</p>
+    <div className="mx-auto max-w-4xl p-6">
+      <div className="mb-12 text-center">
+        <h1 className="mb-4 text-4xl font-bold text-gray-900">Choose Your Plan</h1>
+        <p className="text-xl text-gray-600">
+          Unlock unlimited story generation with our Pro plans
+        </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+      <div className="mx-auto grid max-w-3xl gap-8 md:grid-cols-2">
         {stripeProducts.map((product) => {
           const isYearly = product.name.includes('Yearly');
           const isCurrentUserPlan = isCurrentPlan(product.priceId);
-          
+
           return (
             <div
               key={product.priceId}
-              className={`relative bg-white rounded-2xl shadow-xl p-8 ${
-                isCurrentUserPlan ? 'ring-2 ring-green-500' : isYearly ? 'ring-2 ring-blue-500 transform scale-105' : ''
+              className={`relative rounded-2xl bg-white p-8 shadow-xl ${
+                isCurrentUserPlan
+                  ? 'ring-2 ring-green-500'
+                  : isYearly
+                    ? 'scale-105 transform ring-2 ring-blue-500'
+                    : ''
               }`}
             >
               {isCurrentUserPlan ? (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2">
-                    <Crown className="w-4 h-4" />
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 transform">
+                  <span className="flex items-center gap-2 rounded-full bg-green-500 px-4 py-2 text-sm font-medium text-white">
+                    <Crown className="h-4 w-4" />
                     Current Plan
                   </span>
                 </div>
               ) : isYearly ? (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 transform">
+                  <span className="rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white">
                     Most Popular
                   </span>
                 </div>
               ) : null}
 
-              <div className="text-center mb-8">
-                <div className="flex justify-center mb-4">
+              <div className="mb-8 text-center">
+                <div className="mb-4 flex justify-center">
                   {isYearly ? (
-                    <Crown className="w-12 h-12 text-yellow-500" />
+                    <Crown className="h-12 w-12 text-yellow-500" />
                   ) : (
-                    <Zap className="w-12 h-12 text-blue-500" />
+                    <Zap className="h-12 w-12 text-blue-500" />
                   )}
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{product.name}</h3>
-                <p className="text-gray-600 mb-4">{product.description}</p>
-                <div className="text-4xl font-bold text-gray-900 mb-2">
+                <h3 className="mb-2 text-2xl font-bold text-gray-900">{product.name}</h3>
+                <p className="mb-4 text-gray-600">{product.description}</p>
+                <div className="mb-2 text-4xl font-bold text-gray-900">
                   {formatPrice(product.price, product.currency)}
                   <span className="text-lg font-normal text-gray-600">
                     /{isYearly ? 'year' : 'month'}
                   </span>
                 </div>
-                {isYearly && (
-                  <p className="text-green-600 font-medium">Save €40 per year!</p>
-                )}
+                {isYearly && <p className="font-medium text-green-600">Save €40 per year!</p>}
               </div>
 
-              <ul className="space-y-4 mb-8">
+              <ul className="mb-8 space-y-4">
                 <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-3" />
+                  <Check className="mr-3 h-5 w-5 text-green-500" />
                   <span>Unlimited story generation</span>
                 </li>
                 <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-3" />
+                  <Check className="mr-3 h-5 w-5 text-green-500" />
                   <span>Edit mode for created stories</span>
                 </li>
                 <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-3" />
+                  <Check className="mr-3 h-5 w-5 text-green-500" />
                   <span>AI-generated illustrations</span>
                 </li>
                 <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-3" />
+                  <Check className="mr-3 h-5 w-5 text-green-500" />
                   <span>Text-to-speech narration</span>
                 </li>
                 <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-3" />
+                  <Check className="mr-3 h-5 w-5 text-green-500" />
                   <span>Multiple language support</span>
                 </li>
                 <li className="flex items-center">
-                  <Check className="w-5 h-5 text-green-500 mr-3" />
+                  <Check className="mr-3 h-5 w-5 text-green-500" />
                   <span>Priority support</span>
                 </li>
               </ul>
@@ -118,26 +125,26 @@ export function SubscriptionPlans({ currentPlan, onSubscriptionChange }: Subscri
               <button
                 onClick={() => handleSubscribe(product.priceId)}
                 disabled={loading === product.priceId || isCurrentUserPlan}
-                className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${
+                className={`w-full rounded-lg px-6 py-3 font-medium transition-colors ${
                   isCurrentUserPlan
-                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                    ? 'cursor-not-allowed bg-gray-100 text-gray-500'
                     : isYearly
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-gray-900 text-white hover:bg-gray-800'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-900 text-white hover:bg-gray-800'
+                } disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 {loading === product.priceId
                   ? 'Processing...'
                   : isCurrentUserPlan
-                  ? 'Current Plan'
-                  : `Subscribe to ${product.name}`}
+                    ? 'Current Plan'
+                    : `Subscribe to ${product.name}`}
               </button>
             </div>
           );
         })}
       </div>
 
-      <div className="text-center mt-12">
+      <div className="mt-12 text-center">
         <p className="text-gray-600">
           All plans include a 30-day money-back guarantee. Cancel anytime.
         </p>

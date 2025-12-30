@@ -1,12 +1,41 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { CheckCircle, Trophy, Loader, LogOut, User, Edit2, Trash2, Globe, Lock, Crown, Share2, Menu, X, AlertCircle, Flame, Star, Volume2, VolumeX } from 'lucide-react';
+import {
+  CheckCircle,
+  Trophy,
+  Loader,
+  LogOut,
+  User,
+  Edit2,
+  Trash2,
+  Globe,
+  Lock,
+  Crown,
+  Share2,
+  Menu,
+  X,
+  AlertCircle,
+  Flame,
+  Star,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 import { supabase, getShareUrl } from '../lib/supabase';
 import { useAuth } from '../lib/authContext';
 import { ProfileEdit } from './ProfileEdit';
 import { StoryEditor } from './StoryEditor';
-import { getUserStoriesPaginated, deleteStory, updateStoryVisibility, getFollowerCount, getFollowingCount } from '../lib/storyService';
-import type { Story, UserProfile as UserProfileType } from '../lib/types';
-import { getUserSubscription, createCustomerPortalSession, type UserSubscription } from '../lib/subscriptionService';
+import {
+  getUserStoriesPaginated,
+  deleteStory,
+  updateStoryVisibility,
+  getFollowerCount,
+  getFollowingCount,
+} from '../lib/storyService';
+import type { Story, UserProfile as _UserProfileType } from '../lib/types';
+import {
+  getUserSubscription,
+  createCustomerPortalSession,
+  type UserSubscription,
+} from '../lib/subscriptionService';
 import { getSafeDisplayName } from '../lib/displayName';
 import { getQuests } from '../lib/questsService';
 import UpgradeModal from './UpgradeModal';
@@ -52,7 +81,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
   const [autoNarrationEnabled, setAutoNarrationEnabled] = useState(true);
   const [streak, setStreak] = useState<{ current_streak: number; longest_streak: number }>({
     current_streak: 0,
-    longest_streak: 0
+    longest_streak: 0,
   });
 
   // Pagination states
@@ -120,11 +149,13 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
 
       const { data, error } = await supabase
         .from('user_story_progress')
-        .select(`
+        .select(
+          `
           completed_at,
           path_taken,
           story:stories(*)
-        `)
+        `
+        )
         .eq('user_id', userId)
         .eq('completed', true)
         .order('completed_at', { ascending: false })
@@ -132,11 +163,12 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
 
       if (error) throw error;
 
-      const formatted = data?.map(item => ({
-        story: item.story as unknown as Story,
-        completed_at: item.completed_at || '',
-        path_taken: item.path_taken || []
-      })) || [];
+      const formatted =
+        data?.map((item) => ({
+          story: item.story as unknown as Story,
+          completed_at: item.completed_at || '',
+          path_taken: item.path_taken || [],
+        })) || [];
 
       setCompletedStories(formatted);
       setCompletedTotal(total || 0);
@@ -155,11 +187,13 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
     try {
       const { data, error } = await supabase
         .from('user_story_progress')
-        .select(`
+        .select(
+          `
           completed_at,
           path_taken,
           story:stories(*)
-        `)
+        `
+        )
         .eq('user_id', userId)
         .eq('completed', true)
         .order('completed_at', { ascending: false })
@@ -167,13 +201,14 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
 
       if (error) throw error;
 
-      const formatted = data?.map(item => ({
-        story: item.story as unknown as Story,
-        completed_at: item.completed_at || '',
-        path_taken: item.path_taken || []
-      })) || [];
+      const formatted =
+        data?.map((item) => ({
+          story: item.story as unknown as Story,
+          completed_at: item.completed_at || '',
+          path_taken: item.path_taken || [],
+        })) || [];
 
-      setCompletedStories(prev => [...prev, ...formatted]);
+      setCompletedStories((prev) => [...prev, ...formatted]);
       setCompletedHasMore(completedStories.length + formatted.length < completedTotal);
     } catch (error) {
       console.error('Error loading more completed stories:', error);
@@ -199,7 +234,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
     setCreatedLoadingMore(true);
     try {
       const result = await getUserStoriesPaginated(userId, STORIES_PER_PAGE, createdStories.length);
-      setCreatedStories(prev => [...prev, ...result.data]);
+      setCreatedStories((prev) => [...prev, ...result.data]);
       setCreatedHasMore(result.hasMore);
     } catch (error) {
       console.error('Error loading more created stories:', error);
@@ -283,7 +318,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
     try {
       const [followers, following] = await Promise.all([
         getFollowerCount(userId),
-        getFollowingCount(userId)
+        getFollowingCount(userId),
       ]);
       setFollowersCount(followers);
       setFollowingCount(following);
@@ -295,7 +330,10 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
   const loadQuestData = async () => {
     try {
       const { streak } = await getQuests();
-      setStreak({ current_streak: streak.current_streak || 0, longest_streak: streak.longest_streak || 0 });
+      setStreak({
+        current_streak: streak.current_streak || 0,
+        longest_streak: streak.longest_streak || 0,
+      });
     } catch (error) {
       console.error('Error loading quest data:', error);
     }
@@ -309,7 +347,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
     setDeletingStoryId(storyId);
     try {
       await deleteStory(storyId);
-      setCreatedStories(prev => prev.filter(s => s.id !== storyId));
+      setCreatedStories((prev) => prev.filter((s) => s.id !== storyId));
     } catch (error) {
       console.error('Error deleting story:', error);
       alert('Failed to delete story. Please try again.');
@@ -349,8 +387,8 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
     setUpdatingVisibilityId(storyId);
     try {
       await updateStoryVisibility(storyId, !currentVisibility);
-      setCreatedStories(prev =>
-        prev.map(s => s.id === storyId ? { ...s, is_public: !currentVisibility } : s)
+      setCreatedStories((prev) =>
+        prev.map((s) => (s.id === storyId ? { ...s, is_public: !currentVisibility } : s))
       );
     } catch (error) {
       console.error('Error updating story visibility:', error);
@@ -364,11 +402,20 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen pb-16 gap-3 bg-gray-950">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-950 pb-16">
         <div className="flex gap-2">
-          <div className="w-3 h-3 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-3 h-3 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-3 h-3 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-purple-500"
+            style={{ animationDelay: '0ms' }}
+          ></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-purple-500"
+            style={{ animationDelay: '150ms' }}
+          ></div>
+          <div
+            className="h-3 w-3 animate-bounce rounded-full bg-purple-500"
+            style={{ animationDelay: '300ms' }}
+          ></div>
         </div>
       </div>
     );
@@ -376,74 +423,98 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
 
   return (
     <div className="min-h-screen bg-gray-950 pb-20">
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-6">
-        <div className={`bg-gray-900 rounded-3xl shadow-xl p-6 mb-6 relative border border-gray-800 ${isPro ? 'pt-12' : ''}`}>
+      <div className="mx-auto max-w-2xl px-4 pb-6 pt-4">
+        <div
+          className={`relative mb-6 rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl ${isPro ? 'pt-12' : ''}`}
+        >
           {isPro && (
-            <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center gap-2 rounded-t-3xl">
-              <Crown className="w-4 h-4 text-white" />
-              <span className="text-white text-sm font-bold">PRO</span>
+            <div className="absolute left-0 right-0 top-0 flex h-8 items-center justify-center gap-2 rounded-t-3xl bg-gradient-to-r from-purple-600 to-pink-600">
+              <Crown className="h-4 w-4 text-white" />
+              <span className="text-sm font-bold text-white">PRO</span>
             </div>
           )}
           <div className="flex items-center gap-4">
             {/* Profile Picture */}
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${profile?.avatar_url ? '' : 'bg-gray-800'}`}>
+            <div
+              className={`flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full ${profile?.avatar_url ? '' : 'bg-gray-800'}`}
+            >
               {profile?.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt="Profile"
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                 />
               ) : (
-                <User className="w-8 h-8 text-gray-500" />
+                <User className="h-8 w-8 text-gray-500" />
               )}
             </div>
 
             {/* Profile Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold text-white truncate">
-                    {getSafeDisplayName(profile?.display_name || user?.user_metadata?.full_name || user?.email || '', 'User')}
+                  <h1 className="truncate text-xl font-bold text-white">
+                    {getSafeDisplayName(
+                      profile?.display_name || user?.user_metadata?.full_name || user?.email || '',
+                      'User'
+                    )}
                   </h1>
                 </div>
                 {/* Hamburger Menu */}
                 <div className="relative">
                   <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="p-1.5 text-gray-400 hover:bg-gray-800 rounded-lg transition-colors"
+                    className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-800"
                   >
-                    {showProfileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                    {showProfileMenu ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
                   </button>
                   {showProfileMenu && (
                     <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
-                      <div className="absolute top-full right-0 mt-1 bg-gray-800 rounded-xl shadow-xl border border-gray-700 py-2 z-50 min-w-[200px]">
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowProfileMenu(false)}
+                      />
+                      <div className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-xl border border-gray-700 bg-gray-800 py-2 shadow-xl">
                         {/* Subscription Info - Clickable */}
                         {subscription && (
                           <button
                             onClick={() => {
-                              if (subscription.subscription_tier === 'pro' && subscription.stripe_customer_id && !subscription.is_grandfathered) {
+                              if (
+                                subscription.subscription_tier === 'pro' &&
+                                subscription.stripe_customer_id &&
+                                !subscription.is_grandfathered
+                              ) {
                                 handleManageSubscription();
-                              } else if (subscription.subscription_tier !== 'pro' && !subscription.is_grandfathered) {
+                              } else if (
+                                subscription.subscription_tier !== 'pro' &&
+                                !subscription.is_grandfathered
+                              ) {
                                 setShowUpgradeModal(true);
                               }
                               setShowProfileMenu(false);
                             }}
-                            className="w-full px-3 py-2 text-left hover:bg-gray-700 border-b border-gray-700"
+                            className="w-full border-b border-gray-700 px-3 py-2 text-left hover:bg-gray-700"
                           >
-                            <div className="flex items-center justify-between mb-1">
+                            <div className="mb-1 flex items-center justify-between">
                               <span className="text-xs text-gray-400">Subscription</span>
-                              {subscription.subscription_tier === 'pro' || subscription.is_grandfathered ? (
-                                <span className="text-xs font-bold text-purple-400 flex items-center gap-1">
-                                  <Crown className="w-3 h-3" />
+                              {subscription.subscription_tier === 'pro' ||
+                              subscription.is_grandfathered ? (
+                                <span className="flex items-center gap-1 text-xs font-bold text-purple-400">
+                                  <Crown className="h-3 w-3" />
                                   Pro {subscription.is_grandfathered && '(Lifetime)'}
                                 </span>
                               ) : (
                                 <span className="text-xs text-gray-400">Free</span>
                               )}
                             </div>
-                            {subscription.subscription_tier === 'pro' || subscription.is_grandfathered ? (
-                              <p className="text-[10px] text-gray-500">Unlimited stories {!subscription.is_grandfathered && subscription.stripe_customer_id && '• Tap to manage'}</p>
+                            {subscription.subscription_tier === 'pro' ||
+                            subscription.is_grandfathered ? (
+                              <p className="text-[10px] text-gray-500">
+                                Unlimited stories{' '}
+                                {!subscription.is_grandfathered &&
+                                  subscription.stripe_customer_id &&
+                                  '• Tap to manage'}
+                              </p>
                             ) : (
                               <p className="text-[10px] text-gray-500">Tap to upgrade</p>
                             )}
@@ -455,14 +526,18 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                             setShowEditModal(true);
                             setShowProfileMenu(false);
                           }}
-                          className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="h-3.5 w-3.5" />
                           <span>Edit Profile</span>
                         </button>
-                        <div className="px-3 py-2 flex items-center justify-between">
+                        <div className="flex items-center justify-between px-3 py-2">
                           <div className="flex items-center gap-2 text-sm text-gray-300">
-                            {autoNarrationEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                            {autoNarrationEnabled ? (
+                              <Volume2 className="h-3.5 w-3.5" />
+                            ) : (
+                              <VolumeX className="h-3.5 w-3.5" />
+                            )}
                             <span>Auto Narration</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -490,17 +565,17 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                             </button>
                           </div>
                         </div>
-                        <div className="border-t border-gray-700 mt-1 pt-1">
+                        <div className="mt-1 border-t border-gray-700 pt-1">
                           <a
                             href="/terms"
-                            className="w-full px-3 py-2 text-left text-sm text-gray-400 hover:bg-gray-700 flex items-center gap-2"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-400 hover:bg-gray-700"
                             onClick={() => setShowProfileMenu(false)}
                           >
                             <span>Terms of Service</span>
                           </a>
                           <a
                             href="/privacy"
-                            className="w-full px-3 py-2 text-left text-sm text-gray-400 hover:bg-gray-700 flex items-center gap-2"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-400 hover:bg-gray-700"
                             onClick={() => setShowProfileMenu(false)}
                           >
                             <span>Privacy Policy</span>
@@ -511,9 +586,9 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                             handleSignOut();
                             setShowProfileMenu(false);
                           }}
-                          className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-red-900/30 flex items-center gap-2"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-400 hover:bg-red-900/30"
                         >
-                          <LogOut className="w-3.5 h-3.5" />
+                          <LogOut className="h-3.5 w-3.5" />
                           <span>Sign Out</span>
                         </button>
                       </div>
@@ -534,100 +609,111 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
             </div>
           </div>
 
-          {profile?.bio && (
-            <p className="text-gray-300 text-sm mt-4 break-words">
-              {profile.bio}
-            </p>
-          )}
+          {profile?.bio && <p className="mt-4 break-words text-sm text-gray-300">{profile.bio}</p>}
         </div>
 
         {/* Stats Cards Row */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="mb-6 grid grid-cols-3 gap-3">
           {/* Points */}
           <button
             onClick={() => setShowPointsPopup(true)}
-            className="bg-gray-900 rounded-2xl shadow-lg p-4 text-center hover:shadow-xl transition-shadow border border-gray-800"
+            className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center shadow-lg transition-shadow hover:shadow-xl"
           >
-            <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center">
-              <Star className="w-5 h-5 text-white" />
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500">
+              <Star className="h-5 w-5 text-white" />
             </div>
             <p className="text-2xl font-bold text-white">{subscription?.total_points || 0}</p>
-            <p className="text-xs text-gray-400 font-medium">Points</p>
+            <p className="text-xs font-medium text-gray-400">Points</p>
           </button>
 
           {/* Current Streak */}
-          <div className="bg-gray-900 rounded-2xl shadow-lg p-4 text-center border border-gray-800">
-            <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-              <Flame className="w-5 h-5 text-white" />
+          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center shadow-lg">
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500">
+              <Flame className="h-5 w-5 text-white" />
             </div>
             <p className="text-2xl font-bold text-white">{streak.current_streak}</p>
-            <p className="text-xs text-gray-400 font-medium">Current Streak</p>
+            <p className="text-xs font-medium text-gray-400">Current Streak</p>
           </div>
 
           {/* Longest Streak */}
-          <div className="bg-gray-900 rounded-2xl shadow-lg p-4 text-center border border-gray-800">
-            <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
-              <Flame className="w-5 h-5 text-white" />
+          <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 text-center shadow-lg">
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-600">
+              <Flame className="h-5 w-5 text-white" />
             </div>
             <p className="text-2xl font-bold text-white">{streak.longest_streak}</p>
-            <p className="text-xs text-gray-400 font-medium">Longest Streak</p>
+            <p className="text-xs font-medium text-gray-400">Longest Streak</p>
           </div>
         </div>
 
         {/* Points Breakdown Popup */}
         {showPointsPopup && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setShowPointsPopup(false)}>
-            <div className="bg-gray-900 rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-gray-800" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+            onClick={() => setShowPointsPopup(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Trophy className={`w-6 h-6 ${isPro ? 'text-purple-400' : 'text-blue-400'}`} />
+                  <Trophy className={`h-6 w-6 ${isPro ? 'text-purple-400' : 'text-blue-400'}`} />
                   <h3 className="text-xl font-bold text-white">Points Breakdown</h3>
                 </div>
                 <button
                   onClick={() => setShowPointsPopup(false)}
-                  className="p-2 text-gray-400 hover:bg-gray-800 rounded-full transition-colors"
+                  className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-800"
                 >
                   ✕
                 </button>
               </div>
 
               <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-green-900/30 rounded-xl">
-                  <span className="text-gray-300 font-medium">Reading Points</span>
-                  <span className="text-xl font-bold text-green-400">{subscription?.reading_points || 0}</span>
+                <div className="flex items-center justify-between rounded-xl bg-green-900/30 p-3">
+                  <span className="font-medium text-gray-300">Reading Points</span>
+                  <span className="text-xl font-bold text-green-400">
+                    {subscription?.reading_points || 0}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-purple-900/30 rounded-xl">
-                  <span className="text-gray-300 font-medium">Creating Points</span>
-                  <span className="text-xl font-bold text-purple-400">{subscription?.creating_points || 0}</span>
+                <div className="flex items-center justify-between rounded-xl bg-purple-900/30 p-3">
+                  <span className="font-medium text-gray-300">Creating Points</span>
+                  <span className="text-xl font-bold text-purple-400">
+                    {subscription?.creating_points || 0}
+                  </span>
                 </div>
-                <div className={`flex justify-between items-center p-4 rounded-xl ${isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-blue-600 to-cyan-600'}`}>
-                  <span className="text-white font-semibold">Total Points</span>
-                  <span className="text-2xl font-bold text-white">{subscription?.total_points || 0}</span>
+                <div
+                  className={`flex items-center justify-between rounded-xl p-4 ${isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-blue-600 to-cyan-600'}`}
+                >
+                  <span className="font-semibold text-white">Total Points</span>
+                  <span className="text-2xl font-bold text-white">
+                    {subscription?.total_points || 0}
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-4 p-3 bg-gray-800 rounded-xl">
+              <div className="mt-4 rounded-xl bg-gray-800 p-3">
                 <p className="text-xs text-gray-400">
-                  <strong className="text-gray-300">How to earn:</strong> 1 point per chapter, 5 points for completing a story, 5 points for creating a story!
+                  <strong className="text-gray-300">How to earn:</strong> 1 point per chapter, 5
+                  points for completing a story, 5 points for creating a story!
                 </p>
               </div>
             </div>
           </div>
         )}
 
-
-
         <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
 
-        <div className="bg-gray-900 rounded-3xl shadow-xl overflow-hidden border border-gray-800">
+        <div className="overflow-hidden rounded-3xl border border-gray-800 bg-gray-900 shadow-xl">
           {/* Tabs */}
           <div className="flex gap-2 p-2">
             <button
               onClick={() => setActiveTab('created')}
-              className={`flex-1 py-3 px-4 font-semibold transition-all text-center rounded-xl ${
+              className={`flex-1 rounded-xl px-4 py-3 text-center font-semibold transition-all ${
                 activeTab === 'created'
-                  ? isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 shadow-md'
+                  ? isPro
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-gray-400 shadow-md hover:bg-gray-700'
               }`}
             >
               <span className="block text-lg font-bold">{createdTotal}</span>
@@ -635,10 +721,12 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
             </button>
             <button
               onClick={() => setActiveTab('completed')}
-              className={`flex-1 py-3 px-4 font-semibold transition-all text-center rounded-xl ${
+              className={`flex-1 rounded-xl px-4 py-3 text-center font-semibold transition-all ${
                 activeTab === 'completed'
-                  ? isPro ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700 shadow-md'
+                  ? isPro
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-gray-400 shadow-md hover:bg-gray-700'
               }`}
             >
               <span className="block text-lg font-bold">{completedTotal}</span>
@@ -651,8 +739,8 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
             {activeTab === 'completed' ? (
               completedStories.length === 0 && !loading ? (
                 <div className="p-8 text-center">
-                  <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold text-white mb-2">No Completed Stories Yet</h3>
+                  <Trophy className="mx-auto mb-4 h-16 w-16 text-gray-600" />
+                  <h3 className="mb-2 text-xl font-bold text-white">No Completed Stories Yet</h3>
                   <p className="text-gray-400">
                     Start reading stories and complete them to see your achievements here!
                   </p>
@@ -661,158 +749,176 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     {completedStories.map((item, index) => (
-                    <div
-                      key={index}
-                      className="bg-gray-800 rounded-2xl shadow-md overflow-hidden transform transition-all duration-300 active:scale-95 hover:shadow-lg cursor-pointer border border-gray-700"
-                      onClick={() => onSelectStory(item.story.id)}
-                    >
-                      <div className={`aspect-square flex items-center justify-center relative ${isPro ? 'bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900' : 'bg-gradient-to-br from-blue-900 via-cyan-900 to-blue-900'}`}>
-                        {item.story.cover_image_url ? (
-                          <img
-                            src={item.story.cover_image_url}
-                            alt={item.story.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <CheckCircle className="w-12 h-12 text-white" />
-                        )}
-                        <div className="absolute top-2 right-2 bg-green-500 rounded-full p-1">
-                          <CheckCircle className="w-3 h-3 text-white" />
-                        </div>
-                      </div>
-                      <div className="p-3">
-                        <h3 className="text-sm font-bold text-white line-clamp-1 mb-2">
-                          {item.story.title}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => handleShare(item.story.id, item.story.title, e)}
-                            className="p-1.5 text-gray-400 hover:bg-gray-700 rounded-lg transition-colors"
-                            title="Share"
-                          >
-                            <Share2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  </div>
-                  {/* Completed stories loader */}
-                  <div ref={completedLoaderRef} className="py-6 flex justify-center">
-                    {completedLoadingMore && (
-                      <div className="flex gap-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                      </div>
-                    )}
-                    {!completedHasMore && completedStories.length > 0 && (
-                      <p className="text-gray-400 text-sm">No more stories</p>
-                    )}
-                  </div>
-                </>
-              )
-            ) : (
-              createdStories.length === 0 && !loading ? (
-                <div className="p-8 text-center">
-                  <User className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold text-white mb-2">No Created Stories Yet</h3>
-                  <p className="text-gray-400">
-                    Create your first interactive story to see it here!
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    {createdStories.map((story) => (
                       <div
-                        key={story.id}
-                        className="bg-gray-800 rounded-2xl shadow-md overflow-hidden transform transition-all duration-300 active:scale-95 hover:shadow-lg cursor-pointer border border-gray-700"
-                        onClick={() => onSelectStory(story.id)}
+                        key={index}
+                        className="transform cursor-pointer overflow-hidden rounded-2xl border border-gray-700 bg-gray-800 shadow-md transition-all duration-300 hover:shadow-lg active:scale-95"
+                        onClick={() => onSelectStory(item.story.id)}
                       >
-                        <div className={`aspect-square flex items-center justify-center relative ${isPro ? 'bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900' : 'bg-gradient-to-br from-blue-900 via-cyan-900 to-blue-900'}`}>
-                          {story.cover_image_url ? (
+                        <div
+                          className={`relative flex aspect-square items-center justify-center ${isPro ? 'bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900' : 'bg-gradient-to-br from-blue-900 via-cyan-900 to-blue-900'}`}
+                        >
+                          {item.story.cover_image_url ? (
                             <img
-                              src={story.cover_image_url}
-                              alt={story.title}
-                              className="w-full h-full object-cover"
+                              src={item.story.cover_image_url}
+                              alt={item.story.title}
+                              className="h-full w-full object-cover"
                             />
                           ) : (
-                            <User className="w-12 h-12 text-white" />
+                            <CheckCircle className="h-12 w-12 text-white" />
                           )}
-                          {story.generation_status === 'failed' && (
-                            <div className="absolute inset-0 bg-red-500/70 flex items-center justify-center">
-                              <div className="text-center text-white">
-                                <AlertCircle className="w-8 h-8 mx-auto mb-1" />
-                                <span className="text-xs font-semibold">Failed</span>
-                              </div>
-                            </div>
-                          )}
+                          <div className="absolute right-2 top-2 rounded-full bg-green-500 p-1">
+                            <CheckCircle className="h-3 w-3 text-white" />
+                          </div>
                         </div>
                         <div className="p-3">
-                          <h3 className="text-sm font-bold text-white line-clamp-1 mb-2">
-                            {story.title}
+                          <h3 className="mb-2 line-clamp-1 text-sm font-bold text-white">
+                            {item.story.title}
                           </h3>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={(e) => handleShare(story.id, story.title, e)}
-                              className="p-1.5 text-gray-400 hover:bg-gray-700 rounded-lg transition-colors"
+                              onClick={(e) => handleShare(item.story.id, item.story.title, e)}
+                              className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-700"
                               title="Share"
                             >
-                              <Share2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleVisibility(story.id, story.is_public);
-                              }}
-                              disabled={updatingVisibilityId === story.id}
-                              className="p-1.5 text-gray-400 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
-                              title={story.is_public ? 'Public' : 'Private'}
-                            >
-                              {updatingVisibilityId === story.id ? (
-                                <Loader className="w-4 h-4 animate-spin" />
-                              ) : story.is_public ? (
-                                <Globe className="w-4 h-4" />
-                              ) : (
-                                <Lock className="w-4 h-4" />
-                              )}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteStory(story.id);
-                              }}
-                              disabled={deletingStoryId === story.id}
-                              className="p-1.5 text-red-400 hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
-                              title="Delete"
-                            >
-                              {deletingStoryId === story.id ? (
-                                <Loader className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-4 h-4" />
-                              )}
+                              <Share2 className="h-4 w-4" />
                             </button>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                  {/* Created stories loader */}
-                  <div ref={createdLoaderRef} className="py-6 flex justify-center">
-                    {createdLoadingMore && (
+                  {/* Completed stories loader */}
+                  <div ref={completedLoaderRef} className="flex justify-center py-6">
+                    {completedLoadingMore && (
                       <div className="flex gap-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        <div
+                          className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                          style={{ animationDelay: '0ms' }}
+                        ></div>
+                        <div
+                          className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                          style={{ animationDelay: '150ms' }}
+                        ></div>
+                        <div
+                          className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                          style={{ animationDelay: '300ms' }}
+                        ></div>
                       </div>
                     )}
-                    {!createdHasMore && createdStories.length > 0 && (
-                      <p className="text-gray-400 text-sm">No more stories</p>
+                    {!completedHasMore && completedStories.length > 0 && (
+                      <p className="text-sm text-gray-400">No more stories</p>
                     )}
                   </div>
                 </>
               )
+            ) : createdStories.length === 0 && !loading ? (
+              <div className="p-8 text-center">
+                <User className="mx-auto mb-4 h-16 w-16 text-gray-600" />
+                <h3 className="mb-2 text-xl font-bold text-white">No Created Stories Yet</h3>
+                <p className="text-gray-400">Create your first interactive story to see it here!</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  {createdStories.map((story) => (
+                    <div
+                      key={story.id}
+                      className="transform cursor-pointer overflow-hidden rounded-2xl border border-gray-700 bg-gray-800 shadow-md transition-all duration-300 hover:shadow-lg active:scale-95"
+                      onClick={() => onSelectStory(story.id)}
+                    >
+                      <div
+                        className={`relative flex aspect-square items-center justify-center ${isPro ? 'bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900' : 'bg-gradient-to-br from-blue-900 via-cyan-900 to-blue-900'}`}
+                      >
+                        {story.cover_image_url ? (
+                          <img
+                            src={story.cover_image_url}
+                            alt={story.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-12 w-12 text-white" />
+                        )}
+                        {story.generation_status === 'failed' && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-red-500/70">
+                            <div className="text-center text-white">
+                              <AlertCircle className="mx-auto mb-1 h-8 w-8" />
+                              <span className="text-xs font-semibold">Failed</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <h3 className="mb-2 line-clamp-1 text-sm font-bold text-white">
+                          {story.title}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => handleShare(story.id, story.title, e)}
+                            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-700"
+                            title="Share"
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleVisibility(story.id, story.is_public);
+                            }}
+                            disabled={updatingVisibilityId === story.id}
+                            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-700 disabled:opacity-50"
+                            title={story.is_public ? 'Public' : 'Private'}
+                          >
+                            {updatingVisibilityId === story.id ? (
+                              <Loader className="h-4 w-4 animate-spin" />
+                            ) : story.is_public ? (
+                              <Globe className="h-4 w-4" />
+                            ) : (
+                              <Lock className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteStory(story.id);
+                            }}
+                            disabled={deletingStoryId === story.id}
+                            className="rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-900/30 disabled:opacity-50"
+                            title="Delete"
+                          >
+                            {deletingStoryId === story.id ? (
+                              <Loader className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Created stories loader */}
+                <div ref={createdLoaderRef} className="flex justify-center py-6">
+                  {createdLoadingMore && (
+                    <div className="flex gap-2">
+                      <div
+                        className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                        style={{ animationDelay: '0ms' }}
+                      ></div>
+                      <div
+                        className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                        style={{ animationDelay: '150ms' }}
+                      ></div>
+                      <div
+                        className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                        style={{ animationDelay: '300ms' }}
+                      ></div>
+                    </div>
+                  )}
+                  {!createdHasMore && createdStories.length > 0 && (
+                    <p className="text-sm text-gray-400">No more stories</p>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>

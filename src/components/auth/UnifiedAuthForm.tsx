@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { trackLogin, trackSignUp } from '../../lib/analytics';
-import { GoogleIcon, AppleIcon } from './SocialIcons';
+import { GoogleIcon, AppleIcon as _AppleIcon } from './SocialIcons';
 
 interface UnifiedAuthFormProps {
   onSuccess?: () => void;
@@ -39,7 +39,10 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
         return;
       }
 
-      if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Email not confirmed')) {
+      if (
+        signInError.message.includes('Invalid login credentials') ||
+        signInError.message.includes('Email not confirmed')
+      ) {
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -62,7 +65,7 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
       }
 
       setError(signInError.message);
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -92,7 +95,7 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
       }
 
       setResetEmailSent(true);
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -118,54 +121,56 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
       }
 
       trackLogin(provider);
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred');
       setSocialLoading(null);
     }
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <div className="bg-gray-900 rounded-3xl shadow-2xl p-8 border border-gray-800">
-        <div className="text-center mb-8">
-          <img src="/nexttale-logo.png" alt="Next Tale" className="w-20 h-20 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-white mb-2">
+    <div className="mx-auto w-full max-w-md">
+      <div className="rounded-3xl border border-gray-800 bg-gray-900 p-8 shadow-2xl">
+        <div className="mb-8 text-center">
+          <img src="/nexttale-logo.png" alt="Next Tale" className="mx-auto mb-4 h-20 w-20" />
+          <h1 className="mb-2 text-3xl font-bold text-white">
             {forgotPassword ? 'Reset Password' : 'Welcome to Next Tale'}
           </h1>
           <p className="text-gray-400">
             {forgotPassword
-              ? 'Enter your email and we\'ll send you a reset link'
+              ? "Enter your email and we'll send you a reset link"
               : featurePrompt || 'Enter email and password to sign in or create an account.'}
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-900/30 border border-red-500/50 rounded-lg">
-            <p className="text-red-400 text-sm">{error}</p>
+          <div className="mb-6 rounded-lg border border-red-500/50 bg-red-900/30 p-4">
+            <p className="text-sm text-red-400">{error}</p>
           </div>
         )}
 
         {resetEmailSent && (
-          <div className="mb-6 p-4 bg-green-900/30 border border-green-500/50 rounded-lg">
-            <p className="text-green-400 text-sm font-medium">Password reset email sent!</p>
-            <p className="text-green-500 text-sm mt-1">Check your inbox and follow the link to reset your password.</p>
+          <div className="mb-6 rounded-lg border border-green-500/50 bg-green-900/30 p-4">
+            <p className="text-sm font-medium text-green-400">Password reset email sent!</p>
+            <p className="mt-1 text-sm text-green-500">
+              Check your inbox and follow the link to reset your password.
+            </p>
           </div>
         )}
 
         <form onSubmit={forgotPassword ? handleForgotPassword : handleSubmit} className="space-y-5">
           {!forgotPassword && (
             <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="displayName" className="mb-2 block text-sm font-medium text-gray-300">
                 Display Name (optional)
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-gray-500" />
                 <input
                   id="displayName"
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full rounded-xl border border-gray-700 bg-gray-800 py-3 pl-10 pr-4 text-white placeholder-gray-500 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-500"
                   placeholder="Enter a display name"
                 />
               </div>
@@ -173,17 +178,17 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-300">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+              <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-gray-500" />
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                className="w-full rounded-xl border border-gray-700 bg-gray-800 py-3 pl-10 pr-4 text-white placeholder-gray-500 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-500"
                 placeholder="Enter your email"
                 required
               />
@@ -192,17 +197,17 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
 
           {!forgotPassword && (
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-300">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-gray-500" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full rounded-xl border border-gray-700 bg-gray-800 py-3 pl-10 pr-12 text-white placeholder-gray-500 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-500"
                   placeholder="Enter your password"
                   required
                   minLength={6}
@@ -210,9 +215,9 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-500 hover:text-gray-300"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
               {!forgotPassword && (
@@ -224,7 +229,7 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
                       setError(null);
                       setResetEmailSent(false);
                     }}
-                    className="text-sm text-purple-400 hover:text-purple-300 font-medium"
+                    className="text-sm font-medium text-purple-400 hover:text-purple-300"
                   >
                     Forgot password?
                   </button>
@@ -236,15 +241,19 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
           <button
             type="submit"
             disabled={loading || resetEmailSent}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-xl font-semibold hover:opacity-90 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+            className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 font-semibold text-white shadow-lg transition-all hover:opacity-90 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                 {forgotPassword ? 'Sending...' : 'Signing In...'}
               </span>
             ) : forgotPassword ? (
-              resetEmailSent ? 'Email Sent' : 'Send Reset Link'
+              resetEmailSent ? (
+                'Email Sent'
+              ) : (
+                'Send Reset Link'
+              )
             ) : (
               'Continue'
             )}
@@ -257,7 +266,7 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
                   <div className="w-full border-t border-gray-700"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-gray-900 text-gray-500">or continue with</span>
+                  <span className="bg-gray-900 px-2 text-gray-500">or continue with</span>
                 </div>
               </div>
 
@@ -266,10 +275,10 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
                   type="button"
                   onClick={() => handleSocialSignIn('google')}
                   disabled={loading || socialLoading !== null}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 transition-all hover:bg-gray-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {socialLoading === 'google' ? (
-                    <span className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></span>
                   ) : (
                     <GoogleIcon />
                   )}
@@ -288,27 +297,35 @@ export function UnifiedAuthForm({ onSuccess, featurePrompt }: UnifiedAuthFormPro
                 setError(null);
                 setResetEmailSent(false);
               }}
-              className="text-sm text-purple-400 hover:text-purple-300 font-medium"
+              className="text-sm font-medium text-purple-400 hover:text-purple-300"
             >
               Back to Sign In
             </button>
           </div>
         )}
 
-        <div className="mt-6 pt-6 border-t border-gray-800">
-          <p className="text-xs text-gray-500 text-center">
+        <div className="mt-6 border-t border-gray-800 pt-6">
+          <p className="text-center text-xs text-gray-500">
             By continuing, you agree to our{' '}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline">
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-400 underline hover:text-purple-300"
+            >
               Terms of Service
             </a>{' '}
             and{' '}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline">
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-400 underline hover:text-purple-300"
+            >
               Privacy Policy
             </a>
           </p>
-          <p className="text-xs text-gray-600 text-center mt-2">
-            You must be 18+ to use Next Tale
-          </p>
+          <p className="mt-2 text-center text-xs text-gray-600">You must be 18+ to use Next Tale</p>
         </div>
       </div>
     </div>
