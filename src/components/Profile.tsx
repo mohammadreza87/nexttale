@@ -19,6 +19,7 @@ import {
   Volume2,
   VolumeX,
   Gamepad2,
+  Play,
 } from 'lucide-react';
 import { supabase, getShareUrl } from '../lib/supabase';
 import { useAuth } from '../lib/authContext';
@@ -35,9 +36,11 @@ import {
   getUserInteractiveContent,
   deleteInteractiveContent,
   updateInteractiveContent,
+  getInteractiveContent,
 } from '../lib/interactiveService';
 import type { Story, UserProfile as _UserProfileType } from '../lib/types';
 import type { InteractiveContent } from '../lib/interactiveTypes';
+import { InteractiveViewer } from './interactive/InteractiveViewer';
 import {
   getUserSubscription,
   createCustomerPortalSession,
@@ -107,6 +110,8 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
   const [updatingInteractiveVisibilityId, setUpdatingInteractiveVisibilityId] = useState<
     string | null
   >(null);
+  const [previewContent, setPreviewContent] = useState<InteractiveContent | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   const createdLoaderRef = useRef<HTMLDivElement>(null);
   const completedLoaderRef = useRef<HTMLDivElement>(null);
@@ -502,6 +507,20 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
       alert('Failed to update content visibility. Please try again.');
     } finally {
       setUpdatingInteractiveVisibilityId(null);
+    }
+  };
+
+  const handleOpenPreview = async (contentId: string) => {
+    setLoadingPreview(true);
+    try {
+      const content = await getInteractiveContent(contentId);
+      if (content) {
+        setPreviewContent(content);
+      }
+    } catch (error) {
+      console.error('Error loading preview:', error);
+    } finally {
+      setLoadingPreview(false);
     }
   };
 
@@ -947,6 +966,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                       <div
                         key={content.id}
                         className="transform cursor-pointer overflow-hidden rounded-2xl border border-gray-700 bg-gray-800 shadow-md transition-all duration-300 hover:shadow-lg active:scale-95"
+                        onClick={() => handleOpenPreview(content.id)}
                       >
                         <div
                           className={`relative flex aspect-square items-center justify-center ${isPro ? 'bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900' : 'bg-gradient-to-br from-blue-900 via-cyan-900 to-blue-900'}`}
@@ -962,6 +982,12 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                           )}
                           <div className="absolute left-2 top-2 rounded-full bg-purple-500 px-2 py-0.5 text-xs font-medium text-white">
                             {content.content_type}
+                          </div>
+                          {/* Play button overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity hover:opacity-100">
+                            <div className="rounded-full bg-white/20 p-3 backdrop-blur-sm">
+                              <Play className="h-8 w-8 text-white" fill="white" />
+                            </div>
                           </div>
                         </div>
                         <div className="p-3">
@@ -1164,6 +1190,49 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
             setEditingStoryId(null);
           }}
         />
+      )}
+
+      {/* Interactive Content Preview Modal */}
+      {(previewContent || loadingPreview) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+          <div className="relative h-full w-full max-w-lg">
+            {/* Header */}
+            <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent p-4">
+              <div className="flex-1">
+                {previewContent && (
+                  <>
+                    <h3 className="text-lg font-bold text-white">{previewContent.title}</h3>
+                    <span className="text-sm text-purple-400">{previewContent.content_type}</span>
+                  </>
+                )}
+              </div>
+              <button
+                onClick={() => setPreviewContent(null)}
+                className="rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            {loadingPreview ? (
+              <div className="flex h-full items-center justify-center">
+                <Loader className="h-8 w-8 animate-spin text-purple-500" />
+              </div>
+            ) : previewContent?.html_content ? (
+              <div className="h-full pt-16">
+                <InteractiveViewer
+                  htmlContent={previewContent.html_content}
+                  title={previewContent.title}
+                />
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center text-gray-400">
+                No preview available
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

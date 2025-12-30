@@ -55,14 +55,14 @@ export function InteractiveViewer({
 
     const viewportHeight = window.visualViewport?.height ?? rect.height;
     const availableWidth = Math.max(rect.width - 24, 320);
-    // Reserve extra space for surrounding UI (filters/actions) to avoid overflow on mobile
-    const availableHeight = Math.max(viewportHeight - safeTop - safeBottom - 140, 320);
+    // Reserve space for filter bar + actions but keep frame visible
+    const availableHeight = Math.max(viewportHeight - safeTop - safeBottom - 80, 360);
 
     const scaleX = availableWidth / FRAME_WIDTH;
     const scaleY = availableHeight / FRAME_HEIGHT;
     const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
 
-    setScale(Math.max(newScale, 0.5));
+    setScale(Math.max(newScale, 0.55));
   }, []);
 
   // Recalculate scale on resize

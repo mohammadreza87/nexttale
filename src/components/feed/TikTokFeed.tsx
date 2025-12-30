@@ -33,7 +33,6 @@ export function TikTokFeed({
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [previewActive, setPreviewActive] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -80,7 +79,7 @@ export function TikTokFeed({
   // Navigate between items
   const navigate = useCallback(
     (direction: 'up' | 'down') => {
-      if (isTransitioning || previewActive) return;
+      if (isTransitioning) return;
 
       setIsTransitioning(true);
 
@@ -98,18 +97,17 @@ export function TikTokFeed({
   // Handle swipe
   const handleSwipe = useCallback(
     (direction: 'up' | 'down' | 'left' | 'right') => {
-      if (previewActive) return;
       if (direction === 'up') {
         navigate('down'); // Swipe up = go to next (down in list)
       } else if (direction === 'down') {
         navigate('up'); // Swipe down = go to previous (up in list)
       }
     },
-    [navigate, previewActive]
+    [navigate]
   );
 
   // Attach gesture handlers
-  useSwipeGesture(containerRef, handleSwipe, {}, !previewActive);
+  useSwipeGesture(containerRef, handleSwipe);
   useKeyboardNavigation((dir) => navigate(dir === 'up' ? 'up' : 'down'));
   useWheelNavigation(containerRef, navigate);
 
@@ -149,8 +147,8 @@ export function TikTokFeed({
       {/* Constrain feed width on desktop for better UX */}
       <div
         ref={containerRef}
-        className="relative min-h-dvh w-full max-w-lg select-none overflow-hidden bg-black"
-        style={{ height: '100dvh' }}
+        className="relative w-full max-w-[480px] select-none overflow-hidden rounded-3xl bg-black"
+        style={{ height: 'min(90vh, 820px)', aspectRatio: '4 / 5' }}
       >
         {/* Filter tabs */}
         <div className="absolute left-0 right-0 top-0 z-50 bg-gradient-to-b from-black/80 via-black/40 to-transparent pb-6 pt-2">
@@ -165,7 +163,7 @@ export function TikTokFeed({
           }}
         >
           {items.map((item, index) => (
-            <div key={item.id} className="relative h-[100dvh] w-full">
+            <div key={item.id} className="relative h-full w-full">
               {item.feed_type === 'story' ? (
                 <StoryFeedCard
                   item={item}
@@ -173,7 +171,6 @@ export function TikTokFeed({
                   onSelect={() => handleSelect(item)}
                   onViewProfile={onViewProfile}
                   userId={userId}
-                  onPreviewStateChange={setPreviewActive}
                 />
               ) : (
                 <InteractiveFeedCard
@@ -182,7 +179,6 @@ export function TikTokFeed({
                   onSelect={() => handleSelect(item)}
                   onViewProfile={onViewProfile}
                   userId={userId}
-                  onPreviewStateChange={setPreviewActive}
                 />
               )}
             </div>
