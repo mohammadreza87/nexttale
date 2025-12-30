@@ -29,25 +29,32 @@ function makeChain(result: any) {
   };
 }
 
-let fromMock: ReturnType<typeof vi.fn>;
+const { fromMock } = vi.hoisted(() => ({
+  fromMock: vi.fn(),
+}));
+
+vi.mock('../supabase', () => ({
+  supabase: {
+    from: (...args: unknown[]) => fromMock(...(args as [string])),
+  },
+}));
+
+// Initialize fromMock default implementation
+fromMock.mockImplementation((table: string) => {
+  calls.push({ table, action: 'from' });
+  return makeChain(null);
+});
+
 let fetchMock: ReturnType<typeof vi.fn>;
 const originalFetch = global.fetch;
-
-vi.mock('../supabase', () => {
-  fromMock = vi.fn((table: string) => {
-    calls.push({ table, action: 'from' });
-    return makeChain(null);
-  });
-  return {
-    supabase: {
-      from: (...args: unknown[]) => fromMock(...(args as [string])),
-    },
-  };
-});
 
 describe('storyService.saveProgress', () => {
   beforeEach(() => {
     calls = [];
+    fromMock.mockImplementation((table: string) => {
+      calls.push({ table, action: 'from' });
+      return makeChain(null);
+    });
   });
 
   it('updates existing progress when record is found', async () => {
@@ -125,6 +132,10 @@ describe('storyService.startStoryGeneration', () => {
     global.fetch = fetchMock;
     vi.stubEnv('VITE_SUPABASE_URL', 'https://api.example.com');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key');
+    fromMock.mockImplementation((table: string) => {
+      calls.push({ table, action: 'from' });
+      return makeChain(null);
+    });
   });
 
   afterEach(() => {

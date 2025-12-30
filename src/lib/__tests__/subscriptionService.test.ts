@@ -1,136 +1,105 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as subscriptionService from '../subscriptionService';
+import { createCheckoutSession, createCustomerPortalSession } from '../subscriptionService';
 
-let profileResult: unknown = null;
-let profileError: unknown = null;
+const { getSessionMock } = vi.hoisted(() => ({
+  getSessionMock: vi.fn(),
+}));
 
-let maybeSingleMock: ReturnType<typeof vi.fn>;
-let eqMock: ReturnType<typeof vi.fn>;
-let selectMock: ReturnType<typeof vi.fn>;
-let fromMock: ReturnType<typeof vi.fn>;
-
-vi.mock('../supabase', () => {
-  maybeSingleMock = vi.fn(async () => ({ data: profileResult, error: profileError }));
-  eqMock = vi.fn(() => ({ maybeSingle: maybeSingleMock }));
-  selectMock = vi.fn(() => ({ eq: eqMock }));
-  fromMock = vi.fn(() => ({ select: selectMock }));
-
-  return {
-    supabase: {
-      from: (...args: unknown[]) => fromMock(...args),
+vi.mock('../supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: (...args: unknown[]) => getSessionMock(...args),
     },
-  };
-});
+  },
+}));
 
-describe('subscriptionService.getSubscriptionUsage', () => {
+let fetchMock: ReturnType<typeof vi.fn>;
+const originalWindow = globalThis.window;
+
+describe('subscriptionService checkout helpers', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2024-01-01T12:00:00Z'));
-    profileResult = null;
-    profileError = null;
-    fromMock?.mockClear();
-    selectMock?.mockClear();
-    eqMock?.mockClear();
-    maybeSingleMock?.mockClear();
+    fetchMock = vi.fn();
+    global.fetch = fetchMock;
+    // Minimal window object for origin usage
+    globalThis.window = { location: { origin: 'http://localhost' } } as Window & typeof globalThis;
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    vi.restoreAllMocks();
+    globalThis.window = originalWindow;
   });
 
-  it('returns free defaults when no subscription profile exists', async () => {
-    const result = await subscriptionService.getSubscriptionUsage('user-123');
-
-    expect(result).toEqual({
-      tier: 'free',
-      isGrandfathered: false,
-      storiesGeneratedToday: 0,
-      dailyLimit: 2,
-      hasUnlimited: false,
-      canGenerate: true,
-      isPro: false,
+  it('builds checkout session request with auth token and returns URL', async () => {
+    getSessionMock.mockResolvedValue({ data: { session: { access_token: 'token-123' } } });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ url: 'https://checkout.test' }),
     });
-    expect(fromMock).toHaveBeenCalledWith('user_profiles');
+
+    const result = await createCheckoutSession('price_123');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout`,
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token-123',
+          'Content-Type': 'application/json',
+        }),
+      })
+    );
+    expect(result).toBe('https://checkout.test');
   });
 
-  it('grants unlimited generation for pro or grandfathered users', async () => {
-    profileResult = {
-      subscription_tier: 'pro',
-      subscription_status: 'active',
-      is_grandfathered: false,
-      stories_generated_today: 3,
-      total_stories_generated: 10,
-      last_generation_date: '2024-01-01',
-      stripe_customer_id: 'cus_123',
-      total_points: 0,
-      reading_points: 0,
-      creating_points: 0,
-    };
-
-    const result = await subscriptionService.getSubscriptionUsage('user-123');
-
-    expect(result).toEqual({
-      tier: 'pro',
-      isGrandfathered: false,
-      storiesGeneratedToday: 3,
-      dailyLimit: null,
-      hasUnlimited: true,
-      canGenerate: true,
-      isPro: true,
+  it('returns null when checkout response is not ok', async () => {
+    getSessionMock.mockResolvedValue({ data: { session: { access_token: 'token-123' } } });
+    fetchMock.mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: 'boom' }),
     });
+
+    const result = await createCheckoutSession('price_123');
+    expect(result).toBeNull();
   });
 
-  it('enforces free daily cap based on last_generation_date', async () => {
-    profileResult = {
-      subscription_tier: 'free',
-      subscription_status: 'active',
-      is_grandfathered: false,
-      stories_generated_today: 2,
-      total_stories_generated: 5,
-      last_generation_date: '2024-01-01',
-      stripe_customer_id: null,
-      total_points: 0,
-      reading_points: 0,
-      creating_points: 0,
-    };
+  it('returns null when no auth session is present', async () => {
+    getSessionMock.mockResolvedValue({ data: { session: null } });
 
-    const result = await subscriptionService.getSubscriptionUsage('user-123');
-
-    expect(result).toEqual({
-      tier: 'free',
-      isGrandfathered: false,
-      storiesGeneratedToday: 2,
-      dailyLimit: 2,
-      hasUnlimited: false,
-      canGenerate: false,
-      isPro: false,
-    });
+    const result = await createCheckoutSession('price_123');
+    expect(result).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('resets daily count when last_generation_date is not today', async () => {
-    profileResult = {
-      subscription_tier: 'free',
-      subscription_status: 'active',
-      is_grandfathered: false,
-      stories_generated_today: 2,
-      total_stories_generated: 5,
-      last_generation_date: '2023-12-31',
-      stripe_customer_id: null,
-      total_points: 0,
-      reading_points: 0,
-      creating_points: 0,
-    };
-
-    const result = await subscriptionService.getSubscriptionUsage('user-123');
-
-    expect(result).toEqual({
-      tier: 'free',
-      isGrandfathered: false,
-      storiesGeneratedToday: 0,
-      dailyLimit: 2,
-      hasUnlimited: false,
-      canGenerate: true,
-      isPro: false,
+  it('creates customer portal when authenticated', async () => {
+    getSessionMock.mockResolvedValue({ data: { session: { access_token: 'token-abc' } } });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ url: 'https://portal.test' }),
     });
+
+    const result = await createCustomerPortalSession();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/customer-portal`,
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token-abc',
+          'Content-Type': 'application/json',
+        }),
+      })
+    );
+    expect(result).toBe('https://portal.test');
+  });
+
+  it('returns null when portal response is not ok', async () => {
+    getSessionMock.mockResolvedValue({ data: { session: { access_token: 'token-abc' } } });
+    fetchMock.mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: 'fail' }),
+    });
+
+    const result = await createCustomerPortalSession();
+    expect(result).toBeNull();
   });
 });

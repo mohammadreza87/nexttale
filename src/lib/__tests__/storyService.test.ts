@@ -1,71 +1,68 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStoryChoice } from '../storyService';
 
-let fromMock: ReturnType<typeof vi.fn>;
+const { fromMock } = vi.hoisted(() => ({
+  fromMock: vi.fn(),
+}));
 
-vi.mock('../supabase', () => {
-  fromMock = vi.fn();
-  return {
-    supabase: {
-      from: (...args: unknown[]) => fromMock(...args),
-    },
-  };
-});
+vi.mock('../supabase', () => ({
+  supabase: {
+    from: (...args: unknown[]) => fromMock(...args),
+  },
+}));
 
 describe('storyService.createStoryChoice', () => {
   beforeEach(() => {
     fromMock?.mockReset();
   });
 
-  it('retries without created_by when the column is missing', async () => {
-    const insertCalls: Array<Record<string, unknown>> = [];
+  it('creates a story choice successfully', async () => {
+    const insertData = {
+      from_node_id: 'from-node',
+      to_node_id: 'to-node',
+      choice_text: 'text',
+      consequence_hint: null,
+      choice_order: 0,
+    };
 
     fromMock.mockImplementation(() => ({
-      insert: (data: Record<string, unknown>) => {
-        insertCalls.push({ ...data });
-        return {
-          select: () => ({
-            single: async () => {
-              if (insertCalls.length === 1) {
-                return { data: null, error: { code: 'PGRST204', message: 'created_by missing' } };
-              }
-              return { data: { id: 'choice-123', ...data }, error: null };
-            },
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { id: 'choice-123', ...insertData },
+            error: null,
           }),
-        };
-      },
+        }),
+      }),
     }));
 
-    const result = await createStoryChoice('from-node', 'to-node', 'text', null, 0, 'creator-id');
+    const result = await createStoryChoice('from-node', 'to-node', 'text', null, 0);
 
     expect(result).toMatchObject({ id: 'choice-123', choice_text: 'text', choice_order: 0 });
-    expect(fromMock).toHaveBeenCalledTimes(2);
-    expect(insertCalls[0].created_by).toBe('creator-id');
-    expect('created_by' in insertCalls[1]).toBe(false);
+    expect(fromMock).toHaveBeenCalledWith('story_choices');
   });
 
-  it('succeeds on first attempt when backend supports created_by', async () => {
-    const insertCalls: Array<Record<string, unknown>> = [];
+  it('creates a story choice with consequence hint', async () => {
+    const insertData = {
+      from_node_id: 'from-node',
+      to_node_id: 'to-node',
+      choice_text: 'pick me',
+      consequence_hint: 'hint',
+      choice_order: 1,
+    };
 
     fromMock.mockImplementation(() => ({
-      insert: (data: Record<string, unknown>) => {
-        insertCalls.push({ ...data });
-        return {
-          select: () => ({
-            single: async () => ({ data: { id: 'choice-abc', ...data }, error: null }),
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { id: 'choice-abc', ...insertData },
+            error: null,
           }),
-        };
-      },
+        }),
+      }),
     }));
 
-    const result = await createStoryChoice(
-      'from-node',
-      'to-node',
-      'pick me',
-      'hint',
-      1,
-      'creator-id'
-    );
+    const result = await createStoryChoice('from-node', 'to-node', 'pick me', 'hint', 1);
 
     expect(result).toMatchObject({
       id: 'choice-abc',
@@ -75,7 +72,20 @@ describe('storyService.createStoryChoice', () => {
       consequence_hint: 'hint',
       choice_order: 1,
     });
-    expect(fromMock).toHaveBeenCalledTimes(1);
-    expect(insertCalls[0].created_by).toBe('creator-id');
+  });
+
+  it('throws error when insert fails', async () => {
+    fromMock.mockImplementation(() => ({
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: null,
+            error: { code: 'ERROR', message: 'Insert failed' },
+          }),
+        }),
+      }),
+    }));
+
+    await expect(createStoryChoice('from-node', 'to-node', 'text', null, 0)).rejects.toThrow();
   });
 });

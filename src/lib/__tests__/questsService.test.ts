@@ -1,22 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { progressQuest } from '../questsService';
 
-let fromMock: ReturnType<typeof vi.fn>;
-let getSessionMock: ReturnType<typeof vi.fn>;
+const { fromMock, getSessionMock } = vi.hoisted(() => ({
+  fromMock: vi.fn(),
+  getSessionMock: vi.fn(),
+}));
 
-vi.mock('../supabase', () => {
-  fromMock = vi.fn();
-  getSessionMock = vi.fn();
-  return {
-    supabase: {
-      from: (...args: unknown[]) => fromMock(...args),
-      auth: {
-        getSession: (...args: unknown[]) => getSessionMock(...args),
-      },
-      rpc: vi.fn(),
+vi.mock('../supabase', () => ({
+  supabase: {
+    from: (...args: unknown[]) => fromMock(...args),
+    auth: {
+      getSession: (...args: unknown[]) => getSessionMock(...args),
     },
-  };
-});
+    rpc: vi.fn(),
+  },
+}));
 
 describe('questsService.progressQuest', () => {
   beforeEach(() => {
