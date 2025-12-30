@@ -104,22 +104,19 @@ CRITICAL REQUIREMENTS:
    - window.open(), navigation away from page
    - document.cookie
 
-4. RESPONSIVE DESIGN (CRITICAL):
-   - Use viewport units (vw, vh, vmin, dvh) for sizing
-   - Container: width: 100%, max-width: min(500px, 95vw)
-   - Game area: Use aspect-ratio or calculate from viewport
-   - Canvas games: Set canvas size dynamically with JavaScript:
-     const size = Math.min(window.innerWidth - 32, window.innerHeight - 150, 500);
-     canvas.width = canvas.height = size;
-   - Use CSS Grid or Flexbox for layouts
-   - Font sizes: clamp(14px, 4vw, 18px) for body, larger for headers
-   - Touch-friendly: minimum 44px touch targets
-   - NO fixed pixel widths over 300px
-   - NO horizontal scrolling ever
-   - Center everything: margin: 0 auto
+4. FIXED FRAME DESIGN (CRITICAL - 1080x1350 pixels, 4:5 aspect ratio):
+   - The content will be displayed in a FIXED 1080x1350 frame (scaled to fit screen)
+   - Design for exactly 1080px width and 1350px height
+   - html, body: width: 1080px, height: 1350px, margin: 0, padding: 0
+   - Center all content within this fixed frame
+   - Canvas games: Use fixed size that fits within frame (e.g., 800x800 max)
+   - Use CSS Grid or Flexbox for layouts, centered in frame
+   - Font sizes: 24px-32px for body text, 48px-64px for headers (fixed, not responsive)
+   - Touch-friendly: minimum 60px touch targets
+   - NO viewport units (vw, vh) - use fixed pixel values
    - Dark theme: #0a0a0a background, #fff text
-   - Accent: purple #8b5cf6, cyan #22d3ee, pink #ec4899
-   - Add resize listener to redraw canvas games on orientation change
+   - Accent colors: purple #8b5cf6, cyan #22d3ee, pink #ec4899
+   - The frame will be scaled down on smaller screens, so design for 1080x1350
 
 5. ${CONTENT_TYPE_PROMPTS[contentType]}
 

@@ -10,12 +10,11 @@ import {
   Outlet,
   useOutletContext,
 } from 'react-router-dom';
-import { StoryLibrary } from './components/StoryLibrary';
 import { StoryReader } from './components/StoryReader';
 import { StoryDetail } from './components/StoryDetail';
 import { Profile } from './components/Profile';
 import { PublicProfile } from './components/PublicProfile';
-import { StoryCreator } from './components/StoryCreator';
+import { Creator } from './components/Creator';
 import { Subscription } from './components/Subscription';
 import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
@@ -24,13 +23,13 @@ import { Quests } from './components/Quests';
 import { LandingPage } from './components/LandingPage';
 import { TermsOfService, PrivacyPolicy } from './components/legal';
 import { TikTokFeed } from './components/feed';
-import { InteractiveCreator, InteractiveViewer, InteractiveDetail } from './components/interactive';
+import { InteractiveViewer, InteractiveDetail } from './components/interactive';
 import { getInteractiveContent } from './lib/interactiveService';
 import { AuthProvider, useAuth } from './lib/authContext';
 import { useAnalytics } from './hooks/useAnalytics';
 import { getSubscriptionUsage } from './lib/subscriptionService';
 
-type ViewKey = 'home' | 'feed' | 'profile' | 'create' | 'subscription' | 'quests';
+type ViewKey = 'home' | 'profile' | 'create' | 'subscription' | 'quests';
 
 type AppOutletContext = {
   userId: string;
@@ -39,8 +38,7 @@ type AppOutletContext = {
   handleStartStory: (storyId: string) => void;
   handleSelectInteractive: (contentId: string) => void;
   handleStartInteractive: (contentId: string) => void;
-  handleBackToLibrary: () => void;
-  handleBackToFeed: () => void;
+  handleBackToHome: () => void;
   handleViewProfile: (userId: string) => void;
 };
 
@@ -48,10 +46,8 @@ const viewToPath = (view: ViewKey) => {
   switch (view) {
     case 'home':
       return '/';
-    case 'feed':
-      return '/feed';
     case 'create':
-      return '/create/interactive';
+      return '/create';
     case 'profile':
       return '/profile';
     case 'subscription':
@@ -64,7 +60,6 @@ const viewToPath = (view: ViewKey) => {
 };
 
 const pathToView = (pathname: string): ViewKey => {
-  if (pathname.startsWith('/feed')) return 'feed';
   if (pathname.startsWith('/create')) return 'create';
   if (pathname.startsWith('/profile')) return 'profile';
   if (pathname.startsWith('/subscription')) return 'subscription';
@@ -75,9 +70,7 @@ const pathToView = (pathname: string): ViewKey => {
 const getPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/story/') && pathname.includes('/read')) return 'Reading Story';
   if (pathname.startsWith('/story/')) return 'Story Detail';
-  if (pathname.startsWith('/feed')) return 'Feed';
-  if (pathname.startsWith('/create/interactive')) return 'Create Interactive';
-  if (pathname.startsWith('/create')) return 'Create Story';
+  if (pathname.startsWith('/create')) return 'Create';
   if (pathname.startsWith('/interactive/') && pathname.includes('/view'))
     return 'Interactive Viewer';
   if (pathname.startsWith('/interactive/')) return 'Interactive Detail';
@@ -87,7 +80,7 @@ const getPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/user/')) return 'User Profile';
   if (pathname.startsWith('/landing')) return 'Landing';
   if (pathname.startsWith('/auth')) return 'Auth';
-  return 'Story Library';
+  return 'Explore';
 };
 
 function useQueryRedirects() {
@@ -160,8 +153,7 @@ function MainLayout() {
   const handleStartStory = (storyId: string) => navigate(`/story/${storyId}/read`);
   const handleSelectInteractive = (contentId: string) => navigate(`/interactive/${contentId}`);
   const handleStartInteractive = (contentId: string) => navigate(`/interactive/${contentId}/view`);
-  const handleBackToLibrary = () => navigate('/');
-  const handleBackToFeed = () => navigate('/feed');
+  const handleBackToHome = () => navigate('/');
   const handleViewProfile = (profileUserId: string) => navigate(`/user/${profileUserId}`);
 
   return (
@@ -196,8 +188,7 @@ function MainLayout() {
               handleStartStory,
               handleSelectInteractive,
               handleStartInteractive,
-              handleBackToLibrary,
-              handleBackToFeed,
+              handleBackToHome,
               handleViewProfile,
             } satisfies AppOutletContext
           }
@@ -215,22 +206,22 @@ function MainLayout() {
   );
 }
 
-function StoryLibraryRoute() {
-  const { userId, isPro, handleSelectStory, handleViewProfile } =
+function HomeRoute() {
+  const { userId, handleSelectStory, handleSelectInteractive, handleViewProfile } =
     useOutletContext<AppOutletContext>();
   return (
-    <StoryLibrary
-      onSelectStory={handleSelectStory}
-      onViewProfile={handleViewProfile}
+    <TikTokFeed
       userId={userId}
-      isPro={isPro}
+      onSelectStory={handleSelectStory}
+      onSelectInteractive={handleSelectInteractive}
+      onViewProfile={handleViewProfile}
     />
   );
 }
 
 function StoryDetailRoute() {
   const { storyId } = useParams();
-  const { userId, isPro, handleStartStory, handleBackToLibrary, handleViewProfile } =
+  const { userId, isPro, handleStartStory, handleBackToHome, handleViewProfile } =
     useOutletContext<AppOutletContext>();
 
   if (!storyId) {
@@ -241,7 +232,7 @@ function StoryDetailRoute() {
     <StoryDetail
       storyId={storyId}
       userId={userId}
-      onBack={handleBackToLibrary}
+      onBack={handleBackToHome}
       onStartStory={() => handleStartStory(storyId)}
       onViewProfile={handleViewProfile}
       isPro={isPro}
@@ -251,7 +242,7 @@ function StoryDetailRoute() {
 
 function StoryReaderRoute() {
   const { storyId } = useParams();
-  const { userId, handleBackToLibrary, handleViewProfile } = useOutletContext<AppOutletContext>();
+  const { userId, handleBackToHome, handleViewProfile } = useOutletContext<AppOutletContext>();
 
   if (!storyId) {
     return <Navigate to="/" replace />;
@@ -261,20 +252,27 @@ function StoryReaderRoute() {
     <StoryReader
       storyId={storyId}
       userId={userId}
-      onComplete={handleBackToLibrary}
+      onComplete={handleBackToHome}
       onViewProfile={handleViewProfile}
     />
   );
 }
 
-function StoryCreatorRoute() {
-  const { userId, handleSelectStory } = useOutletContext<AppOutletContext>();
-  return <StoryCreator userId={userId} onStoryCreated={handleSelectStory} />;
+function CreatorRoute() {
+  const { userId, handleSelectStory, handleSelectInteractive } =
+    useOutletContext<AppOutletContext>();
+  return (
+    <Creator
+      userId={userId}
+      onStoryCreated={handleSelectStory}
+      onInteractiveCreated={handleSelectInteractive}
+    />
+  );
 }
 
 function SubscriptionRoute() {
-  const { userId, handleBackToLibrary } = useOutletContext<AppOutletContext>();
-  return <Subscription userId={userId} onBack={handleBackToLibrary} />;
+  const { userId, handleBackToHome } = useOutletContext<AppOutletContext>();
+  return <Subscription userId={userId} onBack={handleBackToHome} />;
 }
 
 function QuestsRoute() {
@@ -289,7 +287,7 @@ function ProfileRoute() {
 
 function PublicProfileRoute() {
   const { profileUserId } = useParams();
-  const { handleBackToLibrary, handleSelectStory } = useOutletContext<AppOutletContext>();
+  const { handleBackToHome, handleSelectStory } = useOutletContext<AppOutletContext>();
 
   if (!profileUserId) {
     return <Navigate to="/" replace />;
@@ -298,7 +296,7 @@ function PublicProfileRoute() {
   return (
     <PublicProfile
       profileUserId={profileUserId}
-      onBack={handleBackToLibrary}
+      onBack={handleBackToHome}
       onSelectStory={handleSelectStory}
     />
   );
@@ -314,31 +312,13 @@ function LandingRoute() {
   );
 }
 
-function TikTokFeedRoute() {
-  const { userId, handleSelectStory, handleSelectInteractive, handleViewProfile } =
-    useOutletContext<AppOutletContext>();
-  return (
-    <TikTokFeed
-      userId={userId}
-      onSelectStory={handleSelectStory}
-      onSelectInteractive={handleSelectInteractive}
-      onViewProfile={handleViewProfile}
-    />
-  );
-}
-
-function InteractiveCreatorRoute() {
-  const { userId, handleSelectInteractive } = useOutletContext<AppOutletContext>();
-  return <InteractiveCreator userId={userId} onCreated={handleSelectInteractive} />;
-}
-
 function InteractiveDetailRoute() {
   const { contentId } = useParams();
-  const { userId, isPro, handleStartInteractive, handleBackToFeed, handleViewProfile } =
+  const { userId, isPro, handleStartInteractive, handleBackToHome, handleViewProfile } =
     useOutletContext<AppOutletContext>();
 
   if (!contentId) {
-    return <Navigate to="/feed" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (
@@ -346,7 +326,7 @@ function InteractiveDetailRoute() {
       contentId={contentId}
       userId={userId}
       isPro={isPro}
-      onBack={handleBackToFeed}
+      onBack={handleBackToHome}
       onStart={() => handleStartInteractive(contentId)}
       onViewProfile={handleViewProfile}
     />
@@ -355,7 +335,7 @@ function InteractiveDetailRoute() {
 
 function InteractiveViewerRoute() {
   const { contentId } = useParams();
-  const { handleBackToFeed } = useOutletContext<AppOutletContext>();
+  const { handleBackToHome } = useOutletContext<AppOutletContext>();
   const [content, setContent] = useState<{ html_content: string; title: string } | null>(null);
 
   useEffect(() => {
@@ -365,7 +345,7 @@ function InteractiveViewerRoute() {
   }, [contentId]);
 
   if (!contentId) {
-    return <Navigate to="/feed" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (!content) {
@@ -380,7 +360,7 @@ function InteractiveViewerRoute() {
     <InteractiveViewer
       htmlContent={content.html_content}
       title={content.title}
-      onBack={handleBackToFeed}
+      onBack={handleBackToHome}
       showBackButton
       className="min-h-screen"
     />
@@ -423,8 +403,7 @@ function AppRoutes() {
       <Route path="/auth" element={<Navigate to="/auth/login" replace />} />
       <Route path="/auth/:mode" element={<AuthRoute />} />
       <Route element={<MainLayout />}>
-        <Route index element={<StoryLibraryRoute />} />
-        <Route path="feed" element={<TikTokFeedRoute />} />
+        <Route index element={<HomeRoute />} />
         <Route path="story/:storyId" element={<StoryDetailRoute />} />
         <Route path="story/:storyId/read" element={<StoryReaderRoute />} />
         <Route path="interactive/:contentId" element={<InteractiveDetailRoute />} />
@@ -433,15 +412,7 @@ function AppRoutes() {
           path="create"
           element={
             <RequireAuth>
-              <StoryCreatorRoute />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="create/interactive"
-          element={
-            <RequireAuth>
-              <InteractiveCreatorRoute />
+              <CreatorRoute />
             </RequireAuth>
           }
         />

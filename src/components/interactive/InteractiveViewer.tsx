@@ -1,11 +1,17 @@
-import { useRef, useEffect, useState } from 'react';
-import { Loader, AlertTriangle, Maximize2, Minimize2, RotateCcw } from 'lucide-react';
+import { useRef, useEffect, useState, useCallback } from 'react';
+import { Loader, AlertTriangle, Maximize2, Minimize2, RotateCcw, ArrowLeft } from 'lucide-react';
+
+// Fixed frame dimensions (Instagram portrait ratio 4:5)
+const FRAME_WIDTH = 1080;
+const FRAME_HEIGHT = 1350;
 
 interface InteractiveViewerProps {
   htmlContent: string;
   title: string;
   onLoad?: () => void;
   onError?: (error: string) => void;
+  onBack?: () => void;
+  showBackButton?: boolean;
   className?: string;
 }
 
@@ -14,15 +20,43 @@ export function InteractiveViewer({
   title,
   onLoad,
   onError,
+  onBack,
+  showBackButton = false,
   className = '',
 }: InteractiveViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const frameWrapperRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [key, setKey] = useState(0); // For forcing reload
+  const [key, setKey] = useState(0);
+  const [scale, setScale] = useState(1);
+
+  // Calculate scale to fit frame in container
+  const calculateScale = useCallback(() => {
+    if (!frameWrapperRef.current) return;
+
+    const container = frameWrapperRef.current.parentElement;
+    if (!container) return;
+
+    const containerWidth = container.clientWidth - 32; // padding
+    const containerHeight = container.clientHeight - 32;
+
+    const scaleX = containerWidth / FRAME_WIDTH;
+    const scaleY = containerHeight / FRAME_HEIGHT;
+    const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+
+    setScale(newScale);
+  }, []);
+
+  // Recalculate scale on resize
+  useEffect(() => {
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, [calculateScale]);
 
   // Create blob URL from HTML content
   useEffect(() => {
@@ -32,78 +66,8 @@ export function InteractiveViewer({
       return;
     }
 
-    // Wrap HTML with viewport meta if not present
-    let processedHtml = htmlContent;
-    if (!processedHtml.includes('viewport')) {
-      processedHtml = processedHtml.replace(
-        '<head>',
-        `<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">`
-      );
-    }
-
-    // Add responsive base styles
-    const responsiveStyles = `<style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow-x: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      background: #0a0a0a;
-      color: #fff;
-    }
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      min-height: 100dvh;
-      padding: 16px;
-    }
-    /* Make content fill available space */
-    #app, #root, #game, .container, .game-container, main {
-      width: 100%;
-      max-width: 100%;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    /* Responsive canvas */
-    canvas {
-      max-width: 100%;
-      height: auto;
-      touch-action: manipulation;
-    }
-    /* Touch-friendly buttons */
-    button, .btn, [role="button"] {
-      min-height: 44px;
-      min-width: 44px;
-      padding: 12px 24px;
-      font-size: 16px;
-      touch-action: manipulation;
-      cursor: pointer;
-    }
-    /* Prevent text selection during gameplay */
-    .no-select {
-      -webkit-user-select: none;
-      user-select: none;
-    }
-  </style>`;
-
-    if (!processedHtml.includes('box-sizing: border-box')) {
-      processedHtml = processedHtml.replace('</head>', `${responsiveStyles}\n</head>`);
-    }
-
-    const blob = new Blob([processedHtml], { type: 'text/html' });
+    // Don't add responsive styles - content is designed for fixed 1080x1350
+    const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     setBlobUrl(url);
 
@@ -116,6 +80,7 @@ export function InteractiveViewer({
   const handleLoad = () => {
     setLoading(false);
     setError(null);
+    calculateScale();
     onLoad?.();
   };
 
@@ -148,13 +113,15 @@ export function InteractiveViewer({
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
+      // Recalculate scale after fullscreen change
+      setTimeout(calculateScale, 100);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
-  }, []);
+  }, [calculateScale]);
 
   // Reload content
   const handleReload = () => {
@@ -166,11 +133,22 @@ export function InteractiveViewer({
   return (
     <div
       ref={containerRef}
-      className={`relative overflow-hidden rounded-2xl bg-gray-900 ${className}`}
+      className={`relative flex items-center justify-center overflow-hidden bg-gray-950 ${className}`}
     >
+      {/* Back button */}
+      {showBackButton && onBack && (
+        <button
+          onClick={onBack}
+          className="absolute left-3 top-3 z-20 flex items-center gap-2 rounded-lg bg-black/50 px-3 py-2 text-white transition-colors hover:bg-black/70"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-sm">Back</span>
+        </button>
+      )}
+
       {/* Loading overlay */}
       {loading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-900">
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-950">
           <div className="flex flex-col items-center gap-3">
             <Loader className="h-8 w-8 animate-spin text-purple-500" />
             <p className="text-sm text-gray-400">Loading {title}...</p>
@@ -180,7 +158,7 @@ export function InteractiveViewer({
 
       {/* Error state */}
       {error && !loading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-900">
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-950">
           <div className="flex flex-col items-center gap-3 p-6 text-center">
             <AlertTriangle className="h-12 w-12 text-red-500" />
             <p className="font-semibold text-white">Something went wrong</p>
@@ -214,21 +192,35 @@ export function InteractiveViewer({
         </button>
       </div>
 
-      {/* Sandboxed iframe */}
-      {blobUrl && (
-        <iframe
-          ref={iframeRef}
-          key={key}
-          src={blobUrl}
-          title={title}
-          className="h-full w-full border-0"
-          onLoad={handleLoad}
-          onError={handleError}
-          sandbox="allow-scripts"
-          // SECURITY: Strict sandbox with only scripts allowed
-          // Disabled: allow-same-origin, allow-forms, allow-popups, allow-top-navigation
-        />
-      )}
+      {/* Fixed frame wrapper with scaling */}
+      <div
+        ref={frameWrapperRef}
+        className="relative overflow-hidden rounded-2xl shadow-2xl"
+        style={{
+          width: FRAME_WIDTH,
+          height: FRAME_HEIGHT,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+      >
+        {/* Sandboxed iframe at fixed size */}
+        {blobUrl && (
+          <iframe
+            ref={iframeRef}
+            key={key}
+            src={blobUrl}
+            title={title}
+            className="border-0"
+            style={{
+              width: FRAME_WIDTH,
+              height: FRAME_HEIGHT,
+            }}
+            onLoad={handleLoad}
+            onError={handleError}
+            sandbox="allow-scripts"
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Home, User, Menu, X, Sparkles, Crown, Target, Compass } from 'lucide-react';
+import { Home, User, Menu, X, Sparkles, Crown, Target } from 'lucide-react';
 
-type ViewKey = 'home' | 'feed' | 'profile' | 'create' | 'subscription' | 'quests';
+type ViewKey = 'home' | 'profile' | 'create' | 'subscription' | 'quests';
 
 interface SidebarProps {
   currentView: ViewKey;
@@ -61,7 +61,7 @@ export function Sidebar({ currentView, onNavigate, isPro = false }: SidebarProps
           {/* Navigation */}
           <nav className="flex-1 p-4">
             <ul className="space-y-2">
-              {/* Home */}
+              {/* Explore (Home) */}
               <li>
                 <button
                   onClick={() => handleNavigate('home')}
@@ -72,21 +72,6 @@ export function Sidebar({ currentView, onNavigate, isPro = false }: SidebarProps
                   }`}
                 >
                   <Home className="h-5 w-5" />
-                  <span>Home</span>
-                </button>
-              </li>
-
-              {/* Explore Feed */}
-              <li>
-                <button
-                  onClick={() => handleNavigate('feed')}
-                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 transition-all ${
-                    currentView === 'feed'
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 font-semibold text-white shadow-lg'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                  }`}
-                >
-                  <Compass className="h-5 w-5" />
                   <span>Explore</span>
                 </button>
               </li>
