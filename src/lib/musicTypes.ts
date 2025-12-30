@@ -75,10 +75,10 @@ export interface CloneVoiceResponse {
 // Request to generate music
 export interface GenerateMusicRequest {
   prompt: string;
-  voiceCloneId?: string;
   genre?: string;
   mood?: string;
-  style?: MusicStyle;
+  instrumental?: boolean;
+  durationSeconds?: number;
 }
 
 // Response from generate-music function

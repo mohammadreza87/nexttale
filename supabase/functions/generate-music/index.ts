@@ -9,56 +9,59 @@ const corsHeaders = {
 
 interface GenerateMusicRequest {
   prompt: string;
-  voiceCloneId?: string;
   genre?: string;
   mood?: string;
-  style?: 'song' | 'poem' | 'rap' | 'spoken_word';
+  instrumental?: boolean;
+  durationSeconds?: number; // 3-600 seconds
 }
 
-interface GeneratedMusic {
+interface GeneratedMusicPlan {
   title: string;
   description: string;
-  lyrics: string;
+  musicPrompt: string; // The prompt for ElevenLabs Music API
+  lyrics: string | null; // Lyrics if not instrumental
   genre: string;
   mood: string;
   tags: string[];
 }
 
-async function generateLyricsWithGemini(
+async function generateMusicPlanWithGemini(
   prompt: string,
-  style: string,
   genre: string,
   mood: string,
+  instrumental: boolean,
   apiKey: string
-): Promise<GeneratedMusic> {
-  const styleGuide = {
-    song: 'Write lyrics for a song with verses and a chorus. Make it melodic and singable.',
-    poem: 'Write a poetic piece with rhythm and flow. Use vivid imagery and emotions.',
-    rap: 'Write rap lyrics with strong rhythm, rhymes, and flow. Include bars and verses.',
-    spoken_word: 'Write a spoken word piece with powerful delivery and emotional depth.',
-  };
+): Promise<GeneratedMusicPlan> {
+  const systemPrompt = `You are a music producer creating a prompt for an AI music generation system.
 
-  const systemPrompt = `You are a talented songwriter and lyricist. Create original content based on the user's request.
+USER REQUEST: ${prompt}
+GENRE: ${genre}
+MOOD: ${mood}
+INSTRUMENTAL: ${instrumental ? 'Yes - no vocals' : 'No - include vocals with lyrics'}
 
-STYLE: ${styleGuide[style as keyof typeof styleGuide] || styleGuide.song}
-GENRE: ${genre || 'pop'}
-MOOD: ${mood || 'uplifting'}
+Create a detailed music generation prompt following these best practices:
+1. Use abstract mood descriptors OR detailed musical language
+2. Include tempo (BPM), musical key if relevant
+3. Specify instruments clearly (e.g., "solo piano", "acoustic guitar")
+4. For vocals, write actual lyrics that fit the mood and theme
+5. Keep the song around 60-90 seconds
 
 Return ONLY a valid JSON object:
 {
-  "title": "Catchy title for the piece",
-  "description": "One sentence description",
-  "lyrics": "The full lyrics/text (use \\n for line breaks)",
-  "genre": "${genre || 'pop'}",
-  "mood": "${mood || 'uplifting'}",
+  "title": "Catchy title for the song",
+  "description": "One sentence description of the song",
+  "musicPrompt": "The complete prompt for music generation - include style, tempo, instruments, mood, and ${instrumental ? 'specify instrumental only' : 'include the full lyrics in the prompt'}",
+  "lyrics": ${instrumental ? 'null' : '"Full lyrics with verse/chorus structure using line breaks"'},
+  "genre": "${genre}",
+  "mood": "${mood}",
   "tags": ["tag1", "tag2", "tag3"]
 }
 
-GUIDELINES:
-- Keep lyrics concise (30-60 seconds when spoken/sung)
-- Make it personal and emotional
-- Use natural language that sounds good when spoken aloud
-- Include rhythm and flow appropriate for the style
+IMPORTANT for musicPrompt:
+- Be specific about instruments and style
+- ${instrumental ? 'Add "instrumental only" or "no vocals" to the prompt' : 'Include lyrics directly in the prompt, formatted naturally'}
+- Include tempo hints like "upbeat 120 BPM" or "slow ballad"
+- Describe the emotional journey of the song
 
 Return ONLY the JSON object. No markdown, no explanation.`;
 
@@ -68,7 +71,7 @@ Return ONLY the JSON object. No markdown, no explanation.`;
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${systemPrompt}\n\nCreate content about: ${prompt}` }] }],
+        contents: [{ parts: [{ text: systemPrompt }] }],
         generationConfig: {
           maxOutputTokens: 2048,
           temperature: 0.8,
@@ -97,7 +100,7 @@ Return ONLY the JSON object. No markdown, no explanation.`;
   } catch {
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('Failed to parse lyrics response');
+      throw new Error('Failed to parse music plan response');
     }
     parsed = JSON.parse(jsonMatch[0]);
   }
@@ -105,23 +108,18 @@ Return ONLY the JSON object. No markdown, no explanation.`;
   return parsed;
 }
 
-async function generateAudioWithElevenLabs(
-  text: string,
-  voiceId: string,
-  apiKey: string,
-  style: string
+async function generateMusicWithElevenLabs(
+  musicPrompt: string,
+  instrumental: boolean,
+  durationMs: number,
+  apiKey: string
 ): Promise<ArrayBuffer> {
-  // Adjust voice settings based on style
-  const voiceSettings = {
-    song: { stability: 0.3, similarity_boost: 0.8, style: 0.5 },
-    poem: { stability: 0.5, similarity_boost: 0.75, style: 0.3 },
-    rap: { stability: 0.2, similarity_boost: 0.85, style: 0.7 },
-    spoken_word: { stability: 0.4, similarity_boost: 0.8, style: 0.4 },
-  };
+  console.log('Calling ElevenLabs Music API...');
+  console.log('Prompt:', musicPrompt.slice(0, 200) + '...');
+  console.log('Duration:', durationMs, 'ms');
+  console.log('Instrumental:', instrumental);
 
-  const settings = voiceSettings[style as keyof typeof voiceSettings] || voiceSettings.spoken_word;
-
-  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+  const response = await fetch('https://api.elevenlabs.io/v1/music', {
     method: 'POST',
     headers: {
       'xi-api-key': apiKey,
@@ -129,21 +127,34 @@ async function generateAudioWithElevenLabs(
       Accept: 'audio/mpeg',
     },
     body: JSON.stringify({
-      text: text,
-      model_id: 'eleven_multilingual_v2',
-      voice_settings: {
-        stability: settings.stability,
-        similarity_boost: settings.similarity_boost,
-        style: settings.style,
-        use_speaker_boost: true,
-      },
+      prompt: musicPrompt,
+      music_length_ms: durationMs,
+      model_id: 'music_v1',
+      force_instrumental: instrumental,
     }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('ElevenLabs TTS error:', errorText);
-    throw new Error(`ElevenLabs TTS failed: ${response.status}`);
+    console.error('ElevenLabs Music API error:', response.status, errorText);
+
+    // Parse error for better messages
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (errorJson.detail?.status === 'bad_prompt') {
+        throw new Error(
+          `Music generation blocked: ${errorJson.detail.message}. Suggestion: ${errorJson.detail.suggestion || 'Try a different prompt'}`
+        );
+      }
+      throw new Error(
+        errorJson.detail?.message || `ElevenLabs Music API failed: ${response.status}`
+      );
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('Music generation blocked')) {
+        throw e;
+      }
+      throw new Error(`ElevenLabs Music API failed: ${response.status} - ${errorText}`);
+    }
   }
 
   return response.arrayBuffer();
@@ -226,10 +237,10 @@ Deno.serve(async (req: Request) => {
 
     const {
       prompt,
-      voiceCloneId,
       genre = 'pop',
       mood = 'uplifting',
-      style = 'spoken_word',
+      instrumental = false,
+      durationSeconds = 60,
     }: GenerateMusicRequest = await req.json();
 
     if (!prompt) {
@@ -239,38 +250,32 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Get voice ID - use cloned voice or default
-    let voiceId = 'EXAVITQu4vr4xnSDxMaL'; // Default voice (Sarah)
-
-    if (voiceCloneId) {
-      const { data: voiceClone } = await supabase
-        .from('voice_clones')
-        .select('voice_id')
-        .eq('id', voiceCloneId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (voiceClone) {
-        voiceId = voiceClone.voice_id;
-      }
-    }
+    // Validate duration (3-600 seconds, ElevenLabs limit)
+    const validDuration = Math.min(Math.max(durationSeconds, 3), 600);
+    const durationMs = validDuration * 1000;
 
     console.log(`Generating music for user ${user.id}: "${prompt.slice(0, 50)}"`);
 
-    // Step 1: Generate lyrics with Gemini
-    console.log('Generating lyrics...');
-    const musicContent = await generateLyricsWithGemini(prompt, style, genre, mood, geminiApiKey);
-    console.log(`Lyrics generated: "${musicContent.title}"`);
-
-    // Step 2: Generate audio with ElevenLabs
-    console.log('Generating audio...');
-    const audioBuffer = await generateAudioWithElevenLabs(
-      musicContent.lyrics,
-      voiceId,
-      elevenLabsApiKey,
-      style
+    // Step 1: Generate music plan with Gemini
+    console.log('Generating music plan...');
+    const musicPlan = await generateMusicPlanWithGemini(
+      prompt,
+      genre,
+      mood,
+      instrumental,
+      geminiApiKey
     );
-    console.log(`Audio generated: ${audioBuffer.byteLength} bytes`);
+    console.log(`Music plan generated: "${musicPlan.title}"`);
+
+    // Step 2: Generate actual music with ElevenLabs Music API
+    console.log('Generating music audio...');
+    const audioBuffer = await generateMusicWithElevenLabs(
+      musicPlan.musicPrompt,
+      instrumental,
+      durationMs,
+      elevenLabsApiKey
+    );
+    console.log(`Music generated: ${audioBuffer.byteLength} bytes`);
 
     // Step 3: Upload audio to storage
     const fileName = `music/${user.id}/${Date.now()}.mp3`;
@@ -292,17 +297,17 @@ Deno.serve(async (req: Request) => {
     const { data: savedMusic, error: dbError } = await supabase
       .from('music_content')
       .insert({
-        title: musicContent.title,
-        description: musicContent.description,
-        lyrics: musicContent.lyrics,
+        title: musicPlan.title,
+        description: musicPlan.description,
+        lyrics: musicPlan.lyrics,
         audio_url: urlData.publicUrl,
-        genre: musicContent.genre,
-        mood: musicContent.mood,
-        voice_clone_id: voiceCloneId || null,
+        duration: validDuration,
+        genre: musicPlan.genre,
+        mood: musicPlan.mood,
         generation_prompt: prompt,
         created_by: user.id,
-        is_public: !hasPro ? true : true, // Default to public
-        tags: musicContent.tags,
+        is_public: true,
+        tags: musicPlan.tags,
       })
       .select()
       .single();
