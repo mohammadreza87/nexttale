@@ -104,19 +104,57 @@ CRITICAL REQUIREMENTS:
    - window.open(), navigation away from page
    - document.cookie
 
-4. FIXED FRAME DESIGN (CRITICAL - 1080x1350 pixels, 4:5 aspect ratio):
-   - The content will be displayed in a FIXED 1080x1350 frame (scaled to fit screen)
-   - Design for exactly 1080px width and 1350px height
-   - html, body: width: 1080px, height: 1350px, margin: 0, padding: 0
-   - Center all content within this fixed frame
-   - Canvas games: Use fixed size that fits within frame (e.g., 800x800 max)
-   - Use CSS Grid or Flexbox for layouts, centered in frame
-   - Font sizes: 24px-32px for body text, 48px-64px for headers (fixed, not responsive)
-   - Touch-friendly: minimum 60px touch targets
-   - NO viewport units (vw, vh) - use fixed pixel values
-   - Dark theme: #0a0a0a background, #fff text
-   - Accent colors: purple #8b5cf6, cyan #22d3ee, pink #ec4899
-   - The frame will be scaled down on smaller screens, so design for 1080x1350
+4. FIXED FRAME DESIGN - ABSOLUTELY CRITICAL (1080x1350 pixels):
+   ⚠️ THE CONTENT MUST FILL THE ENTIRE 1080x1350 FRAME - NO EXCEPTIONS ⚠️
+
+   MANDATORY CSS for html and body:
+   html, body {
+     width: 1080px;
+     height: 1350px;
+     margin: 0;
+     padding: 0;
+     overflow: hidden;
+     background: #0a0a0a;
+   }
+
+   LAYOUT RULES:
+   - The main container MUST be 1080x1350 and fill the entire frame
+   - DO NOT create a "phone mockup" or "device frame" inside - fill the whole area
+   - DO NOT add large margins/padding that make content appear centered in a smaller box
+   - For games: Canvas should be at least 900x900 pixels, centered in frame
+   - For tools/widgets: Use the FULL width (1080px) and distribute content vertically
+   - Header/title area: max 150px height at top
+   - Main content area: Should fill remaining ~1100-1200px of height
+   - Controls/buttons: Place at bottom, 150-200px area
+
+   TYPOGRAPHY (fixed pixel sizes):
+   - Page title: 48-64px, bold
+   - Section headers: 36-42px
+   - Body text: 24-28px
+   - Button text: 28-32px
+   - Small labels: 20-24px
+
+   TOUCH TARGETS:
+   - All buttons/interactive elements: minimum 60px height
+   - Adequate spacing between touch targets (20px+)
+
+   COLORS (dark theme):
+   - Background: #0a0a0a
+   - Surface/cards: #1a1a2e or #16213e
+   - Text: #ffffff
+   - Accent: #8b5cf6 (purple), #22d3ee (cyan), #ec4899 (pink)
+
+   ❌ DO NOT:
+   - Use viewport units (vw, vh, vmin, vmax)
+   - Create nested frames or device mockups
+   - Leave large empty black borders around content
+   - Make content smaller than the frame
+
+   ✅ DO:
+   - Fill the entire 1080x1350 canvas
+   - Use absolute/fixed positioning when needed to fill space
+   - Make game canvases large and centered
+   - Use CSS Grid/Flexbox to distribute content across full height
 
 5. ${CONTENT_TYPE_PROMPTS[contentType]}
 
@@ -193,6 +231,39 @@ Return ONLY the JSON object. No markdown, no explanation, no code blocks.`;
   };
 }
 
+// Enforced CSS to ensure content fills the frame
+const ENFORCED_FRAME_CSS = `
+<style id="enforced-frame-styles">
+  /* Enforced frame dimensions - injected by system */
+  html, body {
+    width: 1080px !important;
+    height: 1350px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+  body {
+    min-height: 1350px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  /* Ensure main containers fill space */
+  body > div:first-child,
+  body > main,
+  body > section,
+  #app,
+  #root,
+  .container,
+  .game-container,
+  .main-container {
+    flex: 1 !important;
+    min-height: 0 !important;
+    width: 100% !important;
+  }
+</style>
+`;
+
 function sanitizeHtml(html: string): string {
   let sanitized = html;
 
@@ -217,6 +288,24 @@ function sanitizeHtml(html: string): string {
     /<form[^>]*action\s*=\s*["']https?:\/\/[^"']*["'][^>]*>/gi,
     '<form>'
   );
+
+  // Inject enforced frame CSS right after <head> tag
+  if (sanitized.includes('<head>')) {
+    sanitized = sanitized.replace('<head>', '<head>' + ENFORCED_FRAME_CSS);
+  } else if (sanitized.includes('<head ')) {
+    // Handle <head with attributes
+    sanitized = sanitized.replace(/<head[^>]*>/, (match) => match + ENFORCED_FRAME_CSS);
+  } else {
+    // No head tag, add it after doctype or at start
+    if (sanitized.toLowerCase().includes('<!doctype')) {
+      sanitized = sanitized.replace(
+        /<!doctype[^>]*>/i,
+        (match) => match + '<head>' + ENFORCED_FRAME_CSS + '</head>'
+      );
+    } else {
+      sanitized = '<head>' + ENFORCED_FRAME_CSS + '</head>' + sanitized;
+    }
+  }
 
   return sanitized;
 }

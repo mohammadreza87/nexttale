@@ -208,6 +208,34 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
     setProgress('');
   };
 
+  const handleRegenerate = async () => {
+    // Keep the preview open but regenerate content
+    setIsGenerating(true);
+    setError(null);
+    setProgress('Regenerating with improved quality...');
+
+    try {
+      const result = await generateInteractiveContent({
+        prompt,
+        contentType,
+        style,
+      });
+
+      setGeneratedContent(result);
+      setProgress('New version generated!');
+      loadUsage();
+    } catch (err) {
+      console.error('Error regenerating content:', err);
+      if (err instanceof Error && err.message === 'daily_limit_reached') {
+        setShowUpgradeModal(true);
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to regenerate. Please try again.');
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const currentTypeInfo = CONTENT_TYPES.find((t) => t.type === contentType);
 
   return (
@@ -292,15 +320,25 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
               {/* Action Buttons */}
               <div className="flex gap-3">
                 <button
-                  onClick={handleDiscard}
-                  disabled={isSaving}
-                  className="flex-1 rounded-xl bg-gray-800 py-3 font-semibold text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
+                  onClick={handleRegenerate}
+                  disabled={isSaving || isGenerating}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gray-800 py-3 font-semibold text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
                 >
-                  Regenerate
+                  {isGenerating ? (
+                    <>
+                      <Loader className="h-5 w-5 animate-spin" />
+                      Regenerating...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-5 w-5" />
+                      Regenerate
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={handleSave}
-                  disabled={isSaving}
+                  disabled={isSaving || isGenerating}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 font-semibold text-white transition-colors hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
                 >
                   {isSaving ? (
