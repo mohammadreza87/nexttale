@@ -162,28 +162,63 @@ export function InteractiveViewer({
 
   // Listen for share/copy messages from iframe
   useEffect(() => {
+    const isValidUrl = (str: string): boolean => {
+      try {
+        new URL(str);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
     const handleMessage = async (event: MessageEvent) => {
       if (event.data?.type === 'INTERACTIVE_SHARE') {
-        const shareData = event.data.data;
+        const shareData = event.data.data || {};
+
+        // Validate and clean share data
+        const cleanedData: { title?: string; text?: string; url?: string } = {};
+        if (shareData.title && typeof shareData.title === 'string') {
+          cleanedData.title = shareData.title;
+        }
+        if (shareData.text && typeof shareData.text === 'string') {
+          cleanedData.text = shareData.text;
+        }
+        // Only include URL if it's valid
+        if (shareData.url && typeof shareData.url === 'string' && isValidUrl(shareData.url)) {
+          cleanedData.url = shareData.url;
+        }
+
+        // Need at least one field to share
+        if (Object.keys(cleanedData).length === 0) {
+          cleanedData.text = 'Check this out!';
+        }
+
         try {
           if (navigator.share) {
-            await navigator.share(shareData);
+            await navigator.share(cleanedData);
           } else {
             // Fallback to clipboard
-            const text = shareData.url || shareData.text || shareData.title || '';
+            const text = cleanedData.url || cleanedData.text || cleanedData.title || '';
             await navigator.clipboard.writeText(text);
           }
         } catch (err) {
-          // User cancelled or share failed - that's ok
+          // User cancelled or share failed - fallback to clipboard
           if ((err as Error).name !== 'AbortError') {
-            console.error('Share failed:', err);
+            const text = cleanedData.url || cleanedData.text || cleanedData.title || '';
+            if (text) {
+              try {
+                await navigator.clipboard.writeText(text);
+              } catch {
+                // Ignore clipboard errors
+              }
+            }
           }
         }
       } else if (event.data?.type === 'INTERACTIVE_COPY') {
         try {
-          await navigator.clipboard.writeText(event.data.text);
-        } catch (err) {
-          console.error('Copy failed:', err);
+          await navigator.clipboard.writeText(event.data.text || '');
+        } catch {
+          // Ignore clipboard errors
         }
       }
     };
