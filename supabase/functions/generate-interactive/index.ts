@@ -316,8 +316,9 @@ ${editPrompt}
 
 Apply the requested changes and return the updated content as JSON.`;
 
+  // Try gemini-2.0-flash-exp for editing as it's more reliable for JSON output
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: {
@@ -332,6 +333,7 @@ Apply the requested changes and return the updated content as JSON.`;
         generationConfig: {
           maxOutputTokens: 16384,
           temperature: 0.5,
+          responseMimeType: 'application/json',
         },
       }),
     }
@@ -344,24 +346,36 @@ Apply the requested changes and return the updated content as JSON.`;
   }
 
   const data = await response.json();
+  console.log('Edit response candidates:', data?.candidates?.length || 0);
+
   const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
   if (!responseText) {
+    console.error('Empty response from Gemini:', JSON.stringify(data).slice(0, 500));
     throw new Error('Gemini returned empty response');
   }
 
-  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    console.error('Failed to find JSON in response:', responseText.slice(0, 500));
-    throw new Error('Gemini did not return valid JSON');
-  }
+  console.log('Edit response length:', responseText.length);
 
+  // Try direct parse first (with responseMimeType it should be clean JSON)
   let parsed;
   try {
-    parsed = JSON.parse(jsonMatch[0]);
-  } catch (parseError) {
-    console.error('JSON parse error:', parseError);
-    throw new Error('Failed to parse Gemini response as JSON');
+    parsed = JSON.parse(responseText);
+  } catch {
+    // Fallback to regex extraction
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('Failed to find JSON in response:', responseText.slice(0, 1000));
+      throw new Error('Gemini did not return valid JSON');
+    }
+
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Attempted to parse:', jsonMatch[0].slice(0, 500));
+      throw new Error('Failed to parse Gemini response as JSON');
+    }
   }
 
   if (!parsed.html) {
