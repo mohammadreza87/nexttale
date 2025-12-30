@@ -10,7 +10,8 @@ type SwipeDirection = 'up' | 'down' | 'left' | 'right';
 export function useSwipeGesture(
   ref: RefObject<HTMLElement>,
   onSwipe: (direction: SwipeDirection) => void,
-  config: SwipeConfig = {}
+  config: SwipeConfig = {},
+  enabled: boolean = true
 ) {
   const { threshold = 50, velocityThreshold = 0.3 } = config;
 
@@ -22,6 +23,7 @@ export function useSwipeGesture(
     if (!element) return;
 
     const handleTouchStart = (e: TouchEvent) => {
+      if (!enabled) return;
       const touch = e.touches[0];
       touchStartRef.current = {
         x: touch.clientX,
@@ -32,6 +34,7 @@ export function useSwipeGesture(
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      if (!enabled) return;
       const touch = e.touches[0];
       touchEndRef.current = {
         x: touch.clientX,
@@ -41,6 +44,11 @@ export function useSwipeGesture(
     };
 
     const handleTouchEnd = () => {
+      if (!enabled) {
+        touchStartRef.current = null;
+        touchEndRef.current = null;
+        return;
+      }
       if (!touchStartRef.current || !touchEndRef.current) return;
 
       const deltaX = touchEndRef.current.x - touchStartRef.current.x;
@@ -88,6 +96,7 @@ export function useSwipeGesture(
     let isMouseDown = false;
 
     const handleMouseDown = (e: MouseEvent) => {
+      if (!enabled) return;
       isMouseDown = true;
       touchStartRef.current = {
         x: e.clientX,
@@ -97,7 +106,7 @@ export function useSwipeGesture(
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isMouseDown) return;
+      if (!isMouseDown || !enabled) return;
       touchEndRef.current = {
         x: e.clientX,
         y: e.clientY,
@@ -106,6 +115,12 @@ export function useSwipeGesture(
     };
 
     const handleMouseUp = () => {
+      if (!enabled) {
+        isMouseDown = false;
+        touchStartRef.current = null;
+        touchEndRef.current = null;
+        return;
+      }
       if (!isMouseDown) return;
       isMouseDown = false;
       handleTouchEnd();
@@ -125,7 +140,7 @@ export function useSwipeGesture(
       element.removeEventListener('mouseup', handleMouseUp);
       element.removeEventListener('mouseleave', handleMouseUp);
     };
-  }, [ref, onSwipe, threshold, velocityThreshold]);
+  }, [ref, onSwipe, threshold, velocityThreshold, enabled]);
 }
 
 // Hook for keyboard navigation (useful for desktop)

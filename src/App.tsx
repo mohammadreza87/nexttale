@@ -157,10 +157,11 @@ function MainLayout() {
   const handleViewProfile = (profileUserId: string) => navigate(`/user/${profileUserId}`);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-dvh bg-gray-950">
       {/* Mobile Header */}
       <div
         className={`fixed left-0 right-0 top-0 z-40 flex flex-col items-center justify-center px-4 py-3 text-white shadow-lg lg:hidden ${isPro ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-gradient-to-r from-blue-500 to-cyan-500'}`}
+        style={{ paddingTop: 'calc(var(--safe-top) + 10px)' }}
       >
         <div className="mb-1 flex items-center gap-2">
           <img src="/nexttale-logo.png" alt="Next Tale" className="h-10 w-10 drop-shadow-lg" />
@@ -178,7 +179,13 @@ function MainLayout() {
         />
       </div>
 
-      <div className="pb-20 pt-20 lg:ml-64 lg:pb-0 lg:pt-0">
+      <div
+        className="pb-20 pt-24 lg:ml-64 lg:pb-0 lg:pt-0"
+        style={{
+          paddingTop: 'calc(88px + var(--safe-top))',
+          paddingBottom: 'calc(88px + var(--safe-bottom))',
+        }}
+      >
         <Outlet
           context={
             {
@@ -362,7 +369,7 @@ function InteractiveViewerRoute() {
       title={content.title}
       onBack={handleBackToHome}
       showBackButton
-      className="min-h-screen"
+      className="min-h-dvh"
     />
   );
 }

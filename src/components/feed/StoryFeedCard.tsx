@@ -27,6 +27,7 @@ interface StoryFeedCardProps {
   onSelect: () => void;
   onViewProfile?: (userId: string) => void;
   userId: string;
+  onPreviewStateChange?: (active: boolean) => void;
 }
 
 export function StoryFeedCard({
@@ -35,6 +36,7 @@ export function StoryFeedCard({
   onSelect,
   onViewProfile,
   userId,
+  onPreviewStateChange: _onPreviewStateChange,
 }: StoryFeedCardProps) {
   const [reaction, setReaction] = useState<StoryReaction | null>(null);
   const [likesCount, setLikesCount] = useState(item.likes_count ?? 0);

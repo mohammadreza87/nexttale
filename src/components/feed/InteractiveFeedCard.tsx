@@ -30,6 +30,7 @@ interface InteractiveFeedCardProps {
   onSelect: () => void;
   onViewProfile?: (userId: string) => void;
   userId: string;
+  onPreviewStateChange?: (active: boolean) => void;
 }
 
 const TYPE_CONFIG: Record<
@@ -69,6 +70,7 @@ export function InteractiveFeedCard({
   onSelect,
   onViewProfile,
   userId,
+  onPreviewStateChange,
 }: InteractiveFeedCardProps) {
   const [reaction, setReaction] = useState<InteractiveReaction | null>(null);
   const [likesCount, setLikesCount] = useState(item.likes_count ?? 0);
@@ -93,6 +95,14 @@ export function InteractiveFeedCard({
       setShowPreview(false);
     }
   }, [isActive, item.html_content]);
+
+  // Notify parent when preview toggles
+  useEffect(() => {
+    onPreviewStateChange?.(showPreview && isActive);
+    return () => {
+      onPreviewStateChange?.(false);
+    };
+  }, [showPreview, isActive, onPreviewStateChange]);
 
   const loadReaction = async () => {
     try {

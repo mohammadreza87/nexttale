@@ -278,7 +278,7 @@ export function InteractiveDetail({
 
         <div className="overflow-hidden rounded-3xl border border-gray-800 bg-gray-900 shadow-2xl">
           {/* Preview Section */}
-          <div className="relative h-64 overflow-hidden bg-gray-800 md:h-96">
+          <div className="relative h-[70vh] max-h-[80vh] min-h-[320px] overflow-hidden bg-gray-800">
             {showPreview && content.html_content ? (
               <InteractiveViewer
                 htmlContent={content.html_content}

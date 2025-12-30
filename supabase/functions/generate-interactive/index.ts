@@ -288,8 +288,20 @@ const ENFORCED_FRAME_CSS = `
     display: block !important;
     margin: 0 auto !important;
   }
+  *, *::before, *::after {
+    box-sizing: border-box !important;
+  }
+  body {
+    touch-action: manipulation !important;
+  }
+  button, input, select, textarea {
+    font-size: 16px !important;
+  }
 </style>
 `;
+
+const VIEWPORT_META =
+  '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">';
 
 function sanitizeHtml(html: string): string {
   let sanitized = html;
@@ -318,19 +330,22 @@ function sanitizeHtml(html: string): string {
 
   // Inject enforced frame CSS right after <head> tag
   if (sanitized.includes('<head>')) {
-    sanitized = sanitized.replace('<head>', '<head>' + ENFORCED_FRAME_CSS);
+    sanitized = sanitized.replace('<head>', '<head>' + VIEWPORT_META + ENFORCED_FRAME_CSS);
   } else if (sanitized.includes('<head ')) {
     // Handle <head with attributes
-    sanitized = sanitized.replace(/<head[^>]*>/, (match) => match + ENFORCED_FRAME_CSS);
+    sanitized = sanitized.replace(
+      /<head[^>]*>/,
+      (match) => match + VIEWPORT_META + ENFORCED_FRAME_CSS
+    );
   } else {
     // No head tag, add it after doctype or at start
     if (sanitized.toLowerCase().includes('<!doctype')) {
       sanitized = sanitized.replace(
         /<!doctype[^>]*>/i,
-        (match) => match + '<head>' + ENFORCED_FRAME_CSS + '</head>'
+        (match) => match + '<head>' + VIEWPORT_META + ENFORCED_FRAME_CSS + '</head>'
       );
     } else {
-      sanitized = '<head>' + ENFORCED_FRAME_CSS + '</head>' + sanitized;
+      sanitized = '<head>' + VIEWPORT_META + ENFORCED_FRAME_CSS + '</head>' + sanitized;
     }
   }
 

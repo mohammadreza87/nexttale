@@ -1,5 +1,13 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Loader, AlertTriangle, Maximize2, Minimize2, RotateCcw, ArrowLeft } from 'lucide-react';
+import {
+  Loader,
+  AlertTriangle,
+  Maximize2,
+  Minimize2,
+  RotateCcw,
+  ArrowLeft,
+  PhoneOff,
+} from 'lucide-react';
 
 // Fixed frame dimensions (Instagram portrait ratio 4:5)
 const FRAME_WIDTH = 1080;
@@ -33,29 +41,60 @@ export function InteractiveViewer({
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [key, setKey] = useState(0);
   const [scale, setScale] = useState(1);
+  const [isLandscape, setIsLandscape] = useState(false);
 
   // Calculate scale to fit frame in container
   const calculateScale = useCallback(() => {
-    if (!frameWrapperRef.current) return;
+    if (!containerRef.current) return;
 
-    const container = frameWrapperRef.current.parentElement;
-    if (!container) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const safeTop =
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-top')) || 0;
+    const safeBottom =
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')) || 0;
 
-    const containerWidth = container.clientWidth - 32; // padding
-    const containerHeight = container.clientHeight - 32;
+    const availableWidth = Math.max(rect.width - 24, 320);
+    const availableHeight = Math.max(rect.height - 24 - safeTop - safeBottom, 320);
 
-    const scaleX = containerWidth / FRAME_WIDTH;
-    const scaleY = containerHeight / FRAME_HEIGHT;
+    const scaleX = availableWidth / FRAME_WIDTH;
+    const scaleY = availableHeight / FRAME_HEIGHT;
     const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
 
-    setScale(newScale);
+    setScale(Math.max(newScale, 0.6));
   }, []);
 
   // Recalculate scale on resize
   useEffect(() => {
     calculateScale();
     window.addEventListener('resize', calculateScale);
-    return () => window.removeEventListener('resize', calculateScale);
+    const viewport = window.visualViewport;
+    const handleViewport = () => {
+      const vpWidth = viewport?.width ?? window.innerWidth;
+      const vpHeight = viewport?.height ?? window.innerHeight;
+      const isWide = vpWidth > vpHeight && vpWidth < 1024; // avoid blocking desktop landscape
+      setIsLandscape(isWide);
+      calculateScale();
+    };
+    viewport?.addEventListener('resize', handleViewport);
+
+    const orientation = window.screen.orientation;
+    orientation?.addEventListener('change', handleViewport);
+
+    handleViewport();
+
+    return () => {
+      window.removeEventListener('resize', calculateScale);
+      viewport?.removeEventListener('resize', handleViewport);
+      orientation?.removeEventListener('change', handleViewport);
+    };
+  }, [calculateScale]);
+
+  // Observe container size for dynamic scaling
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(() => calculateScale());
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, [calculateScale]);
 
   // Create blob URL from HTML content
@@ -130,15 +169,29 @@ export function InteractiveViewer({
     setKey((prev) => prev + 1);
   };
 
+  const scaledWidth = FRAME_WIDTH * scale;
+  const scaledHeight = FRAME_HEIGHT * scale;
+
   return (
     <div
       ref={containerRef}
       className={`relative flex items-center justify-center overflow-hidden bg-gray-950 ${className}`}
     >
+      {/* Orientation hint */}
+      {isLandscape && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-white shadow-lg">
+            <PhoneOff className="h-5 w-5" />
+            <span className="text-sm font-semibold">Rotate your device for the best view</span>
+          </div>
+        </div>
+      )}
+
       {/* Back button */}
       {showBackButton && onBack && (
         <button
           onClick={onBack}
+          aria-label="Go back"
           className="absolute left-3 top-3 z-20 flex items-center gap-2 rounded-lg bg-black/50 px-3 py-2 text-white transition-colors hover:bg-black/70"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -178,14 +231,16 @@ export function InteractiveViewer({
       <div className="absolute right-3 top-3 z-20 flex gap-2">
         <button
           onClick={handleReload}
-          className="rounded-lg bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
+          aria-label="Reload content"
+          className="rounded-lg bg-black/50 p-3 text-white transition-colors hover:bg-black/70"
           title="Reload"
         >
           <RotateCcw className="h-4 w-4" />
         </button>
         <button
           onClick={toggleFullscreen}
-          className="rounded-lg bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
+          aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+          className="rounded-lg bg-black/50 p-3 text-white transition-colors hover:bg-black/70"
           title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
         >
           {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -197,10 +252,8 @@ export function InteractiveViewer({
         ref={frameWrapperRef}
         className="relative overflow-hidden rounded-2xl shadow-2xl"
         style={{
-          width: FRAME_WIDTH,
-          height: FRAME_HEIGHT,
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center',
+          width: scaledWidth,
+          height: scaledHeight,
         }}
       >
         {/* Sandboxed iframe at fixed size */}
@@ -214,6 +267,8 @@ export function InteractiveViewer({
             style={{
               width: FRAME_WIDTH,
               height: FRAME_HEIGHT,
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
             }}
             onLoad={handleLoad}
             onError={handleError}

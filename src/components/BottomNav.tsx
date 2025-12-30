@@ -10,7 +10,10 @@ interface BottomNavProps {
 
 export function BottomNav({ currentView, onNavigate, isPro = false }: BottomNavProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-800 bg-gray-900 shadow-lg">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-800 bg-gray-900 shadow-lg"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
       <div className="mx-auto flex h-16 max-w-md items-center justify-around">
         {/* Home (Explore) */}
         <button
