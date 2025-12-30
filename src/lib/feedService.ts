@@ -2,6 +2,20 @@ import { supabase } from './supabase';
 import type { FeedItem, ContentType, FeedFilter, InteractiveContentType } from './interactiveTypes';
 
 // ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+// Fisher-Yates shuffle algorithm for randomizing feed
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+// ============================================
 // UNIFIED FEED QUERIES
 // ============================================
 
@@ -11,11 +25,11 @@ export async function getUnifiedFeed(
   offset: number = 0
 ): Promise<{ data: FeedItem[]; hasMore: boolean }> {
   if (filter === 'story') {
-    return getStoriesFeed(limit, offset);
+    return getStoriesFeed(limit, offset, true);
   }
 
   if (filter === 'music') {
-    return getMusicFeed(limit, offset);
+    return getMusicFeed(limit, offset, true);
   }
 
   // Check if filter is an interactive content type
@@ -27,22 +41,25 @@ export async function getUnifiedFeed(
     'visualization',
   ];
   if (interactiveTypes.includes(filter as InteractiveContentType)) {
-    return getInteractiveFeed(filter as InteractiveContentType, limit, offset);
+    return getInteractiveFeed(filter as InteractiveContentType, limit, offset, true);
   }
 
-  // Mixed feed - get stories, interactive, and music
-  const thirdLimit = Math.ceil(limit / 3);
+  // Mixed feed - get more items and shuffle for variety
+  const fetchLimit = Math.ceil(limit * 1.5); // Fetch more for better randomization
+  const thirdLimit = Math.ceil(fetchLimit / 3);
 
   const [storiesResult, interactiveResult, musicResult] = await Promise.all([
-    getStoriesFeed(thirdLimit, Math.floor(offset / 3)),
-    getInteractiveFeed(undefined, thirdLimit, Math.floor(offset / 3)),
-    getMusicFeed(thirdLimit, Math.floor(offset / 3)),
+    getStoriesFeed(thirdLimit, Math.floor(offset / 3), false),
+    getInteractiveFeed(undefined, thirdLimit, Math.floor(offset / 3), false),
+    getMusicFeed(thirdLimit, Math.floor(offset / 3), false),
   ]);
 
-  // Combine and sort by created_at
-  const combined = [...storiesResult.data, ...interactiveResult.data, ...musicResult.data].sort(
-    (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
-  );
+  // Combine and shuffle for random order
+  const combined = shuffleArray([
+    ...storiesResult.data,
+    ...interactiveResult.data,
+    ...musicResult.data,
+  ]);
 
   return {
     data: combined.slice(0, limit),
@@ -52,7 +69,8 @@ export async function getUnifiedFeed(
 
 async function getStoriesFeed(
   limit: number,
-  offset: number
+  offset: number,
+  shuffle: boolean = false
 ): Promise<{ data: FeedItem[]; hasMore: boolean }> {
   // First try with creator join, fallback to without if FK relationship fails
   let data;
@@ -137,7 +155,7 @@ async function getStoriesFeed(
   }));
 
   return {
-    data: feedItems,
+    data: shuffle ? shuffleArray(feedItems) : feedItems,
     hasMore: (data?.length || 0) === limit + 1,
   };
 }
@@ -145,7 +163,8 @@ async function getStoriesFeed(
 async function getInteractiveFeed(
   contentType: InteractiveContentType | undefined,
   limit: number,
-  offset: number
+  offset: number,
+  shuffle: boolean = false
 ): Promise<{ data: FeedItem[]; hasMore: boolean }> {
   let query = supabase
     .from('interactive_content')
@@ -190,14 +209,15 @@ async function getInteractiveFeed(
   }));
 
   return {
-    data: feedItems,
+    data: shuffle ? shuffleArray(feedItems) : feedItems,
     hasMore: (data?.length || 0) === limit + 1,
   };
 }
 
 async function getMusicFeed(
   limit: number,
-  offset: number
+  offset: number,
+  shuffle: boolean = false
 ): Promise<{ data: FeedItem[]; hasMore: boolean }> {
   // Query music_content without creator join (no FK relationship exists)
   const { data, error } = await supabase
@@ -285,7 +305,7 @@ async function getMusicFeed(
   }));
 
   return {
-    data: feedItems,
+    data: shuffle ? shuffleArray(feedItems) : feedItems,
     hasMore: (data?.length || 0) === limit + 1,
   };
 }
