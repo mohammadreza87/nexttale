@@ -59,15 +59,24 @@ Create a detailed music generation prompt following these best practices:
 1. Use abstract mood descriptors OR detailed musical language
 2. Include tempo (BPM), musical key if relevant
 3. Specify instruments clearly (e.g., "solo piano", "acoustic guitar")
-4. For vocals, write actual lyrics that fit the mood and theme
+4. For vocals, write ORIGINAL lyrics that fit the mood and theme
 5. Keep the song around 60-90 seconds
+
+CRITICAL RULES TO AVOID CONTENT VIOLATIONS:
+- NEVER mention any real artist names, band names, or song titles
+- NEVER reference copyrighted songs or lyrics
+- NEVER mention real celebrities or public figures
+- Keep all content family-friendly and appropriate
+- Write only ORIGINAL lyrics - no covers or parodies
+- Avoid any violent, explicit, or controversial themes
+- Do not imitate any specific artist's style by name
 
 Return ONLY a valid JSON object:
 {
-  "title": "Catchy title for the song",
+  "title": "Catchy ORIGINAL title for the song",
   "description": "One sentence description of the song",
-  "musicPrompt": "The complete prompt for music generation - include style, tempo, instruments, mood, and ${instrumental ? 'specify instrumental only' : 'include the full lyrics in the prompt'}",
-  "lyrics": ${instrumental ? 'null' : '"Full lyrics with verse/chorus structure using line breaks"'},
+  "musicPrompt": "The complete prompt for music generation - include style, tempo, instruments, mood. Describe the style WITHOUT naming artists. ${instrumental ? 'Specify instrumental only.' : 'Include original family-friendly lyrics.'}",
+  "lyrics": ${instrumental ? 'null' : '"Original lyrics with verse/chorus structure using line breaks"'},
   "genre": "${genre}",
   "mood": "${mood}",
   "tags": ["tag1", "tag2", "tag3"]
@@ -75,9 +84,10 @@ Return ONLY a valid JSON object:
 
 IMPORTANT for musicPrompt:
 - Be specific about instruments and style
-- ${instrumental ? 'Add "instrumental only" or "no vocals" to the prompt' : 'Include lyrics directly in the prompt, formatted naturally'}
+- ${instrumental ? 'Add "instrumental only" or "no vocals" to the prompt' : 'Include original lyrics directly in the prompt'}
 - Include tempo hints like "upbeat 120 BPM" or "slow ballad"
-- Describe the emotional journey of the song
+- Describe the emotional journey WITHOUT referencing real artists
+- Use generic style descriptions like "upbeat pop with synths" instead of "sounds like [artist]"
 
 Return ONLY the JSON object. No markdown, no explanation.`;
 
