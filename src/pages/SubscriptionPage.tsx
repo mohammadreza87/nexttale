@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { SubscriptionPlans } from '../components/subscription/SubscriptionPlans';
@@ -6,10 +6,10 @@ import { SubscriptionStatus } from '../components/subscription/SubscriptionStatu
 import { ArrowLeft } from 'lucide-react';
 
 interface SubscriptionData {
-  subscription_status: string;
+  subscription_status: string | null;
   price_id: string | null;
   current_period_end: number | null;
-  cancel_at_period_end: boolean;
+  cancel_at_period_end: boolean | null;
   payment_method_brand: string | null;
   payment_method_last4: string | null;
 }
@@ -22,7 +22,9 @@ export function SubscriptionPage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         navigate('/login');
         return;
@@ -63,30 +65,30 @@ export function SubscriptionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex items-center mb-8">
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <div className="mb-8 flex items-center">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mr-4"
+            className="mr-4 flex items-center text-gray-600 hover:text-gray-900"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
+            <ArrowLeft className="mr-2 h-5 w-5" />
             Back to Stories
           </button>
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Subscription</h1>
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">Subscription</h1>
           <p className="text-gray-600">Manage your subscription and billing</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Plan</h2>
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">Current Plan</h2>
             <SubscriptionStatus subscription={subscription} loading={loading} />
           </div>
 
           <div className="lg:col-span-2">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Plans</h2>
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">Available Plans</h2>
             <SubscriptionPlans
               currentPlan={subscription?.price_id || undefined}
               onSubscriptionChange={handleSubscriptionChange}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sparkles, Loader, Wand2, Crown, Film } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { startStoryGeneration } from '../lib/storyService';
-import { getSubscriptionUsage, SubscriptionUsage } from '../lib/subscriptionService';
+import { getSubscriptionUsage, type SubscriptionUsage } from '../lib/subscriptionService';
 import UsageBadge from './UsageBadge';
 import UpgradeModal from './UpgradeModal';
 import { progressQuest } from '../lib/questsService';
@@ -73,7 +73,10 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
       if (sessionError) {
         console.error('Session error:', sessionError);
@@ -98,21 +101,18 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
       setProgress('Generating story details...');
       setProgressPercent(10);
 
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/generate-story`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({
-            userPrompt: prompt,
-            generateFullStory: true,
-          }),
-        }
-      );
+      const response = await fetch(`${supabaseUrl}/functions/v1/generate-story`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          userPrompt: prompt,
+          generateFullStory: true,
+        }),
+      });
 
       console.log('Response status:', response.status);
 
@@ -123,7 +123,9 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
         if (response.status === 401) {
           const detailMsg = errorData.details ? ` (${errorData.details})` : '';
           const hintMsg = errorData.hint ? ` ${errorData.hint}` : '';
-          setError(`Authentication failed${detailMsg}${hintMsg}. Please try signing out and back in.`);
+          setError(
+            `Authentication failed${detailMsg}${hintMsg}. Please try signing out and back in.`
+          );
           setIsGenerating(false);
           setProgress('');
           setProgressPercent(0);
@@ -172,20 +174,38 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
 
       let storyInsertError: any = null;
       let storyResult: any = null;
-      const storyResponse = await supabase.from('stories').insert(storyInsertData).select().single();
+      const storyResponse = await supabase
+        .from('stories')
+        .insert(storyInsertData as any)
+        .select()
+        .single();
       storyResult = storyResponse.data;
       storyInsertError = storyResponse.error;
 
-      if (storyInsertError?.code === 'PGRST204' && storyInsertError?.message?.includes('story_memory')) {
+      if (
+        storyInsertError?.code === 'PGRST204' &&
+        storyInsertError?.message?.includes('story_memory')
+      ) {
         delete storyInsertData.story_memory;
-        const retry = await supabase.from('stories').insert(storyInsertData).select().single();
+        const retry = await supabase
+          .from('stories')
+          .insert(storyInsertData as any)
+          .select()
+          .single();
         storyResult = retry.data;
         storyInsertError = retry.error;
       }
 
-      if (storyInsertError?.code === 'PGRST204' && storyInsertError?.message?.includes('story_outline')) {
+      if (
+        storyInsertError?.code === 'PGRST204' &&
+        storyInsertError?.message?.includes('story_outline')
+      ) {
         delete storyInsertData.story_outline;
-        const retry = await supabase.from('stories').insert(storyInsertData).select().single();
+        const retry = await supabase
+          .from('stories')
+          .insert(storyInsertData as any)
+          .select()
+          .single();
         storyResult = retry.data;
         storyInsertError = retry.error;
       }
@@ -196,7 +216,7 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
       setProgress('Creating first chapter...');
       setProgressPercent(50);
 
-      const startNodeData: Record<string, unknown> = {
+      const startNodeData = {
         story_id: story.id,
         node_key: 'start',
         content: generatedData.startContent,
@@ -238,15 +258,13 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
             .single();
 
           if (placeholderNode) {
-            await supabase
-              .from('story_choices')
-              .insert({
-                from_node_id: startNode.id,
-                to_node_id: placeholderNode.id,
-                choice_text: choice.text,
-                consequence_hint: choice.hint,
-                choice_order: i,
-              });
+            await supabase.from('story_choices').insert({
+              from_node_id: startNode.id,
+              to_node_id: placeholderNode.id,
+              choice_text: choice.text,
+              consequence_hint: choice.hint,
+              choice_order: i,
+            });
           }
         }
       }
@@ -259,8 +277,8 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
       setProgress('Story ready to begin!');
       setProgressPercent(100);
 
-      loadUsage().catch(err => console.error('Failed to reload usage:', err));
-      progressQuest('create_story').catch(err => console.error('Failed to update quest:', err));
+      loadUsage().catch((err) => console.error('Failed to reload usage:', err));
+      progressQuest('create_story').catch((err) => console.error('Failed to update quest:', err));
 
       console.log('Navigating to story:', story.id);
       onStoryCreated(story.id);
@@ -278,7 +296,7 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
     // Romance & Chemistry
     'A forbidden romance between rival family heirs at a Venetian masquerade ball',
     'Two strangers stuck in a snowbound cabin with undeniable chemistry',
-    'A bodyguard falling for the person they\'re sworn to protect',
+    "A bodyguard falling for the person they're sworn to protect",
     'Reconnecting with your first love at a destination wedding in Santorini',
     'A fake relationship that becomes dangerously real at a family reunion',
     'An enemies-to-lovers story between competing CEOs forced to merge companies',
@@ -288,13 +306,13 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
     'Falling for the mysterious artist you commissioned for a portrait',
     // Thriller & Mystery
     'A noir detective investigating murders in 1940s Los Angeles with a femme fatale',
-    'A psychological thriller where you wake up in a stranger\'s apartment',
+    "A psychological thriller where you wake up in a stranger's apartment",
     'A corporate spy uncovering dark secrets at a powerful tech company',
     'A journalist investigating disappearances with a suspicious but attractive source',
-    'A therapist whose patient\'s confessions become dangerously personal',
+    "A therapist whose patient's confessions become dangerously personal",
     'A hacker who stumbles upon a conspiracy with an unexpected ally',
     'A casino dealer who notices something wrong with the high-rollers',
-    'A photographer who captures something they shouldn\'t have',
+    "A photographer who captures something they shouldn't have",
     'A witness protection agent whose identity is compromised',
     // Drama & Tension
     'A chef competing in a cutthroat culinary competition against an old flame',
@@ -316,46 +334,44 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
   return (
     <div className="min-h-screen bg-gray-950 pb-20">
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
-      <div className="max-w-2xl w-full mx-auto px-4 pt-4 pb-6">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">Create Your Story</h1>
+      <div className="mx-auto w-full max-w-2xl px-4 pb-6 pt-4">
+        <div className="mb-6 text-center">
+          <h1 className="mb-2 text-3xl font-bold text-white">Create Your Story</h1>
           <p className="text-sm text-gray-400">Describe the adventure you want to experience</p>
           <div className="mt-4 flex justify-center">
             <UsageBadge onUpgradeClick={() => setShowUpgradeModal(true)} />
           </div>
         </div>
 
-        <div className={`bg-gray-900 rounded-3xl shadow-xl p-6 mb-6 space-y-4 relative border border-gray-800 ${usage?.isPro ? 'pt-12' : ''}`}>
+        <div
+          className={`relative mb-6 space-y-4 rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl ${usage?.isPro ? 'pt-12' : ''}`}
+        >
           {usage?.isPro && (
-            <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center gap-2 rounded-t-3xl">
-              <Crown className="w-4 h-4 text-white" />
-              <span className="text-white text-sm font-bold">PRO</span>
+            <div className="absolute left-0 right-0 top-0 flex h-8 items-center justify-center gap-2 rounded-t-3xl bg-gradient-to-r from-purple-600 to-pink-600">
+              <Crown className="h-4 w-4 text-white" />
+              <span className="text-sm font-bold text-white">PRO</span>
             </div>
           )}
 
           {/* Story Topic */}
-          <div className="p-4 bg-gray-800/50 rounded-2xl">
-            <label className="block text-sm font-semibold text-gray-300 mb-3">
-              Story Concept
-            </label>
+          <div className="rounded-2xl bg-gray-800/50 p-4">
+            <label className="mb-3 block text-sm font-semibold text-gray-300">Story Concept</label>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="E.g., A psychological thriller where I'm a detective investigating impossible crimes..."
-              className="w-full h-32 px-4 py-3 bg-gray-800 border-2 border-gray-700 rounded-2xl focus:outline-none focus:border-purple-500 resize-none text-white placeholder-gray-500"
+              className="h-32 w-full resize-none rounded-2xl border-2 border-gray-700 bg-gray-800 px-4 py-3 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
               disabled={isGenerating}
             />
             <div className="mt-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold text-gray-500">
-                  Need inspiration? Try these:
-                </p>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs font-semibold text-gray-500">Need inspiration? Try these:</p>
                 <button
                   onClick={randomizeSuggestions}
                   disabled={isGenerating}
-                  className="text-xs text-purple-400 hover:text-purple-300 font-medium disabled:opacity-50 flex items-center gap-1"
+                  className="flex items-center gap-1 text-xs font-medium text-purple-400 hover:text-purple-300 disabled:opacity-50"
                 >
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles className="h-3 w-3" />
                   More ideas
                 </button>
               </div>
@@ -365,7 +381,7 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
                     key={idx}
                     onClick={() => setPrompt(suggestion)}
                     disabled={isGenerating}
-                    className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-purple-400 text-xs rounded-xl transition-colors disabled:opacity-50 border border-gray-700"
+                    className="rounded-xl border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-purple-400 transition-colors hover:bg-gray-700 disabled:opacity-50"
                   >
                     {suggestion.length > 60 ? suggestion.substring(0, 60) + '...' : suggestion}
                   </button>
@@ -375,10 +391,8 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
           </div>
 
           {/* Art Style */}
-          <div className="p-4 bg-gray-800/50 rounded-2xl">
-            <label className="block text-sm font-semibold text-gray-300 mb-3">
-              Visual Style
-            </label>
+          <div className="rounded-2xl bg-gray-800/50 p-4">
+            <label className="mb-3 block text-sm font-semibold text-gray-300">Visual Style</label>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { value: 'cinematic', label: 'Cinematic' },
@@ -388,17 +402,17 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
                 { value: 'anime', label: 'Anime' },
                 { value: 'oil-painting', label: 'Oil Painting' },
                 { value: 'graphic-novel', label: 'Graphic Novel' },
-                { value: 'concept-art', label: 'Concept Art' }
+                { value: 'concept-art', label: 'Concept Art' },
               ].map((style) => (
                 <button
                   key={style.value}
                   type="button"
                   onClick={() => setArtStyle(style.value)}
                   disabled={isGenerating}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50 ${
+                  className={`rounded-xl px-4 py-2.5 text-sm font-medium transition-all disabled:opacity-50 ${
                     artStyle === style.value
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700 border border-gray-700'
+                      : 'border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700'
                   }`}
                 >
                   {style.label}
@@ -408,11 +422,9 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
           </div>
 
           {/* Visibility */}
-          <div className="p-4 bg-gray-800/50 rounded-2xl">
+          <div className="rounded-2xl bg-gray-800/50 p-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-gray-300">
-                Story Visibility
-              </label>
+              <label className="text-sm font-semibold text-gray-300">Story Visibility</label>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-400">
                   {isPublic ? 'Public' : 'Private'}
@@ -436,11 +448,9 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
           </div>
 
           {/* Narrator */}
-          <div className="p-4 bg-gray-800/50 rounded-2xl">
+          <div className="rounded-2xl bg-gray-800/50 p-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-gray-300">
-                Voice Narration
-              </label>
+              <label className="text-sm font-semibold text-gray-300">Voice Narration</label>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-400">
                   {narratorEnabled ? 'On' : 'Off'}
@@ -464,15 +474,13 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
           </div>
 
           {/* AI Video Clips - Pro Feature */}
-          <div className="p-4 bg-gray-800/50 rounded-2xl">
+          <div className="rounded-2xl bg-gray-800/50 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Film className="w-4 h-4 text-purple-400" />
-                <label className="text-sm font-semibold text-gray-300">
-                  AI Video Clips
-                </label>
+                <Film className="h-4 w-4 text-purple-400" />
+                <label className="text-sm font-semibold text-gray-300">AI Video Clips</label>
                 {!usage?.isPro && (
-                  <span className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full">
+                  <span className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-0.5 text-xs font-bold text-white">
                     PRO
                   </span>
                 )}
@@ -499,13 +507,13 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
                 </button>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="mt-2 text-xs text-gray-500">
               Generate cinematic video clips for each chapter using AI
             </p>
           </div>
 
           {error && (
-            <div className="mt-4 bg-red-900/30 border border-red-500/50 rounded-2xl p-4">
+            <div className="mt-4 rounded-2xl border border-red-500/50 bg-red-900/30 p-4">
               <p className="text-sm text-red-400">{error}</p>
             </div>
           )}
@@ -513,17 +521,19 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
           {isGenerating && (
             <div className="mt-6 space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-300 font-medium">{progress}</span>
+                <span className="font-medium text-gray-300">{progress}</span>
                 <span className="text-gray-500">{progressPercent}%</span>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-800">
                 <div
-                  className="h-full rounded-full transition-all duration-500 ease-out bg-gradient-to-r from-purple-600 to-pink-600"
+                  className="h-full rounded-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-500 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-500 text-center">
-                {progressPercent < 100 ? 'Please wait while we craft your story...' : 'Ready to begin!'}
+              <p className="text-center text-xs text-gray-500">
+                {progressPercent < 100
+                  ? 'Please wait while we craft your story...'
+                  : 'Ready to begin!'}
               </p>
             </div>
           )}
@@ -531,26 +541,26 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
           <button
             onClick={handleGenerateStory}
             disabled={isGenerating || !prompt.trim()}
-            className="w-full mt-8 py-6 text-white font-bold text-lg rounded-2xl shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 py-6 text-lg font-bold text-white shadow-xl transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-2xl disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isGenerating ? (
               <>
-                <Loader className="w-6 h-6 animate-spin" />
+                <Loader className="h-6 w-6 animate-spin" />
                 Creating Your Story...
               </>
             ) : (
               <>
-                <Wand2 className="w-6 h-6" />
+                <Wand2 className="h-6 w-6" />
                 Generate Story
               </>
             )}
           </button>
         </div>
 
-        <div className="bg-gray-900 rounded-3xl shadow-xl p-6 border border-gray-800">
-          <div className="text-sm text-gray-300 space-y-2">
+        <div className="rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl">
+          <div className="space-y-2 text-sm text-gray-300">
             <p className="font-semibold">How it works:</p>
-            <ol className="list-decimal list-inside space-y-1 text-gray-400">
+            <ol className="list-inside list-decimal space-y-1 text-gray-400">
               <li>Describe the story concept you want to explore</li>
               <li>AI generates the opening chapter instantly</li>
               <li>Make choices that shape your narrative</li>

@@ -126,7 +126,7 @@ export default function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
     }
 
     setCheckoutLoading(plan.name);
-    trackSubscriptionCheckoutStart(`${plan.name.toLowerCase()}_${billingCycle}`);
+    trackSubscriptionCheckoutStart(billingCycle);
 
     try {
       const url = await createCheckoutSession(priceId);

@@ -1,12 +1,11 @@
-import React from 'react';
 import { Crown, Calendar, CreditCard } from 'lucide-react';
 import { getProductByPriceId, formatPrice } from '../../stripe-config';
 
 interface SubscriptionData {
-  subscription_status: string;
+  subscription_status: string | null;
   price_id: string | null;
   current_period_end: number | null;
-  cancel_at_period_end: boolean;
+  cancel_at_period_end: boolean | null;
   payment_method_brand: string | null;
   payment_method_last4: string | null;
 }
@@ -19,11 +18,11 @@ interface SubscriptionStatusProps {
 export function SubscriptionStatus({ subscription, loading }: SubscriptionStatusProps) {
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="rounded-lg bg-white p-6 shadow-md">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="mb-4 h-6 w-1/3 rounded bg-gray-200"></div>
+          <div className="mb-2 h-4 w-2/3 rounded bg-gray-200"></div>
+          <div className="h-4 w-1/2 rounded bg-gray-200"></div>
         </div>
       </div>
     );
@@ -31,17 +30,17 @@ export function SubscriptionStatus({ subscription, loading }: SubscriptionStatus
 
   if (!subscription || subscription.subscription_status === 'not_started') {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center mb-4">
-          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-3">
-            <Crown className="w-5 h-5 text-gray-400" />
+      <div className="rounded-lg bg-white p-6 shadow-md">
+        <div className="mb-4 flex items-center">
+          <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+            <Crown className="h-5 w-5 text-gray-400" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Free Plan</h3>
             <p className="text-sm text-gray-600">2 stories per day</p>
           </div>
         </div>
-        <p className="text-gray-600 text-sm">
+        <p className="text-sm text-gray-600">
           Upgrade to Pro for unlimited story generation and premium features.
         </p>
       </div>
@@ -50,7 +49,7 @@ export function SubscriptionStatus({ subscription, loading }: SubscriptionStatus
 
   const product = subscription.price_id ? getProductByPriceId(subscription.price_id) : null;
   const isActive = subscription.subscription_status === 'active';
-  const periodEnd = subscription.current_period_end 
+  const periodEnd = subscription.current_period_end
     ? new Date(subscription.current_period_end * 1000).toLocaleDateString()
     : null;
 
@@ -68,34 +67,37 @@ export function SubscriptionStatus({ subscription, loading }: SubscriptionStatus
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-lg bg-white p-6 shadow-md">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
-            isActive ? 'bg-blue-100' : 'bg-gray-100'
-          }`}>
-            <Crown className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+          <div
+            className={`mr-3 flex h-10 w-10 items-center justify-center rounded-full ${
+              isActive ? 'bg-blue-100' : 'bg-gray-100'
+            }`}
+          >
+            <Crown className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              {product?.name || 'Pro Plan'}
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900">{product?.name || 'Pro Plan'}</h3>
             {product && (
               <p className="text-sm text-gray-600">
-                {formatPrice(product.price, product.currency)}/{product.name.includes('Yearly') ? 'year' : 'month'}
+                {formatPrice(product.price, product.currency)}/
+                {product.name.includes('Yearly') ? 'year' : 'month'}
               </p>
             )}
           </div>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(subscription.subscription_status)}`}>
-          {subscription.subscription_status.replace('_', ' ').toUpperCase()}
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(subscription.subscription_status ?? '')}`}
+        >
+          {(subscription.subscription_status ?? '').replace('_', ' ').toUpperCase()}
         </span>
       </div>
 
       <div className="space-y-3">
         {periodEnd && (
           <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="w-4 h-4 mr-2" />
+            <Calendar className="mr-2 h-4 w-4" />
             <span>
               {subscription.cancel_at_period_end ? 'Expires' : 'Renews'} on {periodEnd}
             </span>
@@ -104,15 +106,16 @@ export function SubscriptionStatus({ subscription, loading }: SubscriptionStatus
 
         {subscription.payment_method_brand && subscription.payment_method_last4 && (
           <div className="flex items-center text-sm text-gray-600">
-            <CreditCard className="w-4 h-4 mr-2" />
+            <CreditCard className="mr-2 h-4 w-4" />
             <span>
-              {subscription.payment_method_brand.toUpperCase()} ending in {subscription.payment_method_last4}
+              {subscription.payment_method_brand.toUpperCase()} ending in{' '}
+              {subscription.payment_method_last4}
             </span>
           </div>
         )}
 
         {subscription.cancel_at_period_end && (
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3">
             <p className="text-sm text-yellow-800">
               Your subscription will not renew and will end on {periodEnd}.
             </p>

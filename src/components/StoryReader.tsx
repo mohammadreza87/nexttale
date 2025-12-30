@@ -227,7 +227,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           {
             storyTitle: story.title,
             artStyle: story.art_style,
-            storyDescription: story.description,
+            storyDescription: story.description ?? undefined,
             styleReference: imageStyleReference,
           },
           async (imageUrl) => {
@@ -633,7 +633,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
 
   const loadStoryNode = async (
     nodeKey: string,
-    previousContent?: string,
+    _previousContent?: string,
     storyOverride?: Story
   ) => {
     const currentStory = storyOverride || story;
@@ -726,7 +726,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
       setChapters([chapter]);
 
       // Ensure cover uses the first chapter's image when available
-      if (isFirstChapter && !currentStory.cover_image_url && existingNodeImage) {
+      if (isFirstChapter && currentStory && !currentStory.cover_image_url && existingNodeImage) {
         await supabase
           .from('stories')
           .update({ cover_image_url: existingNodeImage })
@@ -748,11 +748,10 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           {
             storyTitle: currentStory.title,
             artStyle: currentStory.art_style,
-            storyDescription: currentStory.description,
-            styleReference: imageStyleReference || node.image_prompt,
+            storyDescription: currentStory.description ?? undefined,
+            styleReference: imageStyleReference || (node.image_prompt ?? undefined),
             storyId,
-            nodeId: node.id,
-            previousPrompt: node.image_prompt || imageStyleReference,
+            previousPrompt: (node.image_prompt ?? undefined) || imageStyleReference,
           },
           async (imageUrl) => {
             await updateNodeImage(node.id, imageUrl, node.content.substring(0, 200));
@@ -822,11 +821,12 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
         const resolvedNode = await waitForNodeResolution(choice.to_node.id);
 
         if (resolvedNode) {
-          const nextChoices = resolvedNode.is_ending ? [] : await getNodeChoices(resolvedNode.id);
+          const isEnding = resolvedNode.is_ending ?? false;
+          const nextChoices = isEnding ? [] : await getNodeChoices(resolvedNode.id);
           const newPath = [...pathTaken, resolvedNode.node_key];
           setPathTaken(newPath);
 
-          await saveProgress(userId, storyId, resolvedNode.id, newPath, resolvedNode.is_ending);
+          await saveProgress(userId, storyId, resolvedNode.id, newPath, isEnding);
 
           const newChapter: StoryChapter = {
             node: resolvedNode,
@@ -851,10 +851,9 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
               {
                 storyTitle: story.title,
                 artStyle: story.art_style,
-                storyDescription: story.description,
+                storyDescription: story.description ?? undefined,
                 styleReference: imageStyleReference || resolvedNode.image_prompt,
                 storyId,
-                nodeId: resolvedNode.id,
                 previousPrompt: resolvedNode.image_prompt || imageStyleReference,
               },
               async (imageUrl) => {
@@ -949,10 +948,9 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
             {
               storyTitle: story.title,
               artStyle: story.art_style,
-              storyDescription: story.description,
+              storyDescription: story.description ?? undefined,
               styleReference: imageStyleReference,
               storyId,
-              nodeId: newNode.id,
               previousPrompt: imageStyleReference,
             },
             async (imageUrl) => {
@@ -975,12 +973,13 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
     } else {
       const newPath = [...pathTaken, choice.to_node.node_key];
       setPathTaken(newPath);
+      const toNodeIsEnding = choice.to_node.is_ending ?? false;
 
-      await saveProgress(userId, storyId, choice.to_node.id, newPath, choice.to_node.is_ending);
+      await saveProgress(userId, storyId, choice.to_node.id, newPath, toNodeIsEnding);
 
-      const nextChoices = choice.to_node.is_ending ? [] : await getNodeChoices(choice.to_node.id);
+      const nextChoices = toNodeIsEnding ? [] : await getNodeChoices(choice.to_node.id);
 
-      if (!choice.to_node.is_ending && nextChoices.length === 0 && story?.story_context) {
+      if (!toNodeIsEnding && nextChoices.length === 0 && story?.story_context) {
         console.log('Node has no choices, generating them dynamically...');
         setIsGenerating(true);
 
@@ -1069,10 +1068,9 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           {
             storyTitle: story.title,
             artStyle: story.art_style,
-            storyDescription: story.description,
+            storyDescription: story.description ?? undefined,
             styleReference: imageStyleReference,
             storyId,
-            nodeId: choice.to_node.id,
             previousPrompt: imageStyleReference,
           },
           async (imageUrl) => {
@@ -1280,10 +1278,9 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
           {
             storyTitle: story.title,
             artStyle: story.art_style,
-            storyDescription: story.description,
+            storyDescription: story.description ?? undefined,
             styleReference: imageStyleReference,
             storyId,
-            nodeId: newNode.id,
             previousPrompt: imageStyleReference,
           },
           async (imageUrl) => {
@@ -2375,6 +2372,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
                             setLikesCount((prev) => prev + 1);
                           }
                           setUserReaction({
+                            id: '',
                             user_id: userId,
                             story_id: storyId,
                             reaction_type: 'like',
@@ -2416,6 +2414,7 @@ export function StoryReader({ storyId, userId, onComplete, onViewProfile }: Stor
                             setDislikesCount((prev) => prev + 1);
                           }
                           setUserReaction({
+                            id: '',
                             user_id: userId,
                             story_id: storyId,
                             reaction_type: 'dislike',

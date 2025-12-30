@@ -2,11 +2,12 @@ import { supabase } from './supabase';
 
 export interface Comment {
   id: string;
-  story_id: string;
-  user_id: string;
+  story_id: string | null;
+  user_id: string | null;
   content: string;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
+  parent_id?: string | null;
   user_profiles?: {
     display_name: string | null;
   };
@@ -15,12 +16,7 @@ export interface Comment {
 export async function getStoryComments(storyId: string): Promise<Comment[]> {
   const { data, error } = await supabase
     .from('story_comments')
-    .select(`
-      *,
-      user_profiles!story_comments_user_id_fkey_profiles (
-        display_name
-      )
-    `)
+    .select(`*`)
     .eq('story_id', storyId)
     .order('created_at', { ascending: false });
 
@@ -29,7 +25,7 @@ export async function getStoryComments(storyId: string): Promise<Comment[]> {
     throw error;
   }
 
-  return data || [];
+  return (data || []) as unknown as Comment[];
 }
 
 export async function getCommentCount(storyId: string): Promise<number> {
@@ -47,7 +43,9 @@ export async function getCommentCount(storyId: string): Promise<number> {
 }
 
 export async function addComment(storyId: string, content: string): Promise<Comment | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     throw new Error('User must be authenticated to comment');
@@ -60,12 +58,7 @@ export async function addComment(storyId: string, content: string): Promise<Comm
       user_id: user.id,
       content: content.trim(),
     })
-    .select(`
-      *,
-      user_profiles!story_comments_user_id_fkey_profiles (
-        display_name
-      )
-    `)
+    .select(`*`)
     .single();
 
   if (error) {
@@ -73,7 +66,7 @@ export async function addComment(storyId: string, content: string): Promise<Comm
     throw error;
   }
 
-  return data;
+  return data as unknown as Comment;
 }
 
 export async function updateComment(commentId: string, content: string): Promise<void> {
@@ -89,10 +82,7 @@ export async function updateComment(commentId: string, content: string): Promise
 }
 
 export async function deleteComment(commentId: string): Promise<void> {
-  const { error } = await supabase
-    .from('story_comments')
-    .delete()
-    .eq('id', commentId);
+  const { error } = await supabase.from('story_comments').delete().eq('id', commentId);
 
   if (error) {
     console.error('Error deleting comment:', error);

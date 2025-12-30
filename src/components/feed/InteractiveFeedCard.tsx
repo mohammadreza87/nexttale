@@ -71,8 +71,8 @@ export function InteractiveFeedCard({
   userId,
 }: InteractiveFeedCardProps) {
   const [reaction, setReaction] = useState<InteractiveReaction | null>(null);
-  const [likesCount, setLikesCount] = useState(item.likes_count);
-  const [dislikesCount, setDislikesCount] = useState(item.dislikes_count);
+  const [likesCount, setLikesCount] = useState(item.likes_count ?? 0);
+  const [dislikesCount, setDislikesCount] = useState(item.dislikes_count ?? 0);
   const [showPreview, setShowPreview] = useState(false);
 
   const typeConfig =
@@ -148,7 +148,7 @@ export function InteractiveFeedCard({
       try {
         await navigator.share({
           title: item.title,
-          text: item.description,
+          text: item.description ?? undefined,
           url: shareUrl,
         });
       } catch (error) {

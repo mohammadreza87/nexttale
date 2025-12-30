@@ -63,7 +63,10 @@ export function trackPageView(pagePath: string, pageTitle?: string): void {
 
 // ==================== USER PROPERTIES ====================
 
-export function setUserProperties(userId: string | null, properties?: Record<string, unknown>): void {
+export function setUserProperties(
+  userId: string | null,
+  properties?: Record<string, unknown>
+): void {
   if (!isAnalyticsReady()) return;
 
   if (userId) {
@@ -91,12 +94,14 @@ export function trackStoryView(storyId: string, storyTitle: string, creatorId?: 
   window.gtag('event', 'view_item', {
     currency: 'USD',
     value: 0,
-    items: [{
-      item_id: storyId,
-      item_name: storyTitle,
-      item_category: 'story',
-      item_brand: creatorId || 'nexttale',
-    }],
+    items: [
+      {
+        item_id: storyId,
+        item_name: storyTitle,
+        item_category: 'story',
+        item_brand: creatorId || 'nexttale',
+      },
+    ],
   });
 
   // Custom event for more detailed tracking
@@ -118,11 +123,13 @@ export function trackStoryStart(storyId: string, storyTitle: string): void {
   window.gtag('event', 'begin_checkout', {
     currency: 'USD',
     value: 0,
-    items: [{
-      item_id: storyId,
-      item_name: storyTitle,
-      item_category: 'story',
-    }],
+    items: [
+      {
+        item_id: storyId,
+        item_name: storyTitle,
+        item_category: 'story',
+      },
+    ],
   });
 }
 
@@ -136,7 +143,11 @@ export function trackChapterRead(storyId: string, chapterIndex: number, isEnding
   });
 }
 
-export function trackStoryComplete(storyId: string, storyTitle: string, chaptersRead: number): void {
+export function trackStoryComplete(
+  storyId: string,
+  storyTitle: string,
+  chaptersRead: number
+): void {
   if (!isAnalyticsReady()) return;
 
   window.gtag('event', 'story_complete', {
@@ -150,16 +161,23 @@ export function trackStoryComplete(storyId: string, storyTitle: string, chapters
     currency: 'USD',
     value: 0,
     transaction_id: `story_${storyId}_${Date.now()}`,
-    items: [{
-      item_id: storyId,
-      item_name: storyTitle,
-      item_category: 'story_completion',
-      quantity: 1,
-    }],
+    items: [
+      {
+        item_id: storyId,
+        item_name: storyTitle,
+        item_category: 'story_completion',
+        quantity: 1,
+      },
+    ],
   });
 }
 
-export function trackChoiceSelected(storyId: string, choiceId: string, choiceText: string, isCustom: boolean): void {
+export function trackChoiceSelected(
+  storyId: string,
+  choiceId: string,
+  choiceText: string,
+  isCustom: boolean
+): void {
   if (!isAnalyticsReady()) return;
 
   window.gtag('event', 'select_content', {
@@ -182,7 +200,12 @@ export function trackStoryCreationStart(artStyle: string, ageRange: string): voi
   });
 }
 
-export function trackStoryCreated(storyId: string, storyTitle: string, artStyle: string, isPublic: boolean): void {
+export function trackStoryCreated(
+  storyId: string,
+  storyTitle: string,
+  artStyle: string,
+  isPublic: boolean
+): void {
   if (!isAnalyticsReady()) return;
 
   window.gtag('event', 'story_created', {
@@ -217,7 +240,7 @@ export function trackLogin(method: 'email' | 'google' | 'apple'): void {
   });
 }
 
-export function trackShare(storyId: string, storyTitle: string, method: 'copy' | 'native'): void {
+export function trackShare(storyId: string, _storyTitle: string, method: 'copy' | 'native'): void {
   if (!isAnalyticsReady()) return;
 
   window.gtag('event', 'share', {
@@ -260,12 +283,14 @@ export function trackSubscriptionView(plan: 'monthly' | 'annual'): void {
   window.gtag('event', 'view_item', {
     currency: 'USD',
     value: plan === 'monthly' ? 4.99 : 29.99,
-    items: [{
-      item_id: `pro_${plan}`,
-      item_name: `Pro ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
-      item_category: 'subscription',
-      price: plan === 'monthly' ? 4.99 : 29.99,
-    }],
+    items: [
+      {
+        item_id: `pro_${plan}`,
+        item_name: `Pro ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
+        item_category: 'subscription',
+        price: plan === 'monthly' ? 4.99 : 29.99,
+      },
+    ],
   });
 }
 
@@ -277,13 +302,15 @@ export function trackSubscriptionCheckoutStart(plan: 'monthly' | 'annual'): void
   window.gtag('event', 'begin_checkout', {
     currency: 'USD',
     value: price,
-    items: [{
-      item_id: `pro_${plan}`,
-      item_name: `Pro ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
-      item_category: 'subscription',
-      price: price,
-      quantity: 1,
-    }],
+    items: [
+      {
+        item_id: `pro_${plan}`,
+        item_name: `Pro ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
+        item_category: 'subscription',
+        price: price,
+        quantity: 1,
+      },
+    ],
   });
 }
 
@@ -296,13 +323,15 @@ export function trackSubscriptionPurchase(plan: 'monthly' | 'annual', transactio
     currency: 'USD',
     value: price,
     transaction_id: transactionId,
-    items: [{
-      item_id: `pro_${plan}`,
-      item_name: `Pro ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
-      item_category: 'subscription',
-      price: price,
-      quantity: 1,
-    }],
+    items: [
+      {
+        item_id: `pro_${plan}`,
+        item_name: `Pro ${plan.charAt(0).toUpperCase() + plan.slice(1)}`,
+        item_category: 'subscription',
+        price: price,
+        quantity: 1,
+      },
+    ],
   });
 }
 
@@ -340,7 +369,12 @@ export function trackError(errorType: string, errorMessage: string, context?: st
 
 // ==================== PERFORMANCE TRACKING ====================
 
-export function trackTiming(category: string, variable: string, value: number, label?: string): void {
+export function trackTiming(
+  category: string,
+  variable: string,
+  value: number,
+  label?: string
+): void {
   if (!isAnalyticsReady()) return;
 
   window.gtag('event', 'timing_complete', {

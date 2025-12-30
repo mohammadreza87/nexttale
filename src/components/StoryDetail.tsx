@@ -106,7 +106,7 @@ export function StoryDetail({
       } else {
         setStory(storyData);
         // Track story view
-        trackStoryView(storyData.id, storyData.title, storyData.created_by);
+        trackStoryView(storyData.id, storyData.title, storyData.created_by ?? undefined);
       }
       setLikesCount(storyData.likes_count || 0);
       setDislikesCount(storyData.dislikes_count || 0);

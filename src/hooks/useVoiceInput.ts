@@ -16,11 +16,56 @@ interface UseVoiceInputReturn {
   resetTranscript: () => void;
 }
 
+// Web Speech API type definitions
+interface SpeechRecognitionResult {
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  readonly isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  readonly resultIndex: number;
+  readonly results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: string;
+  readonly message: string;
+}
+
+interface SpeechRecognitionInstance extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognitionInstance;
+}
+
 // Extend Window interface for SpeechRecognition
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    SpeechRecognition: SpeechRecognitionConstructor;
+    webkitSpeechRecognition: SpeechRecognitionConstructor;
   }
 }
 
@@ -29,16 +74,17 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
-  const isSupported = typeof window !== 'undefined' &&
+  const isSupported =
+    typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   useEffect(() => {
     if (!isSupported) return;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
+    const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognitionRef.current = new SpeechRecognitionClass();
 
     const recognition = recognitionRef.current;
     recognition.continuous = continuous;
@@ -143,18 +189,32 @@ export function matchVoiceToChoice(
 
   // Try exact match first
   for (const choice of choices) {
-    if (choice.text.toLowerCase().includes(normalizedTranscript) ||
-        normalizedTranscript.includes(choice.text.toLowerCase())) {
+    if (
+      choice.text.toLowerCase().includes(normalizedTranscript) ||
+      normalizedTranscript.includes(choice.text.toLowerCase())
+    ) {
       return choice;
     }
   }
 
   // Try number matching (e.g., "one", "first", "1")
   const numberWords: Record<string, number> = {
-    'one': 0, 'first': 0, '1': 0, 'a': 0,
-    'two': 1, 'second': 1, '2': 1, 'b': 1,
-    'three': 2, 'third': 2, '3': 2, 'c': 2,
-    'four': 3, 'fourth': 3, '4': 3, 'd': 3,
+    one: 0,
+    first: 0,
+    '1': 0,
+    a: 0,
+    two: 1,
+    second: 1,
+    '2': 1,
+    b: 1,
+    three: 2,
+    third: 2,
+    '3': 2,
+    c: 2,
+    four: 3,
+    fourth: 3,
+    '4': 3,
+    d: 3,
   };
 
   for (const [word, index] of Object.entries(numberWords)) {

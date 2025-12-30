@@ -30,7 +30,7 @@ vi.mock('./supabase', () => ({
 import type {
   StoryOutline,
   StoryMemory,
-  StoryCharacter as _StoryCharacter,
+  StoryCharacter,
   ChapterOutline as _ChapterOutline,
   ImageContext,
 } from './types';

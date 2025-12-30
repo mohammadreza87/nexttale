@@ -37,8 +37,8 @@ export function StoryFeedCard({
   userId,
 }: StoryFeedCardProps) {
   const [reaction, setReaction] = useState<StoryReaction | null>(null);
-  const [likesCount, setLikesCount] = useState(item.likes_count);
-  const [dislikesCount, setDislikesCount] = useState(item.dislikes_count);
+  const [likesCount, setLikesCount] = useState(item.likes_count ?? 0);
+  const [dislikesCount, setDislikesCount] = useState(item.dislikes_count ?? 0);
 
   useEffect(() => {
     if (userId && item.id) {
@@ -96,7 +96,7 @@ export function StoryFeedCard({
       try {
         await navigator.share({
           title: item.title,
-          text: item.description,
+          text: item.description ?? undefined,
           url: shareUrl,
         });
       } catch (error) {

@@ -19,11 +19,9 @@ vi.mock('../supabase', () => {
 describe('subscriptionService checkout helpers', () => {
   beforeEach(() => {
     fetchMock = vi.fn();
-    // @ts-expect-error override global fetch for tests
     global.fetch = fetchMock;
     // Minimal window object for origin usage
-    // @ts-expect-error override for tests
-    globalThis.window = { location: { origin: 'http://localhost' } };
+    globalThis.window = { location: { origin: 'http://localhost' } } as Window & typeof globalThis;
   });
 
   afterEach(() => {

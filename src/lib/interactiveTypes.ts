@@ -14,48 +14,51 @@ export interface InteractiveContent {
   preview_gif_url: string | null;
   html_content: string;
   generation_prompt: string;
-  generation_model: string;
+  generation_model: string | null;
   created_by: string | null;
-  is_public: boolean;
-  likes_count: number;
-  dislikes_count: number;
-  view_count: number;
-  share_count: number;
-  comment_count: number;
-  tags: string[];
+  is_public: boolean | null;
+  likes_count: number | null;
+  dislikes_count: number | null;
+  view_count: number | null;
+  share_count: number | null;
+  comment_count: number | null;
+  tags: string[] | null;
   category: string | null;
-  estimated_interaction_time: number;
-  created_at: string;
-  updated_at: string;
+  estimated_interaction_time: number | null;
+  estimated_duration?: number | null; // Alias for estimated_interaction_time
+  created_at: string | null;
+  updated_at: string | null;
+  html_version?: number | null;
+  generation_tokens_used?: number | null;
   creator?: {
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
 }
 
 // Unified feed item (can be story or interactive content)
 export interface FeedItem {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   feed_type: ContentType;
   thumbnail_url: string | null;
   preview_url: string | null;
   created_by: string | null;
-  is_public: boolean;
-  likes_count: number;
-  dislikes_count: number;
-  view_count: number;
-  comment_count: number;
-  created_at: string;
-  estimated_duration: number;
+  is_public: boolean | null;
+  likes_count: number | null;
+  dislikes_count: number | null;
+  view_count: number | null;
+  comment_count: number | null;
+  created_at: string | null;
+  estimated_duration: number | null;
   creator?: {
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
   // For interactive content
   html_content?: string;
-  tags?: string[];
+  tags?: string[] | null;
 }
 
 // Reaction types
@@ -63,8 +66,8 @@ export interface InteractiveReaction {
   id: string;
   user_id: string;
   content_id: string;
-  reaction_type: 'like' | 'dislike';
-  created_at: string;
+  reaction_type: 'like' | 'dislike' | string;
+  created_at: string | null;
 }
 
 // Comment on interactive content
@@ -73,12 +76,17 @@ export interface InteractiveComment {
   content_id: string;
   user_id: string;
   content: string;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
   user?: {
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
+  // Alias for user - used by some components
+  user_profile?: {
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
 // Request to generate new interactive content

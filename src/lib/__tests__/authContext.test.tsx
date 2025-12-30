@@ -28,8 +28,7 @@ vi.mock('../supabase', () => ({
 describe('authContext', () => {
   it('hydrates session and supports signOut', async () => {
     // Ensure React is available globally for JSX during test transforms
-    // @ts-expect-error allow assignment for test
-    global.React = React;
+    (global as Record<string, unknown>).React = React;
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <AuthProvider>{children}</AuthProvider>

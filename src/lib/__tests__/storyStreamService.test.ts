@@ -14,7 +14,7 @@ function createMemoryStorage() {
       delete store[key];
     },
     clear: () => {
-      Object.keys(store).forEach(k => delete store[k]);
+      Object.keys(store).forEach((k) => delete store[k]);
     },
     key: (index: number) => Object.keys(store)[index] ?? null,
     get length() {
@@ -28,7 +28,6 @@ describe('storyStreamService cache helpers', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2024-01-01T00:00:00Z'));
-    // @ts-expect-error allow override for tests
     globalThis.localStorage = createMemoryStorage();
   });
 

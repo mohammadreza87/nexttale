@@ -1,6 +1,5 @@
 import { supabase } from './supabase';
 import type { FeedItem, ContentType, FeedFilter } from './interactiveTypes';
-import type { Story } from './types';
 
 // ============================================
 // UNIFIED FEED QUERIES
@@ -29,7 +28,7 @@ export async function getUnifiedFeed(
 
   // Combine and sort by created_at
   const combined = [...storiesResult.data, ...interactiveResult.data].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
   );
 
   return {
@@ -49,7 +48,7 @@ async function getStoriesFeed(
       id, title, description,
       cover_image_url, cover_video_url,
       created_by, is_public, likes_count, dislikes_count,
-      completion_count, comment_count, created_at, estimated_duration,
+      completion_count, created_at, estimated_duration,
       creator:user_profiles(display_name, avatar_url)
     `
     )
@@ -59,25 +58,40 @@ async function getStoriesFeed(
 
   if (error) throw error;
 
-  const feedItems: FeedItem[] = (data || []).map(
-    (story: Story & { creator?: { display_name: string | null; avatar_url: string | null } }) => ({
-      id: story.id,
-      title: story.title,
-      description: story.description,
-      feed_type: 'story' as ContentType,
-      thumbnail_url: story.cover_image_url,
-      preview_url: story.cover_video_url || null,
-      created_by: story.created_by || null,
-      is_public: story.is_public || false,
-      likes_count: story.likes_count || 0,
-      dislikes_count: story.dislikes_count || 0,
-      view_count: story.completion_count || 0,
-      comment_count: story.comment_count || 0,
-      created_at: story.created_at || new Date().toISOString(),
-      estimated_duration: story.estimated_duration,
-      creator: story.creator,
-    })
-  );
+  // Type assertion for the query result
+  type StoryQueryResult = {
+    id: string;
+    title: string;
+    description: string | null;
+    cover_image_url: string | null;
+    cover_video_url: string | null;
+    created_by: string | null;
+    is_public: boolean | null;
+    likes_count: number | null;
+    dislikes_count: number | null;
+    completion_count: number | null;
+    created_at: string | null;
+    estimated_duration: number | null;
+    creator: { display_name: string | null; avatar_url: string | null } | null;
+  };
+
+  const feedItems: FeedItem[] = ((data || []) as unknown as StoryQueryResult[]).map((story) => ({
+    id: story.id,
+    title: story.title,
+    description: story.description,
+    feed_type: 'story' as ContentType,
+    thumbnail_url: story.cover_image_url,
+    preview_url: story.cover_video_url || null,
+    created_by: story.created_by || null,
+    is_public: story.is_public || false,
+    likes_count: story.likes_count || 0,
+    dislikes_count: story.dislikes_count || 0,
+    view_count: story.completion_count || 0,
+    comment_count: 0, // Not available from stories table
+    created_at: story.created_at || new Date().toISOString(),
+    estimated_duration: story.estimated_duration,
+    creator: story.creator,
+  }));
 
   return {
     data: feedItems,
@@ -97,8 +111,7 @@ async function getInteractiveFeed(
       id, title, description, content_type,
       thumbnail_url, preview_gif_url, html_content,
       created_by, is_public, likes_count, dislikes_count,
-      view_count, comment_count, created_at, estimated_interaction_time, tags,
-      creator:user_profiles(display_name, avatar_url)
+      view_count, comment_count, created_at, estimated_interaction_time, tags
     `
     )
     .eq('is_public', true)
@@ -128,7 +141,7 @@ async function getInteractiveFeed(
     comment_count: item.comment_count || 0,
     created_at: item.created_at,
     estimated_duration: item.estimated_interaction_time,
-    creator: item.creator,
+    creator: null,
     html_content: item.html_content,
     tags: item.tags,
   }));
@@ -148,6 +161,23 @@ export async function getTrendingFeed(limit: number = 20): Promise<FeedItem[]> {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+  // Type assertion for story query result
+  type StoryQueryResult = {
+    id: string;
+    title: string;
+    description: string | null;
+    cover_image_url: string | null;
+    cover_video_url: string | null;
+    created_by: string | null;
+    is_public: boolean | null;
+    likes_count: number | null;
+    dislikes_count: number | null;
+    completion_count: number | null;
+    created_at: string | null;
+    estimated_duration: number | null;
+    creator: { display_name: string | null; avatar_url: string | null } | null;
+  };
+
   const [{ data: stories }, { data: interactive }] = await Promise.all([
     supabase
       .from('stories')
@@ -156,7 +186,7 @@ export async function getTrendingFeed(limit: number = 20): Promise<FeedItem[]> {
         id, title, description,
         cover_image_url, cover_video_url,
         created_by, is_public, likes_count, dislikes_count,
-        completion_count, comment_count, created_at, estimated_duration,
+        completion_count, created_at, estimated_duration,
         creator:user_profiles(display_name, avatar_url)
       `
       )
@@ -172,8 +202,7 @@ export async function getTrendingFeed(limit: number = 20): Promise<FeedItem[]> {
         id, title, description, content_type,
         thumbnail_url, preview_gif_url, html_content,
         created_by, is_public, likes_count, dislikes_count,
-        view_count, comment_count, created_at, estimated_interaction_time, tags,
-        creator:user_profiles(display_name, avatar_url)
+        view_count, comment_count, created_at, estimated_interaction_time, tags
       `
       )
       .eq('is_public', true)
@@ -182,23 +211,25 @@ export async function getTrendingFeed(limit: number = 20): Promise<FeedItem[]> {
       .limit(Math.ceil(limit / 2)),
   ]);
 
-  const storyItems: FeedItem[] = (stories || []).map((story) => ({
-    id: story.id,
-    title: story.title,
-    description: story.description,
-    feed_type: 'story' as ContentType,
-    thumbnail_url: story.cover_image_url,
-    preview_url: story.cover_video_url,
-    created_by: story.created_by,
-    is_public: story.is_public,
-    likes_count: story.likes_count || 0,
-    dislikes_count: story.dislikes_count || 0,
-    view_count: story.completion_count || 0,
-    comment_count: story.comment_count || 0,
-    created_at: story.created_at,
-    estimated_duration: story.estimated_duration,
-    creator: story.creator,
-  }));
+  const storyItems: FeedItem[] = ((stories || []) as unknown as StoryQueryResult[]).map(
+    (story) => ({
+      id: story.id,
+      title: story.title,
+      description: story.description,
+      feed_type: 'story' as ContentType,
+      thumbnail_url: story.cover_image_url,
+      preview_url: story.cover_video_url,
+      created_by: story.created_by,
+      is_public: story.is_public,
+      likes_count: story.likes_count || 0,
+      dislikes_count: story.dislikes_count || 0,
+      view_count: story.completion_count || 0,
+      comment_count: 0, // Not available from stories table
+      created_at: story.created_at,
+      estimated_duration: story.estimated_duration,
+      creator: story.creator,
+    })
+  );
 
   const interactiveItems: FeedItem[] = (interactive || []).map((item) => ({
     id: item.id,
@@ -215,14 +246,15 @@ export async function getTrendingFeed(limit: number = 20): Promise<FeedItem[]> {
     comment_count: item.comment_count || 0,
     created_at: item.created_at,
     estimated_duration: item.estimated_interaction_time,
-    creator: item.creator,
+    creator: null,
     html_content: item.html_content,
     tags: item.tags,
   }));
 
   // Sort by engagement score (likes + views)
   const combined = [...storyItems, ...interactiveItems].sort(
-    (a, b) => b.likes_count + b.view_count - (a.likes_count + a.view_count)
+    (a, b) =>
+      (b.likes_count ?? 0) + (b.view_count ?? 0) - ((a.likes_count ?? 0) + (a.view_count ?? 0))
   );
 
   return combined.slice(0, limit);
@@ -249,6 +281,23 @@ export async function getFollowingFeed(
 
   const followingIds = following.map((f) => f.following_id);
 
+  // Type assertion for story query result
+  type StoryQueryResult = {
+    id: string;
+    title: string;
+    description: string | null;
+    cover_image_url: string | null;
+    cover_video_url: string | null;
+    created_by: string | null;
+    is_public: boolean | null;
+    likes_count: number | null;
+    dislikes_count: number | null;
+    completion_count: number | null;
+    created_at: string | null;
+    estimated_duration: number | null;
+    creator: { display_name: string | null; avatar_url: string | null } | null;
+  };
+
   // Get content from followed users
   const [{ data: stories }, { data: interactive }] = await Promise.all([
     supabase
@@ -258,7 +307,7 @@ export async function getFollowingFeed(
         id, title, description,
         cover_image_url, cover_video_url,
         created_by, is_public, likes_count, dislikes_count,
-        completion_count, comment_count, created_at, estimated_duration,
+        completion_count, created_at, estimated_duration,
         creator:user_profiles(display_name, avatar_url)
       `
       )
@@ -274,8 +323,7 @@ export async function getFollowingFeed(
         id, title, description, content_type,
         thumbnail_url, preview_gif_url, html_content,
         created_by, is_public, likes_count, dislikes_count,
-        view_count, comment_count, created_at, estimated_interaction_time, tags,
-        creator:user_profiles(display_name, avatar_url)
+        view_count, comment_count, created_at, estimated_interaction_time, tags
       `
       )
       .eq('is_public', true)
@@ -284,23 +332,25 @@ export async function getFollowingFeed(
       .limit(Math.ceil(limit / 2)),
   ]);
 
-  const storyItems: FeedItem[] = (stories || []).map((story) => ({
-    id: story.id,
-    title: story.title,
-    description: story.description,
-    feed_type: 'story' as ContentType,
-    thumbnail_url: story.cover_image_url,
-    preview_url: story.cover_video_url,
-    created_by: story.created_by,
-    is_public: story.is_public,
-    likes_count: story.likes_count || 0,
-    dislikes_count: story.dislikes_count || 0,
-    view_count: story.completion_count || 0,
-    comment_count: story.comment_count || 0,
-    created_at: story.created_at,
-    estimated_duration: story.estimated_duration,
-    creator: story.creator,
-  }));
+  const storyItems: FeedItem[] = ((stories || []) as unknown as StoryQueryResult[]).map(
+    (story) => ({
+      id: story.id,
+      title: story.title,
+      description: story.description,
+      feed_type: 'story' as ContentType,
+      thumbnail_url: story.cover_image_url,
+      preview_url: story.cover_video_url,
+      created_by: story.created_by,
+      is_public: story.is_public,
+      likes_count: story.likes_count || 0,
+      dislikes_count: story.dislikes_count || 0,
+      view_count: story.completion_count || 0,
+      comment_count: 0, // Not available from stories table
+      created_at: story.created_at,
+      estimated_duration: story.estimated_duration,
+      creator: story.creator,
+    })
+  );
 
   const interactiveItems: FeedItem[] = (interactive || []).map((item) => ({
     id: item.id,
@@ -317,13 +367,13 @@ export async function getFollowingFeed(
     comment_count: item.comment_count || 0,
     created_at: item.created_at,
     estimated_duration: item.estimated_interaction_time,
-    creator: item.creator,
+    creator: null,
     html_content: item.html_content,
     tags: item.tags,
   }));
 
   const combined = [...storyItems, ...interactiveItems].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
   );
 
   return {

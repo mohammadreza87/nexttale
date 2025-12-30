@@ -1,86 +1,21 @@
-export interface Database {
-  public: {
-    Tables: {
-      stories: {
-        Row: {
-          id: string;
-          title: string;
-          description: string;
-          cover_image_url: string | null;
-          age_range: string;
-          estimated_duration: number;
-          story_context: string | null;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['stories']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['stories']['Insert']>;
-      };
-      story_nodes: {
-        Row: {
-          id: string;
-          story_id: string;
-          node_key: string;
-          content: string;
-          is_ending: boolean;
-          ending_type: string | null;
-          order_index: number;
-          image_url: string | null;
-          image_prompt: string | null;
-          audio_url: string | null;
-          parent_choice_id: string | null;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['story_nodes']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['story_nodes']['Insert']>;
-      };
-      story_choices: {
-        Row: {
-          id: string;
-          from_node_id: string;
-          to_node_id: string;
-          choice_text: string;
-          consequence_hint: string | null;
-          choice_order: number;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['story_choices']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['story_choices']['Insert']>;
-      };
-      user_story_progress: {
-        Row: {
-          id: string;
-          user_id: string;
-          story_id: string;
-          current_node_id: string | null;
-          path_taken: string[];
-          completed: boolean;
-          started_at: string;
-          completed_at: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Omit<
-          Database['public']['Tables']['user_story_progress']['Row'],
-          'id' | 'created_at' | 'updated_at'
-        >;
-        Update: Partial<Database['public']['Tables']['user_story_progress']['Insert']>;
-      };
-    };
-  };
-}
+// Re-export Database type from generated types
+export type { Database } from './database.types';
 
 export interface StoryNode {
   id: string;
   story_id: string;
   node_key: string;
   content: string;
-  is_ending: boolean;
+  is_ending: boolean | null;
   ending_type: string | null;
-  order_index: number;
+  order_index?: number | null;
   image_url?: string | null;
   image_prompt?: string | null;
   audio_url?: string | null;
   video_url?: string | null;
+  sequence_order?: number | null;
+  created_at?: string | null;
+  parent_choice_id?: string | null;
 }
 
 export interface StoryChoice {
@@ -89,72 +24,79 @@ export interface StoryChoice {
   to_node_id: string;
   choice_text: string;
   consequence_hint: string | null;
-  choice_order: number;
+  choice_order: number | null;
   created_by?: string | null;
   is_public?: boolean;
+  hint?: string | null;
 }
 
 export interface Story {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   cover_image_url: string | null;
   cover_video_url?: string | null;
-  age_range: string;
-  estimated_duration: number;
+  age_range: string | null;
+  estimated_duration: number | null;
   story_context?: string | null;
-  likes_count?: number;
-  dislikes_count?: number;
-  completion_count?: number;
-  comment_count?: number;
+  likes_count?: number | null;
+  dislikes_count?: number | null;
+  completion_count?: number | null;
+  comment_count?: number | null;
   created_by?: string | null;
-  is_public?: boolean;
-  is_user_generated?: boolean;
+  created_at?: string | null;
+  is_public?: boolean | null;
+  is_user_generated?: boolean | null;
   image_prompt?: string | null;
-  generation_status?: string;
-  generation_progress?: number;
-  nodes_generated?: number;
-  total_nodes_planned?: number;
+  generation_status?: string | null;
+  generation_progress?: number | null;
+  nodes_generated?: number | null;
+  total_nodes_planned?: number | null;
   language?: string | null;
-  narrator_enabled?: boolean;
-  video_enabled?: boolean;
+  narrator_enabled?: boolean | null;
+  video_enabled?: boolean | null;
+  art_style?: string | null;
+  story_outline?: StoryOutline | null;
+  story_memory?: StoryMemory | null;
   creator?: {
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
 }
 
 export interface StoryReaction {
   id: string;
   user_id: string;
   story_id: string;
-  reaction_type: 'like' | 'dislike';
-  created_at: string;
+  reaction_type: 'like' | 'dislike' | string;
+  created_at: string | null;
 }
 
 export type SubscriptionPlan = 'basic' | 'pro' | 'max';
 
 export interface UserProfile {
   id: string;
-  display_name: string;
-  bio: string;
-  avatar_url: string;
-  username?: string;
-  subscription_tier: 'free' | 'pro';
+  display_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  username?: string | null;
+  subscription_tier: 'free' | 'pro' | null;
   subscription_plan: SubscriptionPlan | null;
-  subscription_status: string;
+  subscription_status: string | null;
   subscription_period_end: string | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
-  is_grandfathered: boolean;
-  stories_generated_today: number;
+  is_grandfathered: boolean | null;
+  stories_generated_today: number | null;
   last_generation_date: string | null;
-  total_stories_generated: number;
-  total_points: number;
-  reading_points: number;
-  creating_points: number;
-  created_at: string;
-  updated_at: string;
+  total_stories_generated: number | null;
+  total_points: number | null;
+  reading_points: number | null;
+  creating_points: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+  followers_count?: number | null;
+  following_count?: number | null;
 }
 
 // ============================================

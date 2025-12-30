@@ -120,7 +120,6 @@ export function Quests(_props: QuestsProps) {
           {displayQuests
             .filter((q) => q.quest_type === 'daily')
             .map((quest) => {
-              const _isDone = (quest.progress || 0) >= quest.target;
               const pct = Math.min(100, ((quest.progress || 0) / quest.target) * 100);
               return (
                 <div key={quest.id} className="rounded-2xl bg-gray-800 p-4">
@@ -164,7 +163,6 @@ export function Quests(_props: QuestsProps) {
           {displayQuests
             .filter((q) => q.quest_type === 'weekly')
             .map((quest) => {
-              const _isDone = (quest.progress || 0) >= quest.target;
               const pct = Math.min(100, ((quest.progress || 0) / quest.target) * 100);
               return (
                 <div key={quest.id} className="rounded-2xl bg-gray-800 p-4">

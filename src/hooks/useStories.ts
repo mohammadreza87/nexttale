@@ -87,11 +87,13 @@ export function useStoryReaction(userId: string, storyId: string) {
         queryClient.setQueryData(queryKeys.stories.detail(storyId), {
           ...previousStory,
           likes_count:
-            reactionType === 'like' ? previousStory.likes_count + 1 : previousStory.likes_count,
+            reactionType === 'like'
+              ? (previousStory.likes_count ?? 0) + 1
+              : (previousStory.likes_count ?? 0),
           dislikes_count:
             reactionType === 'dislike'
-              ? previousStory.dislikes_count + 1
-              : previousStory.dislikes_count,
+              ? (previousStory.dislikes_count ?? 0) + 1
+              : (previousStory.dislikes_count ?? 0),
         });
       }
 
@@ -111,7 +113,9 @@ export function useStoryReaction(userId: string, storyId: string) {
     },
     onSettled: () => {
       // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: queryKeys.reactions.userReaction(userId, storyId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.reactions.userReaction(userId, storyId),
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.stories.detail(storyId) });
     },
   });
@@ -140,10 +144,12 @@ export function useStoryReaction(userId: string, storyId: string) {
         const wasLike = previousReaction.reaction_type === 'like';
         queryClient.setQueryData(queryKeys.stories.detail(storyId), {
           ...previousStory,
-          likes_count: wasLike ? previousStory.likes_count - 1 : previousStory.likes_count + 1,
+          likes_count: wasLike
+            ? (previousStory.likes_count ?? 0) - 1
+            : (previousStory.likes_count ?? 0) + 1,
           dislikes_count: wasLike
-            ? previousStory.dislikes_count + 1
-            : previousStory.dislikes_count - 1,
+            ? (previousStory.dislikes_count ?? 0) + 1
+            : (previousStory.dislikes_count ?? 0) - 1,
         });
       }
 
@@ -161,7 +167,9 @@ export function useStoryReaction(userId: string, storyId: string) {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.reactions.userReaction(userId, storyId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.reactions.userReaction(userId, storyId),
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.stories.detail(storyId) });
     },
   });
@@ -185,8 +193,12 @@ export function useStoryReaction(userId: string, storyId: string) {
         const wasLike = previousReaction.reaction_type === 'like';
         queryClient.setQueryData(queryKeys.stories.detail(storyId), {
           ...previousStory,
-          likes_count: wasLike ? previousStory.likes_count - 1 : previousStory.likes_count,
-          dislikes_count: wasLike ? previousStory.dislikes_count : previousStory.dislikes_count - 1,
+          likes_count: wasLike
+            ? (previousStory.likes_count ?? 0) - 1
+            : (previousStory.likes_count ?? 0),
+          dislikes_count: wasLike
+            ? (previousStory.dislikes_count ?? 0)
+            : (previousStory.dislikes_count ?? 0) - 1,
         });
       }
 
@@ -204,7 +216,9 @@ export function useStoryReaction(userId: string, storyId: string) {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.reactions.userReaction(userId, storyId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.reactions.userReaction(userId, storyId),
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.stories.detail(storyId) });
     },
   });

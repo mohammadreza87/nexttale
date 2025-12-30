@@ -56,9 +56,9 @@ interface CompletedStory {
 
 interface UserProfile {
   username: string;
-  display_name: string;
-  bio: string;
-  avatar_url: string;
+  display_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
 }
 
 export function Profile({ userId, onSelectStory }: ProfileProps) {
@@ -167,7 +167,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
         data?.map((item) => ({
           story: item.story as unknown as Story,
           completed_at: item.completed_at || '',
-          path_taken: item.path_taken || [],
+          path_taken: (Array.isArray(item.path_taken) ? item.path_taken : []) as string[],
         })) || [];
 
       setCompletedStories(formatted);
@@ -205,7 +205,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
         data?.map((item) => ({
           story: item.story as unknown as Story,
           completed_at: item.completed_at || '',
-          path_taken: item.path_taken || [],
+          path_taken: (Array.isArray(item.path_taken) ? item.path_taken : []) as string[],
         })) || [];
 
       setCompletedStories((prev) => [...prev, ...formatted]);
@@ -862,7 +862,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleToggleVisibility(story.id, story.is_public);
+                              handleToggleVisibility(story.id, story.is_public ?? false);
                             }}
                             disabled={updatingVisibilityId === story.id}
                             className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-700 disabled:opacity-50"

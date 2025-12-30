@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/auth/LoginForm';
 import { SignupForm } from '../components/auth/SignupForm';
@@ -11,7 +11,9 @@ export function LoginPage() {
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session) {
         navigate('/');
       }
@@ -24,18 +26,12 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
         {isLogin ? (
-          <LoginForm
-            onSuccess={handleAuthSuccess}
-            onSwitchToSignup={() => setIsLogin(false)}
-          />
+          <LoginForm onSuccess={handleAuthSuccess} onSwitchToSignup={() => setIsLogin(false)} />
         ) : (
-          <SignupForm
-            onSuccess={handleAuthSuccess}
-            onSwitchToLogin={() => setIsLogin(true)}
-          />
+          <SignupForm onSuccess={handleAuthSuccess} onSwitchToLogin={() => setIsLogin(true)} />
         )}
       </div>
     </div>

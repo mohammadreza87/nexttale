@@ -84,7 +84,8 @@ export function InteractiveCommentSection({ contentId, userId }: InteractiveComm
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Just now';
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();

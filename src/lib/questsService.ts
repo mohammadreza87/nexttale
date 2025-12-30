@@ -22,7 +22,9 @@ export interface Streak {
 }
 
 export async function getQuests() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (!session) throw new Error('Not authenticated');
 
   const today = new Date().toISOString().split('T')[0];
@@ -52,13 +54,13 @@ export async function getQuests() {
     .eq('id', session.user.id)
     .single();
 
-  const allQuests: Quest[] = quests || [];
+  const allQuests: Quest[] = (quests || []) as Quest[];
 
   const dailyTasks: QuestTask[] = ['read_chapter', 'create_story'];
   const weeklyTasks: QuestTask[] = ['complete_story'];
 
   for (const task of dailyTasks) {
-    const exists = allQuests.find(q => q.task === task && q.period_start === today);
+    const exists = allQuests.find((q) => q.task === task && q.period_start === today);
     if (!exists) {
       const config = TASK_CONFIG[task];
       allQuests.push({
@@ -78,7 +80,7 @@ export async function getQuests() {
 
   for (const task of weeklyTasks) {
     const weekStartStr = weekStart.toISOString().split('T')[0];
-    const exists = allQuests.find(q => q.task === task && q.period_start === weekStartStr);
+    const exists = allQuests.find((q) => q.task === task && q.period_start === weekStartStr);
     if (!exists) {
       const config = TASK_CONFIG[task];
       allQuests.push({
@@ -106,7 +108,10 @@ export async function getQuests() {
   };
 }
 
-const TASK_CONFIG: Record<QuestTask, { quest_type: 'daily' | 'weekly'; target: number; reward: number }> = {
+const TASK_CONFIG: Record<
+  QuestTask,
+  { quest_type: 'daily' | 'weekly'; target: number; reward: number }
+> = {
   read_chapter: { quest_type: 'daily', target: 2, reward: 10 },
   create_story: { quest_type: 'daily', target: 1, reward: 15 },
   complete_story: { quest_type: 'weekly', target: 1, reward: 30 },
@@ -133,7 +138,9 @@ function getPeriod(task: QuestTask) {
 }
 
 export async function progressQuest(task: QuestTask) {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (!session) {
     console.error('Not authenticated for quest progress');
     return;
@@ -149,27 +156,30 @@ export async function progressQuest(task: QuestTask) {
 
     const upsertResult = await supabase
       .from('user_quests')
-      .upsert({
-        user_id: session.user.id,
-        task,
-        quest_type: config.quest_type,
-        period_start: start,
-        period_end: end,
-        progress: 1,
-        target: config.target,
-        status: 'pending',
-        reward_points: config.reward,
-        rewarded: false,
-      }, {
-        onConflict: 'user_id,task,period_start',
-        ignoreDuplicates: false,
-      })
+      .upsert(
+        {
+          user_id: session.user.id,
+          task,
+          quest_type: config.quest_type,
+          period_start: start,
+          period_end: end,
+          progress: 1,
+          target: config.target,
+          status: 'pending',
+          reward_points: config.reward,
+          rewarded: false,
+        },
+        {
+          onConflict: 'user_id,task,period_start',
+          ignoreDuplicates: false,
+        }
+      )
       .select()
       .maybeSingle();
 
     const existing = upsertResult.data;
     if (existing) {
-      progress = Math.min(config.target, (existing.progress || 0));
+      progress = Math.min(config.target, existing.progress || 0);
       status = progress >= config.target ? 'completed' : 'pending';
       if (progress === (existing.progress || 0) && status === existing.status) {
         // Already at current state, bump progress by 1 if not completed
@@ -239,14 +249,12 @@ export async function progressQuest(task: QuestTask) {
             })
             .eq('user_id', session.user.id);
         } else {
-          await supabase
-            .from('user_streaks')
-            .insert({
-              user_id: session.user.id,
-              current_streak: 1,
-              longest_streak: 1,
-              last_action_date: today,
-            });
+          await supabase.from('user_streaks').insert({
+            user_id: session.user.id,
+            current_streak: 1,
+            longest_streak: 1,
+            last_action_date: today,
+          });
         }
       }
     }

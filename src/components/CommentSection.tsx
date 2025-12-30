@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MessageCircle, Send, Trash2, Edit2 } from 'lucide-react';
-import { Comment, getStoryComments, addComment, deleteComment, updateComment } from '../lib/commentService';
+import {
+  type Comment,
+  getStoryComments,
+  addComment,
+  deleteComment,
+  updateComment,
+} from '../lib/commentService';
 import { useAuth } from '../lib/authContext';
 
 interface CommentSectionProps {
@@ -16,10 +22,6 @@ export function CommentSection({ storyId }: CommentSectionProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
 
-  useEffect(() => {
-    loadComments();
-  }, [loadComments]);
-
   const loadComments = useCallback(async () => {
     setLoading(true);
     try {
@@ -31,6 +33,10 @@ export function CommentSection({ storyId }: CommentSectionProps) {
       setLoading(false);
     }
   }, [storyId]);
+
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +61,7 @@ export function CommentSection({ storyId }: CommentSectionProps) {
 
     try {
       await deleteComment(commentId);
-      setComments(comments.filter(c => c.id !== commentId));
+      setComments(comments.filter((c) => c.id !== commentId));
     } catch (error) {
       console.error('Failed to delete comment:', error);
     }
@@ -71,9 +77,7 @@ export function CommentSection({ storyId }: CommentSectionProps) {
 
     try {
       await updateComment(commentId, editContent);
-      setComments(comments.map(c =>
-        c.id === commentId ? { ...c, content: editContent } : c
-      ));
+      setComments(comments.map((c) => (c.id === commentId ? { ...c, content: editContent } : c)));
       setEditingId(null);
       setEditContent('');
     } catch (error) {
@@ -81,7 +85,8 @@ export function CommentSection({ storyId }: CommentSectionProps) {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Just now';
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -97,12 +102,10 @@ export function CommentSection({ storyId }: CommentSectionProps) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 mt-8">
-      <div className="flex items-center gap-2 mb-6">
-        <MessageCircle className="w-6 h-6 text-gray-900" />
-        <h2 className="text-2xl font-bold text-gray-900">
-          Comments ({comments.length})
-        </h2>
+    <div className="mt-8 rounded-2xl bg-white p-6 shadow-lg">
+      <div className="mb-6 flex items-center gap-2">
+        <MessageCircle className="h-6 w-6 text-gray-900" />
+        <h2 className="text-2xl font-bold text-gray-900">Comments ({comments.length})</h2>
       </div>
 
       {user ? (
@@ -112,34 +115,34 @@ export function CommentSection({ storyId }: CommentSectionProps) {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Share your thoughts about this story..."
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all resize-none"
+              className="w-full resize-none rounded-xl border-2 border-gray-200 px-4 py-3 transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               rows={3}
               disabled={submitting}
             />
             <button
               type="submit"
               disabled={!newComment.trim() || submitting}
-              className="absolute bottom-3 right-3 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="absolute bottom-3 right-3 flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Send className="w-4 h-4" />
+              <Send className="h-4 w-4" />
               {submitting ? 'Posting...' : 'Post'}
             </button>
           </div>
         </form>
       ) : (
-        <div className="mb-8 p-4 bg-gray-50 rounded-xl text-center">
+        <div className="mb-8 rounded-xl bg-gray-50 p-4 text-center">
           <p className="text-gray-600">Sign in to share your thoughts about this story</p>
         </div>
       )}
 
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center py-8">
-            <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="py-8 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
           </div>
         ) : comments.length === 0 ? (
-          <div className="text-center py-8">
-            <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <div className="py-8 text-center">
+            <MessageCircle className="mx-auto mb-3 h-12 w-12 text-gray-300" />
             <p className="text-gray-500">No comments yet. Be the first to share your thoughts!</p>
           </div>
         ) : (
@@ -147,8 +150,8 @@ export function CommentSection({ storyId }: CommentSectionProps) {
             <div key={comment.id} className="border-b border-gray-100 pb-4 last:border-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-semibold text-white">
                       {comment.user_profiles?.display_name?.[0]?.toUpperCase() || '?'}
                     </div>
                     <div>
@@ -164,13 +167,13 @@ export function CommentSection({ storyId }: CommentSectionProps) {
                       <textarea
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all resize-none"
+                        className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2 transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                         rows={3}
                       />
-                      <div className="flex gap-2 mt-2">
+                      <div className="mt-2 flex gap-2">
                         <button
                           onClick={() => handleUpdate(comment.id)}
-                          className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                          className="rounded-lg bg-blue-600 px-3 py-1 text-sm font-medium text-white transition-colors hover:bg-blue-700"
                         >
                           Save
                         </button>
@@ -179,14 +182,14 @@ export function CommentSection({ storyId }: CommentSectionProps) {
                             setEditingId(null);
                             setEditContent('');
                           }}
-                          className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
+                          className="rounded-lg bg-gray-200 px-3 py-1 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-300"
                         >
                           Cancel
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-700 ml-10">{comment.content}</p>
+                    <p className="ml-10 text-gray-700">{comment.content}</p>
                   )}
                 </div>
 
@@ -194,17 +197,17 @@ export function CommentSection({ storyId }: CommentSectionProps) {
                   <div className="flex gap-1">
                     <button
                       onClick={() => handleEdit(comment)}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
                       title="Edit comment"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(comment.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
                       title="Delete comment"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 )}

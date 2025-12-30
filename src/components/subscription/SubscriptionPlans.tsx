@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Check, Crown, Zap } from 'lucide-react';
 import { stripeProducts, formatPrice } from '../../stripe-config';
 import { createCheckoutSession } from '../../lib/stripe';

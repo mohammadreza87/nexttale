@@ -122,7 +122,6 @@ describe('storyService.startStoryGeneration', () => {
   beforeEach(() => {
     calls = [];
     fetchMock = vi.fn();
-    // @ts-expect-error override fetch for tests
     global.fetch = fetchMock;
     vi.stubEnv('VITE_SUPABASE_URL', 'https://api.example.com');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-key');

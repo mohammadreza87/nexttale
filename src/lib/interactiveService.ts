@@ -63,27 +63,17 @@ export async function createInteractiveContent(
       ...data,
       created_by: userId,
     })
-    .select(
-      `
-      *,
-      creator:user_profiles(display_name, avatar_url)
-    `
-    )
+    .select('*')
     .single();
 
   if (error) throw error;
-  return content;
+  return content as unknown as InteractiveContent;
 }
 
 export async function getInteractiveContent(id: string): Promise<InteractiveContent | null> {
   const { data, error } = await supabase
     .from('interactive_content')
-    .select(
-      `
-      *,
-      creator:user_profiles(display_name, avatar_url)
-    `
-    )
+    .select('*')
     .eq('id', id)
     .single();
 
@@ -92,7 +82,7 @@ export async function getInteractiveContent(id: string): Promise<InteractiveCont
     throw error;
   }
 
-  return data;
+  return data as unknown as InteractiveContent;
 }
 
 export async function getInteractiveContentPaginated(
@@ -102,12 +92,7 @@ export async function getInteractiveContentPaginated(
 ): Promise<{ data: InteractiveContent[]; hasMore: boolean }> {
   let query = supabase
     .from('interactive_content')
-    .select(
-      `
-      *,
-      creator:user_profiles(display_name, avatar_url)
-    `
-    )
+    .select('*')
     .eq('is_public', true)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit);
@@ -121,7 +106,7 @@ export async function getInteractiveContentPaginated(
   if (error) throw error;
 
   return {
-    data: data || [],
+    data: (data || []) as unknown as InteractiveContent[],
     hasMore: (data?.length || 0) === limit + 1,
   };
 }
@@ -133,12 +118,7 @@ export async function getUserInteractiveContent(
 ): Promise<{ data: InteractiveContent[]; hasMore: boolean }> {
   const { data, error } = await supabase
     .from('interactive_content')
-    .select(
-      `
-      *,
-      creator:user_profiles(display_name, avatar_url)
-    `
-    )
+    .select('*')
     .eq('created_by', userId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit);
@@ -146,7 +126,7 @@ export async function getUserInteractiveContent(
   if (error) throw error;
 
   return {
-    data: data || [],
+    data: (data || []) as unknown as InteractiveContent[],
     hasMore: (data?.length || 0) === limit + 1,
   };
 }
@@ -157,13 +137,13 @@ export async function updateInteractiveContent(
 ): Promise<InteractiveContent> {
   const { data, error } = await supabase
     .from('interactive_content')
-    .update(updates)
+    .update(updates as Record<string, unknown>)
     .eq('id', id)
     .select()
     .single();
 
   if (error) throw error;
-  return data;
+  return data as unknown as InteractiveContent;
 }
 
 export async function deleteInteractiveContent(id: string): Promise<void> {
@@ -188,7 +168,7 @@ export async function getInteractiveReaction(
     .maybeSingle();
 
   if (error) throw error;
-  return data;
+  return data as InteractiveReaction | null;
 }
 
 export async function addInteractiveReaction(
@@ -207,7 +187,7 @@ export async function addInteractiveReaction(
     .single();
 
   if (error) throw error;
-  return data;
+  return data as InteractiveReaction;
 }
 
 export async function updateInteractiveReaction(
@@ -224,7 +204,7 @@ export async function updateInteractiveReaction(
     .single();
 
   if (error) throw error;
-  return data;
+  return data as InteractiveReaction;
 }
 
 export async function removeInteractiveReaction(userId: string, contentId: string): Promise<void> {
@@ -244,17 +224,12 @@ export async function removeInteractiveReaction(userId: string, contentId: strin
 export async function getInteractiveComments(contentId: string): Promise<InteractiveComment[]> {
   const { data, error } = await supabase
     .from('interactive_comments')
-    .select(
-      `
-      *,
-      user:user_profiles!interactive_comments_user_id_fkey(display_name, avatar_url)
-    `
-    )
+    .select('*')
     .eq('content_id', contentId)
     .order('created_at', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as InteractiveComment[];
 }
 
 export async function addInteractiveComment(
@@ -269,16 +244,11 @@ export async function addInteractiveComment(
       content_id: contentId,
       content: commentContent,
     })
-    .select(
-      `
-      *,
-      user:user_profiles!interactive_comments_user_id_fkey(display_name, avatar_url)
-    `
-    )
+    .select('*')
     .single();
 
   if (error) throw error;
-  return data;
+  return data as InteractiveComment;
 }
 
 export async function deleteInteractiveComment(commentId: string): Promise<void> {
