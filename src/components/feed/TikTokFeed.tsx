@@ -122,7 +122,7 @@ export function TikTokFeed({
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-black">
+      <div className="fixed inset-0 flex items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-3">
           <Loader className="h-8 w-8 animate-spin text-purple-500" />
           <p className="text-gray-400">Loading feed...</p>
@@ -133,7 +133,7 @@ export function TikTokFeed({
 
   if (items.length === 0) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-black">
+      <div className="fixed inset-0 flex items-center justify-center bg-black">
         <div className="p-6 text-center">
           <p className="mb-2 text-lg text-white">No content yet</p>
           <p className="text-sm text-gray-400">Be the first to create something amazing!</p>
@@ -143,12 +143,11 @@ export function TikTokFeed({
   }
 
   return (
-    <div className="flex min-h-dvh w-full justify-center bg-black">
+    <div className="fixed inset-0 flex w-full justify-center bg-black">
       {/* Constrain feed width on desktop for better UX */}
       <div
         ref={containerRef}
-        className="relative w-full max-w-[480px] select-none overflow-hidden rounded-3xl bg-black"
-        style={{ height: 'min(90vh, 820px)', aspectRatio: '4 / 5' }}
+        className="relative h-full w-full max-w-[480px] select-none overflow-hidden bg-black"
       >
         {/* Filter tabs */}
         <div className="absolute left-0 right-0 top-0 z-50 bg-gradient-to-b from-black/80 via-black/40 to-transparent pb-6 pt-2">
