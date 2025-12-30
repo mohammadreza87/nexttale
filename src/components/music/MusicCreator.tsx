@@ -1,9 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
-import { Loader, Wand2, Crown, Save, X, Play, Pause, Clock, Mic, MicOff } from 'lucide-react';
+import {
+  Loader,
+  Wand2,
+  Crown,
+  Save,
+  X,
+  Play,
+  Pause,
+  Clock,
+  Mic,
+  MicOff,
+  Volume2,
+} from 'lucide-react';
 import { getSubscriptionUsage, type SubscriptionUsage } from '../../lib/subscriptionService';
 import { generateMusic } from '../../lib/musicService';
 import UsageBadge from '../UsageBadge';
 import UpgradeModal from '../UpgradeModal';
+import VoiceCloneModal from './VoiceCloneModal';
 import type { MusicContent } from '../../lib/musicTypes';
 import { GENRE_OPTIONS, MOOD_OPTIONS } from '../../lib/musicTypes';
 
@@ -31,6 +44,7 @@ export function MusicCreator({ userId, onCreated }: MusicCreatorProps) {
   const [progress, setProgress] = useState('');
   const [usage, setUsage] = useState<SubscriptionUsage | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showVoiceCloneModal, setShowVoiceCloneModal] = useState(false);
 
   // Generated content state
   const [generatedMusic, setGeneratedMusic] = useState<MusicContent | null>(null);
@@ -119,6 +133,11 @@ export function MusicCreator({ userId, onCreated }: MusicCreatorProps) {
   return (
     <div className="min-h-screen bg-gray-950 pb-20">
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+      <VoiceCloneModal
+        isOpen={showVoiceCloneModal}
+        onClose={() => setShowVoiceCloneModal(false)}
+        userId={userId}
+      />
 
       <div className="mx-auto w-full max-w-2xl px-4 pb-6 pt-4">
         {/* Header */}
@@ -384,6 +403,27 @@ export function MusicCreator({ userId, onCreated }: MusicCreatorProps) {
             </button>
           </div>
         )}
+
+        {/* Voice Clone Card */}
+        <div className="mb-6 rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-600">
+                <Volume2 className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white">Clone Your Voice</h3>
+                <p className="text-sm text-gray-400">Create a voice clone for narration</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowVoiceCloneModal(true)}
+              className="rounded-xl bg-gray-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-700"
+            >
+              Manage
+            </button>
+          </div>
+        </div>
 
         {/* Info Card */}
         <div className="rounded-3xl border border-gray-800 bg-gray-900 p-6 shadow-xl">
