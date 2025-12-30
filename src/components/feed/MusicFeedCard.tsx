@@ -16,10 +16,11 @@ import {
   removeMusicReaction,
 } from '../../lib/musicService';
 import { getSafeDisplayName } from '../../lib/displayName';
-import type { MusicContent, MusicReaction } from '../../lib/musicTypes';
+import type { MusicReaction } from '../../lib/musicTypes';
+import type { FeedItem } from '../../lib/interactiveTypes';
 
 interface MusicFeedCardProps {
-  item: MusicContent;
+  item: FeedItem;
   isActive: boolean;
   onSelect: () => void;
   onViewProfile?: (userId: string) => void;

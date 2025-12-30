@@ -22,7 +22,11 @@ import {
 } from '../../lib/interactiveService';
 import { getSafeDisplayName } from '../../lib/displayName';
 import { InteractiveViewer } from '../interactive/InteractiveViewer';
-import type { FeedItem, ContentType, InteractiveReaction } from '../../lib/interactiveTypes';
+import type {
+  FeedItem,
+  InteractiveContentType,
+  InteractiveReaction,
+} from '../../lib/interactiveTypes';
 
 interface InteractiveFeedCardProps {
   item: FeedItem;
@@ -33,7 +37,7 @@ interface InteractiveFeedCardProps {
 }
 
 const TYPE_CONFIG: Record<
-  Exclude<ContentType, 'story'>,
+  InteractiveContentType,
   { icon: React.ReactNode; color: string; bgColor: string }
 > = {
   game: {
@@ -75,8 +79,7 @@ export function InteractiveFeedCard({
   const [dislikesCount, setDislikesCount] = useState(item.dislikes_count ?? 0);
   const [showPreview, setShowPreview] = useState(false);
 
-  const typeConfig =
-    TYPE_CONFIG[item.feed_type as Exclude<ContentType, 'story'>] || TYPE_CONFIG.game;
+  const typeConfig = TYPE_CONFIG[item.feed_type as InteractiveContentType] || TYPE_CONFIG.game;
 
   useEffect(() => {
     if (userId && item.id) {

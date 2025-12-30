@@ -35,7 +35,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import type {
   InteractiveContent,
-  ContentType,
+  InteractiveContentType,
   InteractiveReaction,
 } from '../../lib/interactiveTypes';
 import { getSafeDisplayName } from '../../lib/displayName';
@@ -52,7 +52,7 @@ interface InteractiveDetailProps {
 }
 
 const TYPE_CONFIG: Record<
-  Exclude<ContentType, 'story'>,
+  InteractiveContentType,
   { icon: React.ReactNode; label: string; color: string; bgColor: string }
 > = {
   game: {
@@ -305,7 +305,7 @@ export function InteractiveDetail({
   }
 
   const typeConfig =
-    TYPE_CONFIG[content.content_type as Exclude<ContentType, 'story'>] || TYPE_CONFIG.game;
+    TYPE_CONFIG[content.content_type as InteractiveContentType] || TYPE_CONFIG.game;
   const isOwner = content.created_by === userId;
 
   return (

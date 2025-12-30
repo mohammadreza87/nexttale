@@ -9,6 +9,7 @@ import { getUnifiedFeed } from '../../lib/feedService';
 // import { FeedFilters } from './FeedFilters'; // Temporarily disabled
 import { StoryFeedCard } from './StoryFeedCard';
 import { InteractiveFeedCard } from './InteractiveFeedCard';
+import { MusicFeedCard } from './MusicFeedCard';
 import type { FeedItem, FeedFilter } from '../../lib/interactiveTypes';
 
 interface TikTokFeedProps {
@@ -168,6 +169,14 @@ export function TikTokFeed({
               <div key={item.id} className="relative h-full w-full">
                 {item.feed_type === 'story' ? (
                   <StoryFeedCard
+                    item={item}
+                    isActive={index === currentIndex}
+                    onSelect={() => handleSelect(item)}
+                    onViewProfile={onViewProfile}
+                    userId={userId}
+                  />
+                ) : item.feed_type === 'music' ? (
+                  <MusicFeedCard
                     item={item}
                     isActive={index === currentIndex}
                     onSelect={() => handleSelect(item)}

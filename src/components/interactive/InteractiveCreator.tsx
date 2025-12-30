@@ -25,7 +25,7 @@ import UsageBadge from '../UsageBadge';
 import UpgradeModal from '../UpgradeModal';
 import { InteractiveViewer } from './InteractiveViewer';
 import type {
-  ContentType,
+  InteractiveContentType,
   ContentStyle,
   GenerateInteractiveResponse,
 } from '../../lib/interactiveTypes';
@@ -34,8 +34,6 @@ interface InteractiveCreatorProps {
   userId: string;
   onCreated: (contentId: string) => void;
 }
-
-type InteractiveContentType = Exclude<ContentType, 'story'>;
 
 const CONTENT_TYPES: {
   type: InteractiveContentType;

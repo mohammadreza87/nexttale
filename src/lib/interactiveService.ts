@@ -6,7 +6,7 @@ import type {
   CreateInteractiveContentRequest,
   GenerateInteractiveRequest,
   GenerateInteractiveResponse,
-  ContentType,
+  InteractiveContentType,
 } from './interactiveTypes';
 
 // ============================================
@@ -88,7 +88,7 @@ export async function getInteractiveContent(id: string): Promise<InteractiveCont
 export async function getInteractiveContentPaginated(
   limit: number = 20,
   offset: number = 0,
-  contentType?: Exclude<ContentType, 'story'>
+  contentType?: InteractiveContentType
 ): Promise<{ data: InteractiveContent[]; hasMore: boolean }> {
   let query = supabase
     .from('interactive_content')

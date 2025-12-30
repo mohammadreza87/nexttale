@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { FeedItem, ContentType, FeedFilter } from './interactiveTypes';
+import type { FeedItem, ContentType, FeedFilter, InteractiveContentType } from './interactiveTypes';
 
 // ============================================
 // UNIFIED FEED QUERIES
@@ -14,26 +14,39 @@ export async function getUnifiedFeed(
     return getStoriesFeed(limit, offset);
   }
 
-  if (filter !== 'all') {
-    return getInteractiveFeed(filter, limit, offset);
+  if (filter === 'music') {
+    return getMusicFeed(limit, offset);
   }
 
-  // Mixed feed - get both and interleave
-  const halfLimit = Math.ceil(limit / 2);
+  // Check if filter is an interactive content type
+  const interactiveTypes: InteractiveContentType[] = [
+    'game',
+    'tool',
+    'widget',
+    'quiz',
+    'visualization',
+  ];
+  if (interactiveTypes.includes(filter as InteractiveContentType)) {
+    return getInteractiveFeed(filter as InteractiveContentType, limit, offset);
+  }
 
-  const [storiesResult, interactiveResult] = await Promise.all([
-    getStoriesFeed(halfLimit, Math.floor(offset / 2)),
-    getInteractiveFeed(undefined, halfLimit, Math.floor(offset / 2)),
+  // Mixed feed - get stories, interactive, and music
+  const thirdLimit = Math.ceil(limit / 3);
+
+  const [storiesResult, interactiveResult, musicResult] = await Promise.all([
+    getStoriesFeed(thirdLimit, Math.floor(offset / 3)),
+    getInteractiveFeed(undefined, thirdLimit, Math.floor(offset / 3)),
+    getMusicFeed(thirdLimit, Math.floor(offset / 3)),
   ]);
 
   // Combine and sort by created_at
-  const combined = [...storiesResult.data, ...interactiveResult.data].sort(
+  const combined = [...storiesResult.data, ...interactiveResult.data, ...musicResult.data].sort(
     (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
   );
 
   return {
     data: combined.slice(0, limit),
-    hasMore: storiesResult.hasMore || interactiveResult.hasMore,
+    hasMore: storiesResult.hasMore || interactiveResult.hasMore || musicResult.hasMore,
   };
 }
 
@@ -130,7 +143,7 @@ async function getStoriesFeed(
 }
 
 async function getInteractiveFeed(
-  contentType: Exclude<ContentType, 'story'> | undefined,
+  contentType: InteractiveContentType | undefined,
   limit: number,
   offset: number
 ): Promise<{ data: FeedItem[]; hasMore: boolean }> {
@@ -174,6 +187,79 @@ async function getInteractiveFeed(
     creator: null,
     html_content: item.html_content,
     tags: item.tags,
+  }));
+
+  return {
+    data: feedItems,
+    hasMore: (data?.length || 0) === limit + 1,
+  };
+}
+
+async function getMusicFeed(
+  limit: number,
+  offset: number
+): Promise<{ data: FeedItem[]; hasMore: boolean }> {
+  const { data, error } = await supabase
+    .from('music_content')
+    .select(
+      `
+      id, title, description, audio_url, duration,
+      genre, mood, lyrics, tags,
+      created_by, is_public, likes_count, dislikes_count,
+      play_count, created_at,
+      creator:user_profiles(display_name, avatar_url)
+    `
+    )
+    .eq('is_public', true)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit);
+
+  if (error) {
+    console.error('Error fetching music feed:', error);
+    return { data: [], hasMore: false };
+  }
+
+  type MusicQueryResult = {
+    id: string;
+    title: string;
+    description: string | null;
+    audio_url: string;
+    duration: number | null;
+    genre: string | null;
+    mood: string | null;
+    lyrics: string | null;
+    tags: string[] | null;
+    created_by: string | null;
+    is_public: boolean | null;
+    likes_count: number | null;
+    dislikes_count: number | null;
+    play_count: number | null;
+    created_at: string | null;
+    creator?: { display_name: string | null; avatar_url: string | null } | null;
+  };
+
+  const feedItems: FeedItem[] = ((data || []) as unknown as MusicQueryResult[]).map((music) => ({
+    id: music.id,
+    title: music.title,
+    description: music.description,
+    feed_type: 'music' as ContentType,
+    thumbnail_url: null, // Music doesn't have thumbnails
+    preview_url: null,
+    created_by: music.created_by,
+    is_public: music.is_public,
+    likes_count: music.likes_count || 0,
+    dislikes_count: music.dislikes_count || 0,
+    view_count: music.play_count || 0,
+    comment_count: 0,
+    created_at: music.created_at,
+    estimated_duration: music.duration,
+    creator: music.creator || null,
+    audio_url: music.audio_url,
+    lyrics: music.lyrics,
+    genre: music.genre,
+    mood: music.mood,
+    play_count: music.play_count,
+    tags: music.tags,
   }));
 
   return {

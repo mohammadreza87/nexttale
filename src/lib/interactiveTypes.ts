@@ -1,5 +1,8 @@
 // Content types supported by the platform
-export type ContentType = 'story' | 'game' | 'tool' | 'widget' | 'quiz' | 'visualization';
+export type ContentType = 'story' | 'game' | 'tool' | 'widget' | 'quiz' | 'visualization' | 'music';
+
+// Interactive content types (excludes story and music which have separate tables)
+export type InteractiveContentType = 'game' | 'tool' | 'widget' | 'quiz' | 'visualization';
 
 // Style options for content generation
 export type ContentStyle = 'modern' | 'playful' | 'minimal' | 'retro';
@@ -59,6 +62,16 @@ export interface FeedItem {
   // For interactive content
   html_content?: string;
   tags?: string[] | null;
+  // For music content
+  audio_url?: string;
+  lyrics?: string | null;
+  genre?: string | null;
+  mood?: string | null;
+  play_count?: number | null;
+  voice_clone?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 // Reaction types
@@ -92,7 +105,7 @@ export interface InteractiveComment {
 // Request to generate new interactive content
 export interface GenerateInteractiveRequest {
   prompt: string;
-  contentType: Exclude<ContentType, 'story'>;
+  contentType: InteractiveContentType;
   style?: ContentStyle;
   // Base64 encoded image data (without data URL prefix)
   imageData?: string;
@@ -117,7 +130,7 @@ export interface GenerateInteractiveResponse {
 export interface CreateInteractiveContentRequest {
   title: string;
   description: string;
-  content_type: Exclude<ContentType, 'story'>;
+  content_type: InteractiveContentType;
   html_content: string;
   generation_prompt: string;
   tags?: string[];
@@ -134,7 +147,7 @@ export interface ContentTypeInfo {
   color: string;
 }
 
-export const CONTENT_TYPE_INFO: Record<Exclude<ContentType, 'story'>, ContentTypeInfo> = {
+export const CONTENT_TYPE_INFO: Record<InteractiveContentType, ContentTypeInfo> = {
   game: {
     type: 'game',
     label: 'Game',
