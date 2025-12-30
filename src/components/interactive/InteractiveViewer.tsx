@@ -54,15 +54,16 @@ export function InteractiveViewer({
       parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')) || 0;
 
     const viewportHeight = window.visualViewport?.height ?? rect.height;
-    const availableWidth = Math.max(rect.width * 0.9, 320);
-    // Reserve space for filter bar + actions but keep frame visible
-    const availableHeight = Math.max(viewportHeight - safeTop - safeBottom - 80, 360);
+    // Account for side buttons (~80px on right) and some padding
+    const availableWidth = Math.max(rect.width - 100, 280);
+    // Reserve space for filter bar + bottom actions
+    const availableHeight = Math.max(viewportHeight - safeTop - safeBottom - 120, 320);
 
     const scaleX = availableWidth / FRAME_WIDTH;
     const scaleY = availableHeight / FRAME_HEIGHT;
-    const newScale = Math.min(scaleX, scaleY, 1) * 0.95; // keep a margin
+    const newScale = Math.min(scaleX, scaleY, 1);
 
-    setScale(Math.max(newScale, 0.55));
+    setScale(Math.max(newScale, 0.25));
   }, []);
 
   // Recalculate scale on resize
@@ -256,7 +257,6 @@ export function InteractiveViewer({
         style={{
           width: scaledWidth,
           height: scaledHeight,
-          margin: '0 auto',
         }}
       >
         {/* Sandboxed iframe at fixed size */}

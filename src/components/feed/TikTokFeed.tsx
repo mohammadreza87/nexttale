@@ -146,7 +146,7 @@ export function TikTokFeed({
     <div className="fixed inset-0 flex w-full flex-col bg-black">
       {/* Fixed header with filter tabs */}
       <div className="z-50 w-full shrink-0 bg-black py-2">
-        <div className="mx-auto max-w-[420px]">
+        <div className="mx-auto max-w-[500px]">
           <FeedFilters currentFilter={filter} onFilterChange={setFilter} />
         </div>
       </div>
@@ -155,8 +155,7 @@ export function TikTokFeed({
       <div className="flex flex-1 justify-center overflow-hidden">
         <div
           ref={containerRef}
-          className="relative h-full w-full max-w-[420px] select-none overflow-hidden bg-black"
-          style={{ aspectRatio: '4 / 5' }}
+          className="relative h-full w-full max-w-[500px] select-none overflow-hidden bg-black"
         >
           {/* Feed cards container */}
           <div
