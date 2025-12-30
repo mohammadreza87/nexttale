@@ -53,14 +53,15 @@ export function InteractiveViewer({
     const safeBottom =
       parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')) || 0;
 
+    const viewportHeight = window.visualViewport?.height ?? rect.height;
     const availableWidth = Math.max(rect.width - 24, 320);
-    const availableHeight = Math.max(rect.height - 24 - safeTop - safeBottom, 320);
+    const availableHeight = Math.max(viewportHeight - 24 - safeTop - safeBottom, 320);
 
     const scaleX = availableWidth / FRAME_WIDTH;
     const scaleY = availableHeight / FRAME_HEIGHT;
     const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
 
-    setScale(Math.max(newScale, 0.6));
+    setScale(Math.max(newScale, 0.5));
   }, []);
 
   // Recalculate scale on resize

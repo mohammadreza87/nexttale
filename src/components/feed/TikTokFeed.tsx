@@ -165,7 +165,7 @@ export function TikTokFeed({
           }}
         >
           {items.map((item, index) => (
-            <div key={item.id} className="relative h-full w-full">
+            <div key={item.id} className="relative h-[100dvh] w-full">
               {item.feed_type === 'story' ? (
                 <StoryFeedCard
                   item={item}

@@ -172,6 +172,10 @@ CRITICAL REQUIREMENTS:
    - Smooth 60fps animations
    - Immediate visual feedback for interactions
    - Works without any user instructions
+   - NO intro splash screen; the interactive experience must start immediately on load
+   - NO empty padding or letterboxing: header 80-120px tall, footer/controls 140-180px tall, main content fills remaining space
+   - Place primary call-to-action and controls within the bottom footer; avoid floating UI that can be covered by overlays
+   - Ensure everything fits the 1080x1350 frame with zero overflow
 
 Return ONLY the JSON object. No markdown, no explanation, no code blocks.`;
 
@@ -287,6 +291,14 @@ const ENFORCED_FRAME_CSS = `
     max-width: 100% !important;
     display: block !important;
     margin: 0 auto !important;
+  }
+  body, .game-container, .main-container, #app, #root, .container {
+    justify-content: stretch !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+  }
+  body * {
+    margin: 0 !important;
   }
   *, *::before, *::after {
     box-sizing: border-box !important;
@@ -431,6 +443,9 @@ Deno.serve(async (req: Request) => {
 
     const { prompt, contentType, style = 'modern' }: GenerateRequest = await req.json();
 
+    // Trim and sanitize prompt to keep responses focused and well-sized
+    const sanitizedPrompt = (prompt || '').replace(/\s+/g, ' ').trim().slice(0, 400);
+
     if (!prompt || !contentType) {
       return new Response(JSON.stringify({ error: 'prompt and contentType are required' }), {
         status: 400,
@@ -451,10 +466,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log(`Generating ${contentType} for user ${user.id}: "${prompt.slice(0, 100)}"`);
+    console.log(
+      `Generating ${contentType} for user ${user.id}: "${sanitizedPrompt.slice(0, 100)}"`
+    );
 
     // Generate content with Claude
-    const generated = await callClaude(prompt, contentType, style, anthropicApiKey);
+    const generated = await callClaude(sanitizedPrompt, contentType, style, anthropicApiKey);
 
     // Sanitize the HTML
     const sanitizedHtml = sanitizeHtml(generated.html);
