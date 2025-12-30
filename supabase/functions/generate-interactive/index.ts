@@ -13,6 +13,10 @@ interface GenerateRequest {
   style?: 'modern' | 'playful' | 'minimal' | 'retro';
   imageData?: string; // Base64 encoded image
   imageType?: string; // MIME type e.g., 'image/jpeg'
+  // Edit mode fields
+  editMode?: boolean;
+  existingHtml?: string;
+  editPrompt?: string;
 }
 
 interface GeneratedContent {
@@ -75,7 +79,7 @@ const STYLE_PROMPTS: Record<string, string> = {
     'Use retro design: pixel-style elements, neon colors on dark background, 80s/90s aesthetic, CRT effects optional',
 };
 
-async function callClaude(
+async function callGemini(
   prompt: string,
   contentType: string,
   style: string,
@@ -183,19 +187,15 @@ CRITICAL REQUIREMENTS:
 
 Return ONLY the JSON object. No markdown, no explanation, no code blocks.`;
 
-  // Build the message content - include image if provided
-  type ContentBlock =
-    | { type: 'text'; text: string }
-    | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } };
-  const messageContent: ContentBlock[] = [];
+  // Build the message content for Gemini
+  type GeminiPart = { text: string } | { inlineData: { mimeType: string; data: string } };
+  const parts: GeminiPart[] = [];
 
   // Add image first if provided
   if (imageData && imageType) {
-    messageContent.push({
-      type: 'image',
-      source: {
-        type: 'base64',
-        media_type: imageType,
+    parts.push({
+      inlineData: {
+        mimeType: imageType,
         data: imageData,
       },
     });
@@ -206,49 +206,49 @@ Return ONLY the JSON object. No markdown, no explanation, no code blocks.`;
     ? `Based on this image, create a ${contentType}. ${prompt ? `Additional instructions: ${prompt}` : 'Analyze the image and create something inspired by it or that recreates its functionality.'}`
     : `Create a ${contentType}: ${prompt}`;
 
-  messageContent.push({
-    type: 'text',
-    text: textPrompt,
+  parts.push({
+    text: `${systemPrompt}\n\n${textPrompt}`,
   });
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-opus-4-5-20251101',
-      max_tokens: 8192,
-      messages: [
-        {
-          role: 'user',
-          content: messageContent,
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: parts,
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 8192,
+          temperature: 0.7,
         },
-      ],
-      system: systemPrompt,
-    }),
-  });
+      }),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Claude API error:', errorText);
-    throw new Error(`Claude API request failed: ${response.status}`);
+    console.error('Gemini API error:', errorText);
+    throw new Error(`Gemini API request failed: ${response.status}`);
   }
 
   const data = await response.json();
-  const responseText = data.content?.[0]?.type === 'text' ? data.content[0].text : '';
+  const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
   if (!responseText) {
-    throw new Error('Claude returned empty response');
+    throw new Error('Gemini returned empty response');
   }
 
   // Parse JSON from response
   const jsonMatch = responseText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     console.error('Failed to find JSON in response:', responseText.slice(0, 500));
-    throw new Error('Claude did not return valid JSON');
+    throw new Error('Gemini did not return valid JSON');
   }
 
   let parsed;
@@ -257,11 +257,115 @@ Return ONLY the JSON object. No markdown, no explanation, no code blocks.`;
   } catch (parseError) {
     console.error('JSON parse error:', parseError);
     console.error('Attempted to parse:', jsonMatch[0].slice(0, 500));
-    throw new Error('Failed to parse Claude response as JSON');
+    throw new Error('Failed to parse Gemini response as JSON');
   }
 
   if (!parsed.title || !parsed.html) {
     throw new Error('Response missing required fields (title or html)');
+  }
+
+  return {
+    title: parsed.title || 'Untitled',
+    description: parsed.description || '',
+    html: parsed.html,
+    tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+    estimatedTime: typeof parsed.estimatedTime === 'number' ? parsed.estimatedTime : 5,
+  };
+}
+
+async function callGeminiEdit(
+  existingHtml: string,
+  editPrompt: string,
+  apiKey: string
+): Promise<GeneratedContent> {
+  const systemPrompt = `You are an expert web developer modifying existing HTML content based on user feedback.
+
+CRITICAL REQUIREMENTS:
+1. You will receive existing HTML code and a modification request
+2. Apply ONLY the requested changes - preserve everything else
+3. Return ONLY a valid JSON object with this exact structure:
+{
+  "title": "Updated title if changed, or keep original",
+  "description": "Updated description if relevant",
+  "html": "The COMPLETE modified HTML document",
+  "tags": ["tag1", "tag2", "tag3"],
+  "estimatedTime": 5
+}
+
+4. The HTML must remain a COMPLETE, SELF-CONTAINED document
+5. Keep all existing functionality unless explicitly asked to remove it
+6. Maintain the same visual style unless asked to change it
+7. Ensure the content still works in a sandboxed iframe
+
+MODIFICATION GUIDELINES:
+- If asked to change colors, update the CSS
+- If asked to add features, integrate them smoothly
+- If asked to fix bugs, identify and fix them
+- If asked to improve, enhance while keeping core functionality
+- Preserve the 1080x1350 frame dimensions
+
+Return ONLY the JSON object. No markdown, no explanation.`;
+
+  const userPrompt = `EXISTING HTML:
+\`\`\`html
+${existingHtml.slice(0, 50000)}
+\`\`\`
+
+REQUESTED CHANGES:
+${editPrompt}
+
+Apply the requested changes and return the updated content as JSON.`;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 16384,
+          temperature: 0.5,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Gemini API error:', errorText);
+    throw new Error(`Gemini API request failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  if (!responseText) {
+    throw new Error('Gemini returned empty response');
+  }
+
+  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error('Failed to find JSON in response:', responseText.slice(0, 500));
+    throw new Error('Gemini did not return valid JSON');
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonMatch[0]);
+  } catch (parseError) {
+    console.error('JSON parse error:', parseError);
+    throw new Error('Failed to parse Gemini response as JSON');
+  }
+
+  if (!parsed.html) {
+    throw new Error('Response missing required html field');
   }
 
   return {
@@ -465,9 +569,9 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
-    if (!anthropicApiKey) {
-      return new Response(JSON.stringify({ error: 'Claude API key not configured' }), {
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!geminiApiKey) {
+      return new Response(JSON.stringify({ error: 'Gemini API key not configured' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -479,7 +583,28 @@ Deno.serve(async (req: Request) => {
       style = 'modern',
       imageData,
       imageType,
+      editMode,
+      existingHtml,
+      editPrompt,
     }: GenerateRequest = await req.json();
+
+    // Handle edit mode
+    if (editMode && existingHtml && editPrompt) {
+      console.log(`Editing content for user ${user.id}: "${editPrompt.slice(0, 100)}"`);
+
+      const generated = await callGeminiEdit(existingHtml, editPrompt, geminiApiKey);
+      const sanitizedHtml = sanitizeHtml(generated.html);
+
+      console.log(`Successfully edited: "${generated.title}"`);
+
+      return new Response(
+        JSON.stringify({
+          ...generated,
+          html: sanitizedHtml,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Trim and sanitize prompt to keep responses focused and well-sized
     const sanitizedPrompt = (prompt || '').replace(/\s+/g, ' ').trim().slice(0, 400);
@@ -515,12 +640,12 @@ Deno.serve(async (req: Request) => {
       `Generating ${contentType} for user ${user.id}: "${sanitizedPrompt.slice(0, 100)}"${imageData ? ' (with image)' : ''}`
     );
 
-    // Generate content with Claude
-    const generated = await callClaude(
+    // Generate content with Gemini
+    const generated = await callGemini(
       sanitizedPrompt,
       contentType,
       style,
-      anthropicApiKey,
+      geminiApiKey,
       imageData,
       imageType
     );

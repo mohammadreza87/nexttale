@@ -15,6 +15,10 @@ import {
   LayoutGrid,
   HelpCircle,
   BarChart3,
+  Pencil,
+  X,
+  Loader,
+  Sparkles,
 } from 'lucide-react';
 import {
   getInteractiveContent,
@@ -25,6 +29,8 @@ import {
   removeInteractiveReaction,
   getInteractiveShareUrl,
   trackInteractiveView,
+  editInteractiveContentWithPrompt,
+  updateInteractiveContent,
 } from '../../lib/interactiveService';
 import { supabase } from '../../lib/supabase';
 import type {
@@ -98,6 +104,9 @@ export function InteractiveDetail({
   const [deleting, setDeleting] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editPrompt, setEditPrompt] = useState('');
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     loadContentDetails();
@@ -218,6 +227,40 @@ export function InteractiveDetail({
       console.error('Error deleting content:', error);
       alert('Failed to delete. Please try again.');
       setDeleting(false);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!editPrompt.trim() || !content?.html_content) return;
+
+    setEditing(true);
+    try {
+      // Generate edited content
+      const result = await editInteractiveContentWithPrompt(content.html_content, editPrompt);
+
+      // Update in database
+      await updateInteractiveContent(contentId, {
+        html_content: result.html,
+        title: result.title || content.title,
+        description: result.description || content.description,
+      });
+
+      // Update local state
+      setContent({
+        ...content,
+        html_content: result.html,
+        title: result.title || content.title,
+        description: result.description || content.description,
+      });
+
+      setShowEditModal(false);
+      setEditPrompt('');
+      setShowPreview(true); // Show preview after edit
+    } catch (error) {
+      console.error('Error editing content:', error);
+      alert('Failed to edit content. Please try again.');
+    } finally {
+      setEditing(false);
     }
   };
 
@@ -428,13 +471,21 @@ export function InteractiveDetail({
                 <Share2 className="h-5 w-5" />
               </button>
               {isOwner && (
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-4 py-2 font-semibold text-red-400 transition-colors hover:bg-red-900/30 disabled:opacity-50"
-                >
-                  <Trash2 className="h-5 w-5" />
-                </button>
+                <>
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-4 py-2 font-semibold text-blue-400 transition-colors hover:bg-blue-900/30"
+                  >
+                    <Pencil className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-4 py-2 font-semibold text-red-400 transition-colors hover:bg-red-900/30 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
+                </>
               )}
             </div>
 
@@ -454,6 +505,66 @@ export function InteractiveDetail({
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-400" />
+                <h3 className="text-xl font-bold text-white">Edit with AI</h3>
+              </div>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="mb-4 text-sm text-gray-400">
+              Describe the changes you want to make. The AI will modify the content while keeping
+              everything else intact.
+            </p>
+
+            <textarea
+              value={editPrompt}
+              onChange={(e) => setEditPrompt(e.target.value)}
+              placeholder="e.g., Change the colors to blue and green, add a restart button, make the text larger..."
+              className="mb-4 h-32 w-full resize-none rounded-xl border border-gray-700 bg-gray-800 p-4 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+              disabled={editing}
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowEditModal(false)}
+                disabled={editing}
+                className="flex-1 rounded-xl border border-gray-700 bg-gray-800 py-3 font-semibold text-gray-300 transition-colors hover:bg-gray-700 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEdit}
+                disabled={editing || !editPrompt.trim()}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-3 font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {editing ? (
+                  <>
+                    <Loader className="h-5 w-5 animate-spin" />
+                    Editing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5" />
+                    Apply Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

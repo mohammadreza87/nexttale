@@ -133,7 +133,9 @@ export async function getUserInteractiveContent(
 
 export async function updateInteractiveContent(
   id: string,
-  updates: Partial<Pick<InteractiveContent, 'title' | 'description' | 'is_public' | 'tags'>>
+  updates: Partial<
+    Pick<InteractiveContent, 'title' | 'description' | 'is_public' | 'tags' | 'html_content'>
+  >
 ): Promise<InteractiveContent> {
   const { data, error } = await supabase
     .from('interactive_content')
@@ -144,6 +146,44 @@ export async function updateInteractiveContent(
 
   if (error) throw error;
   return data as unknown as InteractiveContent;
+}
+
+export async function editInteractiveContentWithPrompt(
+  existingHtml: string,
+  editPrompt: string
+): Promise<GenerateInteractiveResponse> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error('Not authenticated');
+  }
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/generate-interactive`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({
+      editMode: true,
+      existingHtml,
+      editPrompt,
+      prompt: '', // Required by interface but not used in edit mode
+      contentType: 'widget', // Required by interface but not used in edit mode
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(errorData.error || 'Failed to edit content');
+  }
+
+  return response.json();
 }
 
 export async function deleteInteractiveContent(id: string): Promise<void> {

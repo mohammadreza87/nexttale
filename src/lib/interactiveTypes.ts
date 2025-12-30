@@ -98,6 +98,10 @@ export interface GenerateInteractiveRequest {
   imageData?: string;
   // Image MIME type (e.g., 'image/jpeg', 'image/png')
   imageType?: string;
+  // Edit mode fields
+  editMode?: boolean;
+  existingHtml?: string;
+  editPrompt?: string;
 }
 
 // Response from generate-interactive edge function
