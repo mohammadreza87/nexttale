@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { BookOpen, Gamepad2, Music } from 'lucide-react';
+import { BookOpen, Gamepad2, Music, Mic } from 'lucide-react';
 import { StoryCreator } from './StoryCreator';
 import { InteractiveCreator } from './interactive/InteractiveCreator';
 import { MusicCreator } from './music/MusicCreator';
+import { VoiceCloneManager } from './music/VoiceCloneManager';
 
-type CreatorTab = 'story' | 'interactive' | 'music';
+type CreatorTab = 'story' | 'interactive' | 'music' | 'voice';
 
 interface CreatorProps {
   userId: string;
@@ -52,6 +53,17 @@ export function Creator({
               <span>Music</span>
             </button>
             <button
+              onClick={() => setActiveTab('voice')}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all ${
+                activeTab === 'voice'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Mic className="h-5 w-5" />
+              <span>Voice</span>
+            </button>
+            <button
               onClick={() => setActiveTab('story')}
               className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all ${
                 activeTab === 'story'
@@ -74,6 +86,7 @@ export function Creator({
         {activeTab === 'music' && (
           <MusicCreator userId={userId} onCreated={onMusicCreated || (() => {})} />
         )}
+        {activeTab === 'voice' && <VoiceCloneManager userId={userId} />}
         {activeTab === 'story' && <StoryCreator userId={userId} onStoryCreated={onStoryCreated} />}
       </div>
     </div>
