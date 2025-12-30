@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Loader,
   Wand2,
@@ -10,6 +10,8 @@ import {
   BarChart3,
   Save,
   X,
+  ImagePlus,
+  Trash2,
 } from 'lucide-react';
 import { generateInteractiveContent, createInteractiveContent } from '../../lib/interactiveService';
 import { getSubscriptionUsage, type SubscriptionUsage } from '../../lib/subscriptionService';
@@ -121,6 +123,12 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
 
+  // Image upload state
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [imageType, setImageType] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Preview state
   const [generatedContent, setGeneratedContent] = useState<GenerateInteractiveResponse | null>(
     null
@@ -132,14 +140,56 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
     loadUsage();
   }, [userId]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be smaller than 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Create preview URL
+      setImagePreview(result);
+      // Extract base64 data (remove data URL prefix)
+      const base64Data = result.split(',')[1];
+      setImageData(base64Data);
+      setImageType(file.type);
+      setError(null);
+    };
+    reader.onerror = () => {
+      setError('Failed to read image file');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setImageData(null);
+    setImageType(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const loadUsage = async () => {
     const data = await getSubscriptionUsage(userId);
     setUsage(data);
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      setError('Please describe what you want to create');
+    if (!prompt.trim() && !imageData) {
+      setError('Please describe what you want to create or upload an image');
       return;
     }
 
@@ -150,14 +200,18 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
 
     setIsGenerating(true);
     setError(null);
-    setProgress('Generating your content with AI...');
+    setProgress(
+      imageData ? 'Analyzing image and generating content...' : 'Generating your content with AI...'
+    );
     setGeneratedContent(null);
 
     try {
       const result = await generateInteractiveContent({
-        prompt,
+        prompt: prompt || (imageData ? 'Create something based on this image' : ''),
         contentType,
         style,
+        imageData: imageData || undefined,
+        imageType: imageType || undefined,
       });
 
       setGeneratedContent(result);
@@ -216,9 +270,11 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
 
     try {
       const result = await generateInteractiveContent({
-        prompt,
+        prompt: prompt || (imageData ? 'Create something based on this image' : ''),
         contentType,
         style,
+        imageData: imageData || undefined,
+        imageType: imageType || undefined,
       });
 
       setGeneratedContent(result);
@@ -433,6 +489,52 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
               )}
             </div>
 
+            {/* Image Upload */}
+            <div className="rounded-2xl bg-gray-800/50 p-4">
+              <label className="mb-3 block text-sm font-semibold text-gray-300">
+                Reference Image (Optional)
+              </label>
+              <p className="mb-3 text-xs text-gray-500">
+                Upload an image to inspire the AI - it can recreate games, analyze charts, or use
+                any visual as reference
+              </p>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={isGenerating}
+              />
+
+              {imagePreview ? (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Upload preview"
+                    className="h-48 w-full rounded-xl bg-gray-900 object-contain"
+                  />
+                  <button
+                    onClick={handleRemoveImage}
+                    disabled={isGenerating}
+                    className="absolute right-2 top-2 rounded-lg bg-red-500/80 p-2 text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isGenerating}
+                  className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-700 bg-gray-800 py-8 text-gray-400 transition-colors hover:border-purple-500 hover:text-purple-400 disabled:opacity-50"
+                >
+                  <ImagePlus className="h-6 w-6" />
+                  <span>Click to upload an image</span>
+                </button>
+              )}
+            </div>
+
             {/* Style Selection */}
             <div className="rounded-2xl bg-gray-800/50 p-4">
               <label className="mb-3 block text-sm font-semibold text-gray-300">Visual Style</label>
@@ -473,7 +575,7 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
             {/* Generate Button */}
             <button
               onClick={handleGenerate}
-              disabled={isGenerating || !prompt.trim()}
+              disabled={isGenerating || (!prompt.trim() && !imageData)}
               className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 py-6 text-lg font-bold text-white shadow-xl transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-2xl disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isGenerating ? (
@@ -497,10 +599,13 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
             <p className="font-semibold">How it works:</p>
             <ol className="list-inside list-decimal space-y-1 text-gray-400">
               <li>Choose what type of content you want</li>
-              <li>Describe it in natural language</li>
+              <li>Describe it or upload a reference image</li>
               <li>AI generates a working interactive experience</li>
               <li>Preview, then publish to share with others</li>
             </ol>
+            <p className="mt-3 text-xs text-purple-400">
+              Tip: Upload a screenshot of a game to recreate it, or any image as inspiration!
+            </p>
           </div>
         </div>
       </div>

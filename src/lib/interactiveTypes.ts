@@ -94,6 +94,10 @@ export interface GenerateInteractiveRequest {
   prompt: string;
   contentType: Exclude<ContentType, 'story'>;
   style?: ContentStyle;
+  // Base64 encoded image data (without data URL prefix)
+  imageData?: string;
+  // Image MIME type (e.g., 'image/jpeg', 'image/png')
+  imageType?: string;
 }
 
 // Response from generate-interactive edge function

@@ -11,6 +11,8 @@ interface GenerateRequest {
   prompt: string;
   contentType: 'game' | 'tool' | 'widget' | 'quiz' | 'visualization';
   style?: 'modern' | 'playful' | 'minimal' | 'retro';
+  imageData?: string; // Base64 encoded image
+  imageType?: string; // MIME type e.g., 'image/jpeg'
 }
 
 interface GeneratedContent {
@@ -77,7 +79,9 @@ async function callClaude(
   prompt: string,
   contentType: string,
   style: string,
-  apiKey: string
+  apiKey: string,
+  imageData?: string,
+  imageType?: string
 ): Promise<GeneratedContent> {
   const systemPrompt = `You are an expert web developer creating self-contained interactive HTML content.
 
@@ -179,6 +183,34 @@ CRITICAL REQUIREMENTS:
 
 Return ONLY the JSON object. No markdown, no explanation, no code blocks.`;
 
+  // Build the message content - include image if provided
+  type ContentBlock =
+    | { type: 'text'; text: string }
+    | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } };
+  const messageContent: ContentBlock[] = [];
+
+  // Add image first if provided
+  if (imageData && imageType) {
+    messageContent.push({
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: imageType,
+        data: imageData,
+      },
+    });
+  }
+
+  // Add text prompt
+  const textPrompt = imageData
+    ? `Based on this image, create a ${contentType}. ${prompt ? `Additional instructions: ${prompt}` : 'Analyze the image and create something inspired by it or that recreates its functionality.'}`
+    : `Create a ${contentType}: ${prompt}`;
+
+  messageContent.push({
+    type: 'text',
+    text: textPrompt,
+  });
+
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -192,7 +224,7 @@ Return ONLY the JSON object. No markdown, no explanation, no code blocks.`;
       messages: [
         {
           role: 'user',
-          content: `Create a ${contentType}: ${prompt}`,
+          content: messageContent,
         },
       ],
       system: systemPrompt,
@@ -441,13 +473,26 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { prompt, contentType, style = 'modern' }: GenerateRequest = await req.json();
+    const {
+      prompt,
+      contentType,
+      style = 'modern',
+      imageData,
+      imageType,
+    }: GenerateRequest = await req.json();
 
     // Trim and sanitize prompt to keep responses focused and well-sized
     const sanitizedPrompt = (prompt || '').replace(/\s+/g, ' ').trim().slice(0, 400);
 
-    if (!prompt || !contentType) {
-      return new Response(JSON.stringify({ error: 'prompt and contentType are required' }), {
+    if (!prompt && !imageData) {
+      return new Response(JSON.stringify({ error: 'prompt or imageData is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!contentType) {
+      return new Response(JSON.stringify({ error: 'contentType is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -467,11 +512,18 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log(
-      `Generating ${contentType} for user ${user.id}: "${sanitizedPrompt.slice(0, 100)}"`
+      `Generating ${contentType} for user ${user.id}: "${sanitizedPrompt.slice(0, 100)}"${imageData ? ' (with image)' : ''}`
     );
 
     // Generate content with Claude
-    const generated = await callClaude(sanitizedPrompt, contentType, style, anthropicApiKey);
+    const generated = await callClaude(
+      sanitizedPrompt,
+      contentType,
+      style,
+      anthropicApiKey,
+      imageData,
+      imageType
+    );
 
     // Sanitize the HTML
     const sanitizedHtml = sanitizeHtml(generated.html);
