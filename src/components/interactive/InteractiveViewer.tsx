@@ -54,13 +54,13 @@ export function InteractiveViewer({
       parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')) || 0;
 
     const viewportHeight = window.visualViewport?.height ?? rect.height;
-    const availableWidth = Math.max(rect.width - 24, 320);
+    const availableWidth = Math.max(rect.width * 0.9, 320);
     // Reserve space for filter bar + actions but keep frame visible
     const availableHeight = Math.max(viewportHeight - safeTop - safeBottom - 80, 360);
 
     const scaleX = availableWidth / FRAME_WIDTH;
     const scaleY = availableHeight / FRAME_HEIGHT;
-    const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+    const newScale = Math.min(scaleX, scaleY, 1) * 0.95; // keep a margin
 
     setScale(Math.max(newScale, 0.55));
   }, []);
@@ -256,6 +256,7 @@ export function InteractiveViewer({
         style={{
           width: scaledWidth,
           height: scaledHeight,
+          margin: '0 auto',
         }}
       >
         {/* Sandboxed iframe at fixed size */}
