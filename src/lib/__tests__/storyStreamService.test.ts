@@ -1,4 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// Mock supabase to prevent environment variable errors in CI
+vi.mock('../supabase', () => ({
+  supabase: {
+    from: vi.fn(),
+    auth: { getSession: vi.fn() },
+  },
+}));
+
 import { getCachedResponse, setCachedResponse } from '../storyStreamService';
 
 const realLocalStorage = globalThis.localStorage;
