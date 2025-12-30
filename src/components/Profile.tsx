@@ -18,6 +18,7 @@ import {
   Star,
   Volume2,
   VolumeX,
+  Gamepad2,
 } from 'lucide-react';
 import { supabase, getShareUrl } from '../lib/supabase';
 import { useAuth } from '../lib/authContext';
@@ -30,7 +31,13 @@ import {
   getFollowerCount,
   getFollowingCount,
 } from '../lib/storyService';
+import {
+  getUserInteractiveContent,
+  deleteInteractiveContent,
+  updateInteractiveContent,
+} from '../lib/interactiveService';
 import type { Story, UserProfile as _UserProfileType } from '../lib/types';
+import type { InteractiveContent } from '../lib/interactiveTypes';
 import {
   getUserSubscription,
   createCustomerPortalSession,
@@ -68,7 +75,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'completed' | 'created'>('created');
+  const [activeTab, setActiveTab] = useState<'completed' | 'created' | 'interactive'>('created');
   const [deletingStoryId, setDeletingStoryId] = useState<string | null>(null);
   const [updatingVisibilityId, setUpdatingVisibilityId] = useState<string | null>(null);
   const [followersCount, setFollowersCount] = useState<number>(0);
@@ -92,8 +99,18 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
   const [createdTotal, setCreatedTotal] = useState(0);
   const [completedTotal, setCompletedTotal] = useState(0);
 
+  // Interactive content state
+  const [createdInteractive, setCreatedInteractive] = useState<InteractiveContent[]>([]);
+  const [interactiveHasMore, setInteractiveHasMore] = useState(true);
+  const [interactiveLoadingMore, setInteractiveLoadingMore] = useState(false);
+  const [deletingInteractiveId, setDeletingInteractiveId] = useState<string | null>(null);
+  const [updatingInteractiveVisibilityId, setUpdatingInteractiveVisibilityId] = useState<
+    string | null
+  >(null);
+
   const createdLoaderRef = useRef<HTMLDivElement>(null);
   const completedLoaderRef = useRef<HTMLDivElement>(null);
+  const interactiveLoaderRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
     await signOut();
@@ -243,11 +260,41 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
     }
   }, [createdLoadingMore, createdHasMore, createdStories.length, userId]);
 
+  const loadCreatedInteractive = async () => {
+    try {
+      const result = await getUserInteractiveContent(userId, STORIES_PER_PAGE, 0);
+      setCreatedInteractive(result.data);
+      setInteractiveHasMore(result.hasMore);
+    } catch (error) {
+      console.error('Error loading interactive content:', error);
+    }
+  };
+
+  const loadMoreInteractive = useCallback(async () => {
+    if (interactiveLoadingMore || !interactiveHasMore) return;
+
+    setInteractiveLoadingMore(true);
+    try {
+      const result = await getUserInteractiveContent(
+        userId,
+        STORIES_PER_PAGE,
+        createdInteractive.length
+      );
+      setCreatedInteractive((prev) => [...prev, ...result.data]);
+      setInteractiveHasMore(result.hasMore);
+    } catch (error) {
+      console.error('Error loading more interactive content:', error);
+    } finally {
+      setInteractiveLoadingMore(false);
+    }
+  }, [interactiveLoadingMore, interactiveHasMore, createdInteractive.length, userId]);
+
   // Initial data load
   useEffect(() => {
     loadProfile();
     loadCompletedStories();
     loadCreatedStories();
+    loadCreatedInteractive();
     loadFollowCounts();
     loadSubscription();
     loadQuestData();
@@ -313,6 +360,31 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
 
     return () => observer.disconnect();
   }, [loadMoreCompletedStories, completedHasMore, completedLoadingMore, loading, activeTab]);
+
+  // Interactive content infinite scroll
+  useEffect(() => {
+    if (activeTab !== 'interactive') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          interactiveHasMore &&
+          !interactiveLoadingMore &&
+          !loading
+        ) {
+          loadMoreInteractive();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (interactiveLoaderRef.current) {
+      observer.observe(interactiveLoaderRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [loadMoreInteractive, interactiveHasMore, interactiveLoadingMore, loading, activeTab]);
 
   const loadFollowCounts = async () => {
     try {
@@ -395,6 +467,41 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
       alert('Failed to update story visibility. Please try again.');
     } finally {
       setUpdatingVisibilityId(null);
+    }
+  };
+
+  const handleDeleteInteractive = async (contentId: string) => {
+    if (!confirm('Are you sure you want to delete this content? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingInteractiveId(contentId);
+    try {
+      await deleteInteractiveContent(contentId);
+      setCreatedInteractive((prev) => prev.filter((c) => c.id !== contentId));
+    } catch (error) {
+      console.error('Error deleting interactive content:', error);
+      alert('Failed to delete content. Please try again.');
+    } finally {
+      setDeletingInteractiveId(null);
+    }
+  };
+
+  const handleToggleInteractiveVisibility = async (
+    contentId: string,
+    currentVisibility: boolean
+  ) => {
+    setUpdatingInteractiveVisibilityId(contentId);
+    try {
+      await updateInteractiveContent(contentId, { is_public: !currentVisibility });
+      setCreatedInteractive((prev) =>
+        prev.map((c) => (c.id === contentId ? { ...c, is_public: !currentVisibility } : c))
+      );
+    } catch (error) {
+      console.error('Error updating content visibility:', error);
+      alert('Failed to update content visibility. Please try again.');
+    } finally {
+      setUpdatingInteractiveVisibilityId(null);
     }
   };
 
@@ -708,7 +815,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
           <div className="flex gap-2 p-2">
             <button
               onClick={() => setActiveTab('created')}
-              className={`flex-1 rounded-xl px-4 py-3 text-center font-semibold transition-all ${
+              className={`flex-1 rounded-xl px-3 py-3 text-center font-semibold transition-all ${
                 activeTab === 'created'
                   ? isPro
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
@@ -717,11 +824,24 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
               }`}
             >
               <span className="block text-lg font-bold">{createdTotal}</span>
-              <span className="text-xs">My Stories</span>
+              <span className="text-xs">Stories</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('interactive')}
+              className={`flex-1 rounded-xl px-3 py-3 text-center font-semibold transition-all ${
+                activeTab === 'interactive'
+                  ? isPro
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-gray-400 shadow-md hover:bg-gray-700'
+              }`}
+            >
+              <Gamepad2 className="mx-auto mb-1 h-5 w-5" />
+              <span className="text-xs">Created</span>
             </button>
             <button
               onClick={() => setActiveTab('completed')}
-              className={`flex-1 rounded-xl px-4 py-3 text-center font-semibold transition-all ${
+              className={`flex-1 rounded-xl px-3 py-3 text-center font-semibold transition-all ${
                 activeTab === 'completed'
                   ? isPro
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
@@ -730,7 +850,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
               }`}
             >
               <span className="block text-lg font-bold">{completedTotal}</span>
-              <span className="text-xs">Completed stories</span>
+              <span className="text-xs">Played</span>
             </button>
           </div>
 
@@ -807,6 +927,108 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                     )}
                     {!completedHasMore && completedStories.length > 0 && (
                       <p className="text-sm text-gray-400">No more stories</p>
+                    )}
+                  </div>
+                </>
+              )
+            ) : activeTab === 'interactive' ? (
+              createdInteractive.length === 0 && !loading ? (
+                <div className="p-8 text-center">
+                  <Gamepad2 className="mx-auto mb-4 h-16 w-16 text-gray-600" />
+                  <h3 className="mb-2 text-xl font-bold text-white">No Interactive Content Yet</h3>
+                  <p className="text-gray-400">
+                    Create games, tools, quizzes, and more to see them here!
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    {createdInteractive.map((content) => (
+                      <div
+                        key={content.id}
+                        className="transform cursor-pointer overflow-hidden rounded-2xl border border-gray-700 bg-gray-800 shadow-md transition-all duration-300 hover:shadow-lg active:scale-95"
+                      >
+                        <div
+                          className={`relative flex aspect-square items-center justify-center ${isPro ? 'bg-gradient-to-br from-purple-900 via-pink-900 to-purple-900' : 'bg-gradient-to-br from-blue-900 via-cyan-900 to-blue-900'}`}
+                        >
+                          {content.thumbnail_url ? (
+                            <img
+                              src={content.thumbnail_url}
+                              alt={content.title}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Gamepad2 className="h-12 w-12 text-white" />
+                          )}
+                          <div className="absolute left-2 top-2 rounded-full bg-purple-500 px-2 py-0.5 text-xs font-medium text-white">
+                            {content.content_type}
+                          </div>
+                        </div>
+                        <div className="p-3">
+                          <h3 className="mb-2 line-clamp-1 text-sm font-bold text-white">
+                            {content.title}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleInteractiveVisibility(
+                                  content.id,
+                                  content.is_public ?? false
+                                );
+                              }}
+                              disabled={updatingInteractiveVisibilityId === content.id}
+                              className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-700 disabled:opacity-50"
+                              title={content.is_public ? 'Public' : 'Private'}
+                            >
+                              {updatingInteractiveVisibilityId === content.id ? (
+                                <Loader className="h-4 w-4 animate-spin" />
+                              ) : content.is_public ? (
+                                <Globe className="h-4 w-4" />
+                              ) : (
+                                <Lock className="h-4 w-4" />
+                              )}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteInteractive(content.id);
+                              }}
+                              disabled={deletingInteractiveId === content.id}
+                              className="rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-900/30 disabled:opacity-50"
+                              title="Delete"
+                            >
+                              {deletingInteractiveId === content.id ? (
+                                <Loader className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Interactive content loader */}
+                  <div ref={interactiveLoaderRef} className="flex justify-center py-6">
+                    {interactiveLoadingMore && (
+                      <div className="flex gap-2">
+                        <div
+                          className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                          style={{ animationDelay: '0ms' }}
+                        ></div>
+                        <div
+                          className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                          style={{ animationDelay: '150ms' }}
+                        ></div>
+                        <div
+                          className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                          style={{ animationDelay: '300ms' }}
+                        ></div>
+                      </div>
+                    )}
+                    {!interactiveHasMore && createdInteractive.length > 0 && (
+                      <p className="text-sm text-gray-400">No more content</p>
                     )}
                   </div>
                 </>
