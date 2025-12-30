@@ -1224,6 +1224,7 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
                 <InteractiveViewer
                   htmlContent={previewContent.html_content}
                   title={previewContent.title}
+                  className="h-full w-full"
                 />
               </div>
             ) : (
