@@ -41,22 +41,52 @@ async function getStoriesFeed(
   limit: number,
   offset: number
 ): Promise<{ data: FeedItem[]; hasMore: boolean }> {
-  const { data, error } = await supabase
-    .from('stories')
-    .select(
-      `
-      id, title, description,
-      cover_image_url, cover_video_url,
-      created_by, is_public, likes_count, dislikes_count,
-      completion_count, created_at, estimated_duration,
-      creator:user_profiles(display_name, avatar_url)
-    `
-    )
-    .eq('is_public', true)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit);
+  // First try with creator join, fallback to without if FK relationship fails
+  let data;
+  let error;
 
-  if (error) throw error;
+  try {
+    const result = await supabase
+      .from('stories')
+      .select(
+        `
+        id, title, description,
+        cover_image_url, cover_video_url,
+        created_by, is_public, likes_count, dislikes_count,
+        completion_count, created_at, estimated_duration,
+        creator:user_profiles(display_name, avatar_url)
+      `
+      )
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit);
+
+    data = result.data;
+    error = result.error;
+  } catch (e) {
+    // FK relationship might not exist, try without creator join
+    console.warn('Stories query with creator join failed, trying without:', e);
+  }
+
+  // Fallback: query without creator join
+  if (error || !data) {
+    const fallbackResult = await supabase
+      .from('stories')
+      .select(
+        `
+        id, title, description,
+        cover_image_url, cover_video_url,
+        created_by, is_public, likes_count, dislikes_count,
+        completion_count, created_at, estimated_duration
+      `
+      )
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit);
+
+    if (fallbackResult.error) throw fallbackResult.error;
+    data = fallbackResult.data;
+  }
 
   // Type assertion for the query result
   type StoryQueryResult = {
@@ -72,7 +102,7 @@ async function getStoriesFeed(
     completion_count: number | null;
     created_at: string | null;
     estimated_duration: number | null;
-    creator: { display_name: string | null; avatar_url: string | null } | null;
+    creator?: { display_name: string | null; avatar_url: string | null } | null;
   };
 
   const feedItems: FeedItem[] = ((data || []) as unknown as StoryQueryResult[]).map((story) => ({
@@ -90,7 +120,7 @@ async function getStoriesFeed(
     comment_count: 0, // Not available from stories table
     created_at: story.created_at || new Date().toISOString(),
     estimated_duration: story.estimated_duration,
-    creator: story.creator,
+    creator: story.creator || null,
   }));
 
   return {
