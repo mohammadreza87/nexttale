@@ -4,12 +4,12 @@ export type MusicStyle = 'song' | 'poem' | 'rap' | 'spoken_word';
 // Voice clone from database
 export interface VoiceClone {
   id: string;
-  user_id: string;
+  user_id: string | null;
   name: string;
   voice_id: string; // ElevenLabs voice ID
   description: string | null;
   sample_url: string | null;
-  is_default: boolean;
+  is_default: boolean | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -27,11 +27,11 @@ export interface MusicContent {
   voice_clone_id: string | null;
   generation_prompt: string | null;
   created_by: string | null;
-  is_public: boolean;
-  likes_count: number;
-  dislikes_count: number;
-  play_count: number;
-  share_count: number;
+  is_public: boolean | null;
+  likes_count: number | null;
+  dislikes_count: number | null;
+  play_count: number | null;
+  share_count: number | null;
   tags: string[] | null;
   created_at: string | null;
   updated_at: string | null;
@@ -49,7 +49,7 @@ export interface MusicReaction {
   id: string;
   user_id: string;
   music_id: string;
-  reaction_type: 'like' | 'dislike';
+  reaction_type: string; // 'like' | 'dislike'
   created_at: string | null;
 }
 

@@ -271,6 +271,147 @@ export type Database = {
           },
         ];
       };
+      music_comments: {
+        Row: {
+          content: string;
+          created_at: string | null;
+          id: string;
+          music_id: string;
+          updated_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          content: string;
+          created_at?: string | null;
+          id?: string;
+          music_id: string;
+          updated_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          content?: string;
+          created_at?: string | null;
+          id?: string;
+          music_id?: string;
+          updated_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'music_comments_music_id_fkey';
+            columns: ['music_id'];
+            isOneToOne: false;
+            referencedRelation: 'music_content';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      music_content: {
+        Row: {
+          audio_url: string;
+          created_at: string | null;
+          created_by: string | null;
+          description: string | null;
+          dislikes_count: number | null;
+          duration: number | null;
+          generation_prompt: string | null;
+          genre: string | null;
+          id: string;
+          is_public: boolean | null;
+          likes_count: number | null;
+          lyrics: string | null;
+          mood: string | null;
+          play_count: number | null;
+          share_count: number | null;
+          tags: string[] | null;
+          title: string;
+          updated_at: string | null;
+          voice_clone_id: string | null;
+        };
+        Insert: {
+          audio_url: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          dislikes_count?: number | null;
+          duration?: number | null;
+          generation_prompt?: string | null;
+          genre?: string | null;
+          id?: string;
+          is_public?: boolean | null;
+          likes_count?: number | null;
+          lyrics?: string | null;
+          mood?: string | null;
+          play_count?: number | null;
+          share_count?: number | null;
+          tags?: string[] | null;
+          title: string;
+          updated_at?: string | null;
+          voice_clone_id?: string | null;
+        };
+        Update: {
+          audio_url?: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          dislikes_count?: number | null;
+          duration?: number | null;
+          generation_prompt?: string | null;
+          genre?: string | null;
+          id?: string;
+          is_public?: boolean | null;
+          likes_count?: number | null;
+          lyrics?: string | null;
+          mood?: string | null;
+          play_count?: number | null;
+          share_count?: number | null;
+          tags?: string[] | null;
+          title?: string;
+          updated_at?: string | null;
+          voice_clone_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'music_content_voice_clone_id_fkey';
+            columns: ['voice_clone_id'];
+            isOneToOne: false;
+            referencedRelation: 'voice_clones';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      music_reactions: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          music_id: string;
+          reaction_type: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          music_id: string;
+          reaction_type: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          music_id?: string;
+          reaction_type?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'music_reactions_music_id_fkey';
+            columns: ['music_id'];
+            isOneToOne: false;
+            referencedRelation: 'music_content';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -584,7 +725,15 @@ export type Database = {
           user_id?: string | null;
           video_enabled?: boolean | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'stories_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'user_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       story_choices: {
         Row: {
@@ -1071,6 +1220,7 @@ export type Database = {
           is_grandfathered: boolean | null;
           is_profile_public: boolean | null;
           last_generation_date: string | null;
+          music_generated_today: number | null;
           reading_points: number | null;
           stories_generated_today: number | null;
           stripe_customer_id: string | null;
@@ -1080,10 +1230,12 @@ export type Database = {
           subscription_status: string | null;
           subscription_tier: string | null;
           total_interactive_generated: number | null;
+          total_music_generated: number | null;
           total_points: number | null;
           total_stories_generated: number | null;
           updated_at: string | null;
           username: string;
+          voice_clones_count: number | null;
         };
         Insert: {
           avatar_url?: string | null;
@@ -1096,6 +1248,7 @@ export type Database = {
           is_grandfathered?: boolean | null;
           is_profile_public?: boolean | null;
           last_generation_date?: string | null;
+          music_generated_today?: number | null;
           reading_points?: number | null;
           stories_generated_today?: number | null;
           stripe_customer_id?: string | null;
@@ -1105,10 +1258,12 @@ export type Database = {
           subscription_status?: string | null;
           subscription_tier?: string | null;
           total_interactive_generated?: number | null;
+          total_music_generated?: number | null;
           total_points?: number | null;
           total_stories_generated?: number | null;
           updated_at?: string | null;
           username: string;
+          voice_clones_count?: number | null;
         };
         Update: {
           avatar_url?: string | null;
@@ -1121,6 +1276,7 @@ export type Database = {
           is_grandfathered?: boolean | null;
           is_profile_public?: boolean | null;
           last_generation_date?: string | null;
+          music_generated_today?: number | null;
           reading_points?: number | null;
           stories_generated_today?: number | null;
           stripe_customer_id?: string | null;
@@ -1130,10 +1286,12 @@ export type Database = {
           subscription_status?: string | null;
           subscription_tier?: string | null;
           total_interactive_generated?: number | null;
+          total_music_generated?: number | null;
           total_points?: number | null;
           total_stories_generated?: number | null;
           updated_at?: string | null;
           username?: string;
+          voice_clones_count?: number | null;
         };
         Relationships: [];
       };
@@ -1260,6 +1418,42 @@ export type Database = {
           longest_streak?: number;
           updated_at?: string | null;
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      voice_clones: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          is_default: boolean | null;
+          name: string;
+          sample_url: string | null;
+          updated_at: string | null;
+          user_id: string | null;
+          voice_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_default?: boolean | null;
+          name: string;
+          sample_url?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+          voice_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_default?: boolean | null;
+          name?: string;
+          sample_url?: string | null;
+          updated_at?: string | null;
+          user_id?: string | null;
+          voice_id?: string;
         };
         Relationships: [];
       };

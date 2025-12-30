@@ -86,18 +86,12 @@ export async function generateMusic(request: GenerateMusicRequest): Promise<Gene
 export async function getUserMusic(userId: string): Promise<MusicContent[]> {
   const { data, error } = await supabase
     .from('music_content')
-    .select(
-      `
-      *,
-      creator:user_profiles!created_by(display_name, avatar_url),
-      voice_clone:voice_clones!voice_clone_id(name)
-    `
-    )
+    .select('*')
     .eq('created_by', userId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as MusicContent[];
 }
 
 // Get public music feed
@@ -109,13 +103,7 @@ export async function getMusicFeed(options?: {
 }): Promise<MusicContent[]> {
   let query = supabase
     .from('music_content')
-    .select(
-      `
-      *,
-      creator:user_profiles!created_by(display_name, avatar_url),
-      voice_clone:voice_clones!voice_clone_id(name)
-    `
-    )
+    .select('*')
     .eq('is_public', true)
     .order('created_at', { ascending: false });
 
@@ -138,20 +126,14 @@ export async function getMusicFeed(options?: {
   const { data, error } = await query;
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as MusicContent[];
 }
 
 // Get single music content
 export async function getMusicById(musicId: string): Promise<MusicContent | null> {
   const { data, error } = await supabase
     .from('music_content')
-    .select(
-      `
-      *,
-      creator:user_profiles!created_by(display_name, avatar_url),
-      voice_clone:voice_clones!voice_clone_id(name)
-    `
-    )
+    .select('*')
     .eq('id', musicId)
     .single();
 
@@ -159,7 +141,7 @@ export async function getMusicById(musicId: string): Promise<MusicContent | null
     if (error.code === 'PGRST116') return null;
     throw error;
   }
-  return data;
+  return data as MusicContent;
 }
 
 // Update music
@@ -237,15 +219,17 @@ export async function removeMusicReaction(musicId: string): Promise<void> {
 
 // Increment play count
 export async function incrementPlayCount(musicId: string): Promise<void> {
-  const { error } = await supabase.rpc('increment_music_play_count', {
-    music_id: musicId,
-  });
+  // Get current play count and increment it
+  const { data } = await supabase
+    .from('music_content')
+    .select('play_count')
+    .eq('id', musicId)
+    .single();
 
-  // Fallback if RPC doesn't exist
-  if (error) {
-    await supabase
-      .from('music_content')
-      .update({ play_count: supabase.rpc('increment', { x: 1 }) as unknown as number })
-      .eq('id', musicId);
-  }
+  const currentCount = data?.play_count ?? 0;
+
+  await supabase
+    .from('music_content')
+    .update({ play_count: currentCount + 1 })
+    .eq('id', musicId);
 }
