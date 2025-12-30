@@ -143,101 +143,105 @@ export function TikTokFeed({
   }
 
   return (
-    <div className="fixed inset-0 flex w-full justify-center bg-black">
-      {/* Constrain feed width on desktop for better UX */}
-      <div
-        ref={containerRef}
-        className="relative h-full w-full max-w-[480px] select-none overflow-hidden bg-black"
-      >
-        {/* Filter tabs */}
-        <div className="absolute left-0 right-0 top-0 z-50 bg-gradient-to-b from-black/80 via-black/40 to-transparent pb-6 pt-2">
+    <div className="fixed inset-0 flex w-full flex-col bg-black">
+      {/* Fixed header with filter tabs */}
+      <div className="z-50 w-full shrink-0 bg-black py-2">
+        <div className="mx-auto max-w-[480px]">
           <FeedFilters currentFilter={filter} onFilterChange={setFilter} />
         </div>
+      </div>
 
-        {/* Feed cards container */}
+      {/* Feed content area */}
+      <div className="flex flex-1 justify-center overflow-hidden">
         <div
-          className="duration-400 h-full transition-transform ease-out"
-          style={{
-            transform: `translateY(-${currentIndex * 100}%)`,
-          }}
+          ref={containerRef}
+          className="relative h-full w-full max-w-[480px] select-none overflow-hidden bg-black"
         >
-          {items.map((item, index) => (
-            <div key={item.id} className="relative h-full w-full">
-              {item.feed_type === 'story' ? (
-                <StoryFeedCard
-                  item={item}
-                  isActive={index === currentIndex}
-                  onSelect={() => handleSelect(item)}
-                  onViewProfile={onViewProfile}
-                  userId={userId}
-                />
-              ) : (
-                <InteractiveFeedCard
-                  item={item}
-                  isActive={index === currentIndex}
-                  onSelect={() => handleSelect(item)}
-                  onViewProfile={onViewProfile}
-                  userId={userId}
-                />
-              )}
-            </div>
-          ))}
-        </div>
+          {/* Feed cards container */}
+          <div
+            className="duration-400 h-full transition-transform ease-out"
+            style={{
+              transform: `translateY(-${currentIndex * 100}%)`,
+            }}
+          >
+            {items.map((item, index) => (
+              <div key={item.id} className="relative h-full w-full">
+                {item.feed_type === 'story' ? (
+                  <StoryFeedCard
+                    item={item}
+                    isActive={index === currentIndex}
+                    onSelect={() => handleSelect(item)}
+                    onViewProfile={onViewProfile}
+                    userId={userId}
+                  />
+                ) : (
+                  <InteractiveFeedCard
+                    item={item}
+                    isActive={index === currentIndex}
+                    onSelect={() => handleSelect(item)}
+                    onViewProfile={onViewProfile}
+                    userId={userId}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
 
-        {/* Navigation hints */}
-        <div className="absolute left-4 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2">
-          {/* Up indicator */}
-          {currentIndex > 0 && (
-            <button
-              onClick={() => navigate('up')}
-              className="rounded-full bg-black/30 p-2 text-white/60 transition-all hover:bg-black/50 hover:text-white"
-            >
-              <ChevronUp className="h-5 w-5" />
-            </button>
+          {/* Navigation hints */}
+          <div className="absolute left-4 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2">
+            {/* Up indicator */}
+            {currentIndex > 0 && (
+              <button
+                onClick={() => navigate('up')}
+                className="rounded-full bg-black/30 p-2 text-white/60 transition-all hover:bg-black/50 hover:text-white"
+              >
+                <ChevronUp className="h-5 w-5" />
+              </button>
+            )}
+
+            {/* Progress dots */}
+            <div className="flex flex-col gap-1 py-2">
+              {items.slice(Math.max(0, currentIndex - 2), currentIndex + 3).map((_, i) => {
+                const actualIndex = Math.max(0, currentIndex - 2) + i;
+                return (
+                  <div
+                    key={actualIndex}
+                    className={`w-1.5 rounded-full transition-all duration-200 ${
+                      actualIndex === currentIndex ? 'h-4 bg-white' : 'h-2 bg-white/30'
+                    }`}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Down indicator */}
+            {currentIndex < items.length - 1 && (
+              <button
+                onClick={() => navigate('down')}
+                className="rounded-full bg-black/30 p-2 text-white/60 transition-all hover:bg-black/50 hover:text-white"
+              >
+                <ChevronDown className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+
+          {/* Loading more indicator */}
+          {loadingMore && (
+            <div className="absolute bottom-20 left-1/2 z-40 -translate-x-1/2">
+              <Loader className="h-6 w-6 animate-spin text-purple-500" />
+            </div>
           )}
 
-          {/* Progress dots */}
-          <div className="flex flex-col gap-1 py-2">
-            {items.slice(Math.max(0, currentIndex - 2), currentIndex + 3).map((_, i) => {
-              const actualIndex = Math.max(0, currentIndex - 2) + i;
-              return (
-                <div
-                  key={actualIndex}
-                  className={`w-1.5 rounded-full transition-all duration-200 ${
-                    actualIndex === currentIndex ? 'h-4 bg-white' : 'h-2 bg-white/30'
-                  }`}
-                />
-              );
-            })}
-          </div>
-
-          {/* Down indicator */}
-          {currentIndex < items.length - 1 && (
-            <button
-              onClick={() => navigate('down')}
-              className="rounded-full bg-black/30 p-2 text-white/60 transition-all hover:bg-black/50 hover:text-white"
-            >
-              <ChevronDown className="h-5 w-5" />
-            </button>
+          {/* Swipe hint for first-time users */}
+          {currentIndex === 0 && items.length > 1 && (
+            <div className="absolute bottom-24 left-1/2 z-40 -translate-x-1/2 animate-bounce">
+              <div className="flex flex-col items-center text-white/60">
+                <ChevronUp className="h-6 w-6" />
+                <span className="text-xs">Swipe up</span>
+              </div>
+            </div>
           )}
         </div>
-
-        {/* Loading more indicator */}
-        {loadingMore && (
-          <div className="absolute bottom-20 left-1/2 z-40 -translate-x-1/2">
-            <Loader className="h-6 w-6 animate-spin text-purple-500" />
-          </div>
-        )}
-
-        {/* Swipe hint for first-time users */}
-        {currentIndex === 0 && items.length > 1 && (
-          <div className="absolute bottom-24 left-1/2 z-40 -translate-x-1/2 animate-bounce">
-            <div className="flex flex-col items-center text-white/60">
-              <ChevronUp className="h-6 w-6" />
-              <span className="text-xs">Swipe up</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

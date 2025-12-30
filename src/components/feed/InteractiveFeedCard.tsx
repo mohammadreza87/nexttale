@@ -185,7 +185,7 @@ export function InteractiveFeedCard({
       </div>
 
       {/* Content type badge */}
-      <div className="absolute left-4 top-20 z-10">
+      <div className="absolute left-4 top-4 z-10">
         <div
           className={`flex items-center gap-1.5 px-3 py-1.5 ${typeConfig.bgColor} rounded-full backdrop-blur-sm`}
         >
@@ -196,7 +196,7 @@ export function InteractiveFeedCard({
 
       {/* Tags */}
       {item.tags && item.tags.length > 0 && (
-        <div className="absolute right-16 top-20 z-10 flex gap-1">
+        <div className="absolute right-16 top-4 z-10 flex gap-1">
           {item.tags.slice(0, 2).map((tag, idx) => (
             <span
               key={idx}

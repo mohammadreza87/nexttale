@@ -137,7 +137,7 @@ export function StoryFeedCard({
       </div>
 
       {/* Content type badge */}
-      <div className="absolute left-4 top-20 z-10">
+      <div className="absolute left-4 top-4 z-10">
         <div className="flex items-center gap-1.5 rounded-full bg-blue-500/80 px-3 py-1.5 backdrop-blur-sm">
           <BookOpen className="h-4 w-4 text-white" />
           <span className="text-sm font-medium text-white">Story</span>
