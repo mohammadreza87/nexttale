@@ -496,6 +496,11 @@ export function Profile({ userId, onSelectStory }: ProfileProps) {
     contentId: string,
     currentVisibility: boolean
   ) => {
+    // Only Pro users can change visibility
+    if (!isPro) {
+      return;
+    }
+
     setUpdatingInteractiveVisibilityId(contentId);
     try {
       await updateInteractiveContent(contentId, { is_public: !currentVisibility });

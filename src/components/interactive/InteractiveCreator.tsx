@@ -237,6 +237,9 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
     setError(null);
 
     try {
+      // Free users can only create public content
+      const finalIsPublic = usage?.isPro ? isPublic : true;
+
       const content = await createInteractiveContent(userId, {
         title: generatedContent.title,
         description: generatedContent.description,
@@ -244,7 +247,7 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
         html_content: generatedContent.html,
         generation_prompt: prompt,
         tags: generatedContent.tags,
-        is_public: isPublic,
+        is_public: finalIsPublic,
         estimated_interaction_time: generatedContent.estimatedTime,
       });
 
