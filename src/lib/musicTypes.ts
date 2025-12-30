@@ -79,6 +79,7 @@ export interface GenerateMusicRequest {
   mood?: string;
   instrumental?: boolean;
   durationSeconds?: number;
+  voiceType?: 'random-female' | 'random-male' | string; // string for voice clone ID
 }
 
 // Response from generate-music function

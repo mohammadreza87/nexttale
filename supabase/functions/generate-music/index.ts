@@ -13,6 +13,7 @@ interface GenerateMusicRequest {
   mood?: string;
   instrumental?: boolean;
   durationSeconds?: number; // 3-600 seconds
+  voiceType?: 'random-female' | 'random-male' | string; // string for voice clone ID
 }
 
 interface GeneratedMusicPlan {
@@ -30,14 +31,29 @@ async function generateMusicPlanWithGemini(
   genre: string,
   mood: string,
   instrumental: boolean,
+  voiceType: string | undefined,
   apiKey: string
 ): Promise<GeneratedMusicPlan> {
+  // Determine voice description for the prompt
+  let voiceDescription = '';
+  if (!instrumental && voiceType) {
+    if (voiceType === 'random-female') {
+      voiceDescription = 'VOICE: Female vocalist with clear, expressive vocals';
+    } else if (voiceType === 'random-male') {
+      voiceDescription = 'VOICE: Male vocalist with strong, emotive vocals';
+    } else {
+      // Voice clone - use generic description since Music API doesn't support custom voices
+      voiceDescription = 'VOICE: Natural singing voice with emotional delivery';
+    }
+  }
+
   const systemPrompt = `You are a music producer creating a prompt for an AI music generation system.
 
 USER REQUEST: ${prompt}
 GENRE: ${genre}
 MOOD: ${mood}
 INSTRUMENTAL: ${instrumental ? 'Yes - no vocals' : 'No - include vocals with lyrics'}
+${voiceDescription}
 
 Create a detailed music generation prompt following these best practices:
 1. Use abstract mood descriptors OR detailed musical language
@@ -241,6 +257,7 @@ Deno.serve(async (req: Request) => {
       mood = 'uplifting',
       instrumental = false,
       durationSeconds = 60,
+      voiceType,
     }: GenerateMusicRequest = await req.json();
 
     if (!prompt) {
@@ -263,6 +280,7 @@ Deno.serve(async (req: Request) => {
       genre,
       mood,
       instrumental,
+      voiceType,
       geminiApiKey
     );
     console.log(`Music plan generated: "${musicPlan.title}"`);

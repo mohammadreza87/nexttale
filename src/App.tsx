@@ -266,13 +266,14 @@ function StoryReaderRoute() {
 }
 
 function CreatorRoute() {
-  const { userId, handleSelectStory, handleSelectInteractive } =
+  const { userId, handleSelectStory, handleSelectInteractive, handleBackToHome } =
     useOutletContext<AppOutletContext>();
   return (
     <Creator
       userId={userId}
       onStoryCreated={handleSelectStory}
       onInteractiveCreated={handleSelectInteractive}
+      onMusicCreated={() => handleBackToHome()}
     />
   );
 }

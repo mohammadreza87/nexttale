@@ -11,14 +11,18 @@ import {
   Mic,
   MicOff,
   Volume2,
+  User,
+  Plus,
 } from 'lucide-react';
 import { getSubscriptionUsage, type SubscriptionUsage } from '../../lib/subscriptionService';
-import { generateMusic } from '../../lib/musicService';
+import { generateMusic, getUserVoiceClones } from '../../lib/musicService';
 import UsageBadge from '../UsageBadge';
 import UpgradeModal from '../UpgradeModal';
 import VoiceCloneModal from './VoiceCloneModal';
-import type { MusicContent } from '../../lib/musicTypes';
+import type { MusicContent, VoiceClone } from '../../lib/musicTypes';
 import { GENRE_OPTIONS, MOOD_OPTIONS } from '../../lib/musicTypes';
+
+type VoiceType = 'random-female' | 'random-male' | string; // string for voice clone ID
 
 interface MusicCreatorProps {
   userId: string;
@@ -45,6 +49,8 @@ export function MusicCreator({ userId, onCreated }: MusicCreatorProps) {
   const [usage, setUsage] = useState<SubscriptionUsage | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showVoiceCloneModal, setShowVoiceCloneModal] = useState(false);
+  const [voiceType, setVoiceType] = useState<VoiceType>('random-female');
+  const [voiceClones, setVoiceClones] = useState<VoiceClone[]>([]);
 
   // Generated content state
   const [generatedMusic, setGeneratedMusic] = useState<MusicContent | null>(null);
@@ -53,12 +59,16 @@ export function MusicCreator({ userId, onCreated }: MusicCreatorProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    loadUsage();
+    loadData();
   }, [userId]);
 
-  const loadUsage = async () => {
-    const data = await getSubscriptionUsage(userId);
-    setUsage(data);
+  const loadData = async () => {
+    const [usageData, clones] = await Promise.all([
+      getSubscriptionUsage(userId),
+      getUserVoiceClones(userId),
+    ]);
+    setUsage(usageData);
+    setVoiceClones(clones);
   };
 
   const handleGenerate = async () => {
@@ -85,12 +95,13 @@ export function MusicCreator({ userId, onCreated }: MusicCreatorProps) {
         mood,
         instrumental,
         durationSeconds,
+        voiceType: instrumental ? undefined : voiceType,
       });
 
       setGeneratedMusic(result.music);
       setShowPreview(true);
       setProgress('Music created successfully!');
-      loadUsage();
+      loadData();
     } catch (err) {
       console.error('Error generating music:', err);
       if (err instanceof Error && err.message.includes('daily_limit_reached')) {
@@ -137,6 +148,7 @@ export function MusicCreator({ userId, onCreated }: MusicCreatorProps) {
         isOpen={showVoiceCloneModal}
         onClose={() => setShowVoiceCloneModal(false)}
         userId={userId}
+        onVoiceCloned={loadData}
       />
 
       <div className="mx-auto w-full max-w-2xl px-4 pb-6 pt-4">
@@ -288,6 +300,67 @@ export function MusicCreator({ userId, onCreated }: MusicCreatorProps) {
                 </button>
               </div>
             </div>
+
+            {/* Voice Selection - only shown when not instrumental */}
+            {!instrumental && (
+              <div className="rounded-2xl bg-gray-800/50 p-4">
+                <label className="mb-3 block text-sm font-semibold text-gray-300">Voice</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setVoiceType('random-female')}
+                    disabled={isGenerating}
+                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
+                      voiceType === 'random-female'
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                        : 'border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                  >
+                    <User className="h-4 w-4" />
+                    Female
+                  </button>
+                  <button
+                    onClick={() => setVoiceType('random-male')}
+                    disabled={isGenerating}
+                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
+                      voiceType === 'random-male'
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                        : 'border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                  >
+                    <User className="h-4 w-4" />
+                    Male
+                  </button>
+                  {voiceClones.map((clone) => (
+                    <button
+                      key={clone.id}
+                      onClick={() => setVoiceType(clone.id)}
+                      disabled={isGenerating}
+                      className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
+                        voiceType === clone.id
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                          : 'border border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      }`}
+                    >
+                      <Volume2 className="h-4 w-4" />
+                      {clone.name}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setShowVoiceCloneModal(true)}
+                    disabled={isGenerating}
+                    className="flex items-center gap-2 rounded-xl border border-dashed border-gray-600 px-4 py-2.5 text-sm font-medium text-gray-400 transition-all hover:border-purple-500 hover:text-purple-400"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Clone Voice
+                  </button>
+                </div>
+                {voiceType !== 'random-female' && voiceType !== 'random-male' && (
+                  <p className="mt-2 text-xs text-purple-400">
+                    Note: Cloned voices work best with narration. For singing, try Female or Male.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Genre & Mood */}
             <div className="grid grid-cols-2 gap-4">
