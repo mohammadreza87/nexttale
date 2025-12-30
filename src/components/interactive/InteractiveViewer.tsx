@@ -100,7 +100,7 @@ export function InteractiveViewer({
     return () => observer.disconnect();
   }, [calculateScale]);
 
-  // Create blob URL from HTML content
+  // Create blob URL from HTML content with share polyfill
   useEffect(() => {
     if (!htmlContent) {
       setError('No content to display');
@@ -108,8 +108,50 @@ export function InteractiveViewer({
       return;
     }
 
-    // Don't add responsive styles - content is designed for fixed 1080x1350
-    const blob = new Blob([htmlContent], { type: 'text/html' });
+    // Inject a polyfill that redirects share/clipboard calls to parent via postMessage
+    const sharePolyfill = `
+<script>
+(function() {
+  // Override navigator.share to use postMessage
+  const originalShare = navigator.share?.bind(navigator);
+  navigator.share = function(data) {
+    return new Promise((resolve, reject) => {
+      window.parent.postMessage({
+        type: 'INTERACTIVE_SHARE',
+        data: data
+      }, '*');
+      // Resolve after a short delay (assume parent handles it)
+      setTimeout(resolve, 100);
+    });
+  };
+
+  // Also override clipboard.writeText for fallback
+  const originalWriteText = navigator.clipboard?.writeText?.bind(navigator.clipboard);
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText = function(text) {
+      return new Promise((resolve, reject) => {
+        window.parent.postMessage({
+          type: 'INTERACTIVE_COPY',
+          text: text
+        }, '*');
+        setTimeout(resolve, 100);
+      });
+    };
+  }
+})();
+</script>`;
+
+    // Inject polyfill right after <head> or at the start of the document
+    let modifiedHtml = htmlContent;
+    if (modifiedHtml.includes('<head>')) {
+      modifiedHtml = modifiedHtml.replace('<head>', '<head>' + sharePolyfill);
+    } else if (modifiedHtml.includes('<html>')) {
+      modifiedHtml = modifiedHtml.replace('<html>', '<html><head>' + sharePolyfill + '</head>');
+    } else {
+      modifiedHtml = sharePolyfill + modifiedHtml;
+    }
+
+    const blob = new Blob([modifiedHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     setBlobUrl(url);
 
@@ -117,6 +159,38 @@ export function InteractiveViewer({
       URL.revokeObjectURL(url);
     };
   }, [htmlContent, key]);
+
+  // Listen for share/copy messages from iframe
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data?.type === 'INTERACTIVE_SHARE') {
+        const shareData = event.data.data;
+        try {
+          if (navigator.share) {
+            await navigator.share(shareData);
+          } else {
+            // Fallback to clipboard
+            const text = shareData.url || shareData.text || shareData.title || '';
+            await navigator.clipboard.writeText(text);
+          }
+        } catch (err) {
+          // User cancelled or share failed - that's ok
+          if ((err as Error).name !== 'AbortError') {
+            console.error('Share failed:', err);
+          }
+        }
+      } else if (event.data?.type === 'INTERACTIVE_COPY') {
+        try {
+          await navigator.clipboard.writeText(event.data.text);
+        } catch (err) {
+          console.error('Copy failed:', err);
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   // Handle iframe load
   const handleLoad = () => {
