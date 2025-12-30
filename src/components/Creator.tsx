@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { BookOpen, Gamepad2 } from 'lucide-react';
+import { BookOpen, Gamepad2, Music } from 'lucide-react';
 import { StoryCreator } from './StoryCreator';
 import { InteractiveCreator } from './interactive/InteractiveCreator';
+import { MusicCreator } from './music/MusicCreator';
 
-type CreatorTab = 'story' | 'interactive';
+type CreatorTab = 'story' | 'interactive' | 'music';
 
 interface CreatorProps {
   userId: string;
   onStoryCreated: (storyId: string) => void;
   onInteractiveCreated: (contentId: string) => void;
+  onMusicCreated?: (musicId: string) => void;
   initialTab?: CreatorTab;
 }
 
@@ -16,6 +18,7 @@ export function Creator({
   userId,
   onStoryCreated,
   onInteractiveCreated,
+  onMusicCreated,
   initialTab = 'interactive',
 }: CreatorProps) {
   const [activeTab, setActiveTab] = useState<CreatorTab>(initialTab);
@@ -38,6 +41,17 @@ export function Creator({
               <span>Interactive</span>
             </button>
             <button
+              onClick={() => setActiveTab('music')}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all ${
+                activeTab === 'music'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Music className="h-5 w-5" />
+              <span>Music</span>
+            </button>
+            <button
               onClick={() => setActiveTab('story')}
               className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all ${
                 activeTab === 'story'
@@ -54,11 +68,13 @@ export function Creator({
 
       {/* Content */}
       <div className="pt-2">
-        {activeTab === 'interactive' ? (
+        {activeTab === 'interactive' && (
           <InteractiveCreator userId={userId} onCreated={onInteractiveCreated} />
-        ) : (
-          <StoryCreator userId={userId} onStoryCreated={onStoryCreated} />
         )}
+        {activeTab === 'music' && (
+          <MusicCreator userId={userId} onCreated={onMusicCreated || (() => {})} />
+        )}
+        {activeTab === 'story' && <StoryCreator userId={userId} onStoryCreated={onStoryCreated} />}
       </div>
     </div>
   );
