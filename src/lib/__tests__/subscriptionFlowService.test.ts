@@ -13,7 +13,7 @@ const { maybeSingleMock, eqMock, selectMock, fromMock } = vi.hoisted(() => ({
 
 vi.mock('../supabase', () => ({
   supabase: {
-    from: (...args: unknown[]) => fromMock(...args),
+    from: (table: string) => (fromMock as ReturnType<typeof vi.fn>)(table),
   },
 }));
 

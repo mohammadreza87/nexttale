@@ -8,7 +8,7 @@ const { getSessionMock } = vi.hoisted(() => ({
 vi.mock('../supabase', () => ({
   supabase: {
     auth: {
-      getSession: (...args: unknown[]) => getSessionMock(...args),
+      getSession: () => (getSessionMock as ReturnType<typeof vi.fn>)(),
     },
   },
 }));
