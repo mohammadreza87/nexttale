@@ -185,7 +185,7 @@ export function TikTokFeed({
         </div>
 
         {/* Navigation hints */}
-        <div className="absolute right-4 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2">
+        <div className="absolute left-4 top-1/2 z-40 flex -translate-y-1/2 flex-col items-center gap-2">
           {/* Up indicator */}
           {currentIndex > 0 && (
             <button
