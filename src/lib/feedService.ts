@@ -199,6 +199,7 @@ async function getMusicFeed(
   limit: number,
   offset: number
 ): Promise<{ data: FeedItem[]; hasMore: boolean }> {
+  // Query music_content without creator join (no FK relationship exists)
   const { data, error } = await supabase
     .from('music_content')
     .select(
@@ -206,8 +207,7 @@ async function getMusicFeed(
       id, title, description, audio_url, duration,
       genre, mood, lyrics, tags,
       created_by, is_public, likes_count, dislikes_count,
-      play_count, created_at,
-      creator:user_profiles(display_name, avatar_url)
+      play_count, created_at
     `
     )
     .eq('is_public', true)
@@ -235,10 +235,32 @@ async function getMusicFeed(
     dislikes_count: number | null;
     play_count: number | null;
     created_at: string | null;
-    creator?: { display_name: string | null; avatar_url: string | null } | null;
   };
 
-  const feedItems: FeedItem[] = ((data || []) as unknown as MusicQueryResult[]).map((music) => ({
+  // Fetch creator profiles separately if needed
+  const musicData = (data || []) as unknown as MusicQueryResult[];
+  const creatorIds = [...new Set(musicData.map((m) => m.created_by).filter(Boolean))] as string[];
+
+  let creatorMap: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
+
+  if (creatorIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('user_profiles')
+      .select('id, display_name, avatar_url')
+      .in('id', creatorIds);
+
+    if (profiles) {
+      creatorMap = profiles.reduce(
+        (acc, p) => {
+          acc[p.id] = { display_name: p.display_name, avatar_url: p.avatar_url };
+          return acc;
+        },
+        {} as Record<string, { display_name: string | null; avatar_url: string | null }>
+      );
+    }
+  }
+
+  const feedItems: FeedItem[] = musicData.map((music) => ({
     id: music.id,
     title: music.title,
     description: music.description,
@@ -253,7 +275,7 @@ async function getMusicFeed(
     comment_count: 0,
     created_at: music.created_at,
     estimated_duration: music.duration,
-    creator: music.creator || null,
+    creator: music.created_by ? creatorMap[music.created_by] || null : null,
     audio_url: music.audio_url,
     lyrics: music.lyrics,
     genre: music.genre,
