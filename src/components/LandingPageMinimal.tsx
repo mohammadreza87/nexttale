@@ -18,19 +18,20 @@ export function LandingPageMinimal({ onGetStarted }: LandingPageMinimalProps) {
   const loadRandomContent = async () => {
     try {
       // Fetch random story or interactive content (not music)
+      // Prioritize content WITH thumbnails for better visual display
       const [storiesResult, interactiveResult] = await Promise.all([
         supabase
           .from('stories')
           .select('id, title, description, cover_image_url, likes_count, estimated_duration')
           .eq('is_public', true)
           .not('cover_image_url', 'is', null)
-          .order('created_at', { ascending: false })
+          .order('likes_count', { ascending: false })
           .limit(10),
         supabase
           .from('interactive_content')
-          .select('id, title, description, thumbnail_url, content_type, likes_count, html_content')
+          .select('id, title, description, thumbnail_url, content_type, likes_count')
           .eq('is_public', true)
-          .order('created_at', { ascending: false })
+          .order('likes_count', { ascending: false })
           .limit(10),
       ]);
 
@@ -59,7 +60,6 @@ export function LandingPageMinimal({ onGetStarted }: LandingPageMinimalProps) {
         feed_type: i.content_type as FeedItem['feed_type'],
         thumbnail_url: i.thumbnail_url,
         likes_count: i.likes_count || 0,
-        html_content: i.html_content,
         preview_url: null,
         created_by: null,
         is_public: true,
@@ -71,13 +71,16 @@ export function LandingPageMinimal({ onGetStarted }: LandingPageMinimalProps) {
         estimated_duration: null,
       }));
 
-      // Combine and pick random
-      const all = [...stories, ...interactive].filter(
-        (item) => item.thumbnail_url || item.html_content
-      );
-      if (all.length > 0) {
-        const randomIndex = Math.floor(Math.random() * all.length);
-        setFeaturedContent(all[randomIndex]);
+      // Combine all content
+      const all = [...stories, ...interactive];
+
+      // Prefer content with thumbnails, but include all for variety
+      const withThumbnails = all.filter((item) => item.thumbnail_url);
+      const contentPool = withThumbnails.length > 0 ? withThumbnails : all;
+
+      if (contentPool.length > 0) {
+        const randomIndex = Math.floor(Math.random() * contentPool.length);
+        setFeaturedContent(contentPool[randomIndex]);
       }
     } catch (error) {
       console.error('Error loading content:', error);
@@ -204,16 +207,29 @@ export function LandingPageMinimal({ onGetStarted }: LandingPageMinimalProps) {
                               alt={featuredContent.title}
                               className="h-full w-full object-cover"
                             />
-                          ) : featuredContent.html_content ? (
-                            <iframe
-                              srcDoc={featuredContent.html_content}
-                              className="h-full w-full border-0"
-                              sandbox="allow-scripts"
-                              title={featuredContent.title}
-                            />
                           ) : (
-                            <div className="flex h-full items-center justify-center bg-gradient-to-br from-purple-900 to-pink-900">
-                              <Sparkles className="h-16 w-16 text-white/50" />
+                            <div className="flex h-full flex-col items-center justify-center bg-gradient-to-br from-purple-900 via-gray-900 to-pink-900 p-6">
+                              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-sm">
+                                {featuredContent.feed_type === 'game' && (
+                                  <Gamepad2 className="h-10 w-10 text-purple-300" />
+                                )}
+                                {featuredContent.feed_type === 'story' && (
+                                  <BookOpen className="h-10 w-10 text-purple-300" />
+                                )}
+                                {(featuredContent.feed_type === 'tool' ||
+                                  featuredContent.feed_type === 'widget') && (
+                                  <Wrench className="h-10 w-10 text-purple-300" />
+                                )}
+                                {featuredContent.feed_type !== 'game' &&
+                                  featuredContent.feed_type !== 'story' &&
+                                  featuredContent.feed_type !== 'tool' &&
+                                  featuredContent.feed_type !== 'widget' && (
+                                    <Sparkles className="h-10 w-10 text-purple-300" />
+                                  )}
+                              </div>
+                              <p className="text-center text-sm font-medium text-white/70">
+                                {getContentTypeLabel(featuredContent.feed_type)}
+                              </p>
                             </div>
                           )}
 
