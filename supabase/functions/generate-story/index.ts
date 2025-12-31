@@ -10,9 +10,7 @@ import {
 import {
   datadog,
   withLLMTrace,
-  withTiming,
   createLogger,
-  estimateTokens,
 } from '../_shared/datadog.ts';
 
 const corsHeaders = {
