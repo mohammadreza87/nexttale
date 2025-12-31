@@ -169,6 +169,7 @@ class DatadogClient {
 
   /**
    * Send LLM Observability spans to Datadog
+   * Using the official LLM Obs agentless HTTP API format from dd-trace-py
    */
   async sendLLMObsSpan(span: {
     name: string;
@@ -188,63 +189,105 @@ class DatadogClient {
     error?: { message: string; type: string };
     tags?: string[];
   }): Promise<void> {
-    if (!this.isEnabled) return;
+    if (!this.isEnabled) {
+      console.log('[Datadog] LLM Obs disabled - no API key');
+      return;
+    }
 
+    // Convert BigInt to number (safe for timestamps up to 2^53)
+    const startNsNum = Number(span.startNs);
+    const durationNum = Number(span.durationNs);
+
+    // Build meta object
+    const meta: Record<string, unknown> = {
+      kind: span.kind,
+      model_name: span.model || 'unknown',
+      model_provider: span.provider || 'unknown',
+    };
+
+    // Add input/output in the format Datadog expects
+    if (span.input) {
+      meta['input'] = { value: span.input };
+    }
+    if (span.output) {
+      meta['output'] = { value: span.output };
+    }
+
+    // Add error info if present
+    if (span.error) {
+      meta['error.message'] = span.error.message;
+      meta['error.type'] = span.error.type;
+    }
+
+    // Build metrics object
+    const metrics: Record<string, number> = {};
+    if (span.inputTokens !== undefined) {
+      metrics['input_tokens'] = span.inputTokens;
+    }
+    if (span.outputTokens !== undefined) {
+      metrics['output_tokens'] = span.outputTokens;
+    }
+    if (span.totalTokens !== undefined) {
+      metrics['total_tokens'] = span.totalTokens;
+    }
+
+    // Build the span object according to Datadog LLM Obs API spec (from dd-trace-py _writer.py)
     const spanData: Record<string, unknown> = {
-      name: span.name,
       span_id: span.spanId,
       trace_id: span.traceId,
-      start_ns: span.startNs.toString(),
-      duration: span.durationNs.toString(),
+      name: span.name,
+      start_ns: startNsNum,
+      duration: durationNum,
       status: span.error ? 'error' : 'ok',
-      meta: {
-        kind: span.kind,
-        input: span.input ? { value: span.input } : undefined,
-        output: span.output ? { value: span.output } : undefined,
-        error: span.error,
-        metadata: {
-          model_name: span.model,
-          model_provider: span.provider,
-        },
-      },
-      metrics: {
-        input_tokens: span.inputTokens,
-        output_tokens: span.outputTokens,
-        total_tokens: span.totalTokens,
-      },
+      meta,
+      metrics,
       tags: [...this.getDefaultTags(), ...(span.tags || [])],
+      service: this.config.service,
+      session_id: span.traceId, // Use traceId as session for grouping
     };
 
     if (span.parentId) {
       spanData.parent_id = span.parentId;
     }
 
-    const payload = {
-      data: {
-        type: 'span',
-        attributes: {
-          ml_app: this.config.service,
-          spans: [spanData],
-          tags: this.getDefaultTags(),
-        },
+    // Payload format from dd-trace-py _writer.py - array of event objects
+    const payload = [
+      {
+        '_dd.stage': 'raw',
+        '_dd.tracer_version': '1.0.0',
+        event_type: 'span',
+        ml_app: this.config.service,
+        spans: [spanData],
       },
-    };
+    ];
 
-    const url = this.getBaseUrl('llmobs');
+    // Use llm-obs intake endpoint
+    const url = `https://llmobs-intake.${this.config.site}/api/v2/llmobs`;
+    console.log(`[Datadog] Sending LLM Obs span to: ${url}`);
+    console.log(`[Datadog] Span: ${span.name}, traceId: ${span.traceId}, model: ${span.model}`);
+
     try {
+      const bodyStr = JSON.stringify(payload);
+      console.log(`[Datadog] Payload size: ${bodyStr.length} bytes`);
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'DD-API-KEY': this.config.apiKey!,
         },
-        body: JSON.stringify(payload),
+        body: bodyStr,
       });
+
+      const responseText = await response.text();
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Datadog] LLM Obs span send failed: ${response.status} - ${errorText}`);
+        console.error(`[Datadog] LLM Obs span send failed: ${response.status}`);
+        console.error(`[Datadog] Response: ${responseText}`);
       } else {
-        console.log('[Datadog] LLM Obs span sent successfully');
+        console.log(`[Datadog] LLM Obs span sent successfully: ${response.status}`);
+        if (responseText) {
+          console.log(`[Datadog] Response: ${responseText}`);
+        }
       }
     } catch (error) {
       console.error('[Datadog] Failed to send LLM Obs span:', error);
