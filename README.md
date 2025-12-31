@@ -1,219 +1,308 @@
-# Next Tale - AI-Powered Interactive Storytelling
+# Next Tale - AI-Powered Interactive Storytelling with LLM Observability
 
 **Create, share, and experience personalized interactive stories brought to life with AI-generated illustrations, video clips, and voice narration.**
 
 Next Tale transforms storytelling into an immersive, voice-driven interactive experience. Users create their own branching narratives or explore community stories, with each choice leading to unique paths and outcomes.
 
-## Google Cloud x ElevenLabs Hackathon Submission
+---
 
-This project is submitted for the **ElevenLabs Challenge** in the Google Cloud Hackathon.
+## Google Cloud x Datadog Hackathon Submission
+
+This project is submitted for the **Datadog Challenge** in the AI Accelerate Hackathon.
+
+### Datadog Organization
+
+**Organization Name:** `nexttale`
 
 ### Challenge Requirements Met
 
-- **ElevenLabs Integration**: Professional AI voice narration for all story chapters using ElevenLabs' text-to-speech API with the `eleven_flash_v2_5` model
-- **Google Cloud/Gemini Integration**: Story generation powered by Google's Gemini AI for creating coherent, branching narratives
-- **Voice-Driven Interaction**: Users can speak their story choices using browser speech recognition, making the app fully conversational
-- **Natural Voice Experience**: Stories are narrated with natural, expressive voices that bring characters to life
+| Requirement                  | Status | Implementation                              |
+| ---------------------------- | ------ | ------------------------------------------- |
+| Vertex AI / Gemini Model     | ✅     | Gemini 3 Pro, 2.5 Flash, 2.0 Flash          |
+| Telemetry to Datadog         | ✅     | LLM Observability API + Logs + Metrics      |
+| Application Health Dashboard | ✅     | `/datadog/dashboard.json`                   |
+| Detection Rules (min 3)      | ✅     | 10 rules in `/datadog/detection-rules.json` |
+| Actionable Records           | ✅     | Incidents created on rule triggers          |
 
-### How It Works
+---
 
-1. **Story Creation**: Users describe their story idea, and Gemini AI generates a complete branching narrative with multiple paths
-2. **Voice Narration**: Each chapter is automatically narrated using ElevenLabs' high-quality text-to-speech
-3. **Voice Input**: Users can speak to choose their story path (e.g., "option one", "explore the cave", etc.)
-4. **Visual & Video**: AI-generated images and video clips enhance the storytelling experience
+## Datadog Observability Architecture
 
-## Features
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Next Tale Application                        │
+├─────────────────────────────────────────────────────────────────────┤
+│  Supabase Edge Functions (Deno Runtime)                             │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  │
+│  │  generate-story  │  │ generate-music   │  │generate-interactive│ │
+│  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘  │
+│           │                     │                     │             │
+│           └─────────────────────┼─────────────────────┘             │
+│                                 ▼                                   │
+│                    ┌────────────────────────┐                       │
+│                    │   withLLMTrace()       │                       │
+│                    │   Observability Wrapper│                       │
+│                    └───────────┬────────────┘                       │
+└────────────────────────────────┼────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Datadog Platform                            │
+├─────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌───────────┐  │
+│  │ LLM Obs API │  │  Logs API   │  │ Metrics API │  │Events API │  │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └─────┬─────┘  │
+│         │                │                │               │         │
+│         └────────────────┼────────────────┼───────────────┘         │
+│                          ▼                ▼                         │
+│         ┌────────────────────────────────────────────┐              │
+│         │           Detection Rules (10)             │              │
+│         │  • LLM High Error Rate    • Cost Anomaly   │              │
+│         │  • Latency Spike          • Abuse Pattern  │              │
+│         │  • Rate Limit Warning     • Service Degrade│              │
+│         └───────────────────┬────────────────────────┘              │
+│                             ▼                                       │
+│         ┌────────────────────────────────────────────┐              │
+│         │         Incident Management                │              │
+│         │   Actionable items with context            │              │
+│         └────────────────────────────────────────────┘              │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
-### Voice-Driven Storytelling
-- **ElevenLabs Narration** - Professional AI voices narrate every chapter
-- **Speech-to-Text Choices** - Speak your story choices instead of clicking
-- **Multi-language Support** - Stories and narration in multiple languages
+---
 
-### AI-Powered Story Creation
-- **Gemini Story Generation** - Create complete interactive stories with branching paths
-- **Story Memory System** - Maintains narrative coherence across chapters
-- **Visual Storytelling** - AI-generated illustrations for every scene (Leonardo AI)
-- **Video Clips** - Animated scenes for Pro users (Leonardo Motion)
+## Detection Rules
 
-### Story Library
-- **Discover Stories** - Browse public stories from the community
-- **Interactive Reading** - Make choices that shape the story outcome
-- **Multiple Endings** - Each path leads to different conclusions
-- **Progress Tracking** - Automatic save and resume functionality
+We've implemented **10 detection rules** covering cost, reliability, and security:
 
-### Social Features
-- **User Profiles** - Customizable profiles with avatars and bios
-- **Follow System** - Follow favorite creators
-- **Reactions & Comments** - Engage with the community
+| Rule                     | Type              | Trigger Condition       | Severity |
+| ------------------------ | ----------------- | ----------------------- | -------- |
+| LLM High Error Rate      | Log Detection     | >5% errors in 5 minutes | High     |
+| LLM Latency Spike        | Metric Alert      | P95 latency >30 seconds | Medium   |
+| AI Cost Anomaly          | Anomaly Detection | 150% above baseline     | High     |
+| Rate Limit Warning       | Log Detection     | Usage >80% of limit     | Medium   |
+| Rate Limit Critical      | Log Detection     | Usage >90% of limit     | High     |
+| Abuse Pattern Detected   | Log Detection     | Abuse signal detected   | Critical |
+| Content Safety Issue     | Log Detection     | High severity violation | High     |
+| Service Degradation      | Log Detection     | Degradation signal      | High     |
+| Story Generation Failure | Metric Alert      | >10% failure rate       | High     |
+| Daily Cost Threshold     | Log Detection     | Budget exceeded         | Critical |
 
-### Gamification
-- **Points System** - Earn points for reading and creating
-- **Daily/Weekly Quests** - Complete challenges for rewards
+### Detection Signals Code
+
+```typescript
+// Example: Cost anomaly detection
+DetectionSignals.costThresholdExceeded(currentCostUsd, thresholdUsd, period);
+
+// Example: Abuse pattern detection
+DetectionSignals.abuseDetected('rapid_generation', userId, {
+  requests_per_minute: 50,
+});
+
+// Example: Rate limit warning
+DetectionSignals.rateLimitWarning('gemini', currentUsage, limit, userId);
+```
+
+---
+
+## Datadog Configuration Files
+
+All Datadog configurations are exportable and included in this repository:
+
+```
+datadog/
+├── dashboard.json          # Application health dashboard
+├── detection-rules.json    # All 10 detection rules
+└── README.md              # Datadog setup instructions
+```
+
+### Importing Dashboard
+
+1. Go to Datadog Dashboards
+2. Click "New Dashboard" → "Import Dashboard JSON"
+3. Paste contents of `/datadog/dashboard.json`
+
+### Creating Detection Rules
+
+1. Go to Monitors → New Monitor
+2. Use the configurations from `/datadog/detection-rules.json`
+3. Configure notification channels for incidents
+
+---
+
+## Traffic Generator
+
+To demonstrate detection rules triggering, use the traffic generator script:
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run volume spike scenario (triggers cost anomaly)
+npx ts-node scripts/traffic-generator.ts --scenario=volume --token=YOUR_AUTH_TOKEN
+
+# Run error rate scenario (triggers high error rate)
+npx ts-node scripts/traffic-generator.ts --scenario=errors --token=YOUR_AUTH_TOKEN
+
+# Run rate limit scenario
+npx ts-node scripts/traffic-generator.ts --scenario=ratelimit --token=YOUR_AUTH_TOKEN
+
+# Run all scenarios
+npx ts-node scripts/traffic-generator.ts --scenario=all --token=YOUR_AUTH_TOKEN
+```
+
+---
+
+## Observability Implementation
+
+### Core Module: `_shared/datadog.ts`
+
+```typescript
+// Wrap any LLM call with automatic tracing
+const result = await withLLMTrace(
+  'gemini',
+  'story-generation',
+  async () => {
+    return await callGemini(prompt, apiKey);
+  },
+  {
+    prompt,
+    model: 'gemini-3-pro-preview',
+    userId: user.id,
+  }
+);
+```
+
+### What Gets Tracked
+
+- **LLM Spans**: Every Gemini/ElevenLabs API call
+- **Token Usage**: Input/output/total tokens (estimated)
+- **Cost**: Per-request cost estimation by model
+- **Latency**: Request duration in milliseconds
+- **Errors**: Full error context with type and message
+- **User Context**: User ID, story ID, operation type
+
+### Graceful Degradation
+
+If Datadog is not configured, the module operates in no-op mode:
+
+```typescript
+if (!this.isEnabled) {
+  console.log('[Datadog] Disabled - no API key');
+  return;
+}
+```
+
+---
 
 ## Tech Stack
 
 ### Frontend
+
 - **React 18** with TypeScript
 - **Vite** for development and builds
 - **Tailwind CSS** for styling
 - **Web Speech API** for voice input
 
 ### Backend
+
 - **Supabase** - Database, authentication, storage
 - **PostgreSQL** with Row Level Security
 - **Edge Functions** (Deno runtime) for serverless APIs
 
 ### AI Services
-- **Google Gemini** - Story generation (via Vertex AI / Google AI)
-- **ElevenLabs** - Voice narration with `eleven_flash_v2_5` model
+
+- **Google Gemini** - Story generation (gemini-3-pro-preview, gemini-2.5-flash)
+- **ElevenLabs** - Voice narration and music generation
 - **Leonardo AI** - Image and video generation
 
-### Payments
-- **Stripe** - Subscriptions and checkout
+### Observability
 
-## ElevenLabs Integration Details
+- **Datadog LLM Observability** - LLM span tracing
+- **Datadog Logs** - Structured application logs
+- **Datadog Metrics** - Custom metrics (latency, tokens, cost)
+- **Datadog Events** - Alert events
 
-### Text-to-Speech Implementation
+---
 
-Located in `supabase/functions/text-to-speech/index.ts`:
-
-```typescript
-// ElevenLabs TTS Configuration
-const elevenLabsApiKey = Deno.env.get("ELEVENLABS_API_KEY");
-const voiceId = Deno.env.get("ELEVENLABS_VOICE_ID"); // wyWA56cQNU2KqUW4eCsI
-const modelId = Deno.env.get("ELEVENLABS_MODEL_ID"); // eleven_flash_v2_5
-
-// Generate speech
-const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-  method: "POST",
-  headers: {
-    "xi-api-key": elevenLabsApiKey,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    text,
-    model_id: modelId,
-    voice_settings: {
-      stability: 0.4,
-      similarity_boost: 0.7,
-    },
-    output_format: "mp3_44100_128",
-  }),
-});
-```
-
-### Features
-- **Automatic Narration**: Stories with narrator enabled auto-play audio for each chapter
-- **Audio Caching**: Generated audio is cached to reduce API calls
-- **Progress Sync**: Audio playback syncs with text highlighting
-- **Manual Control**: Play/pause narration at any time
-
-## Google Cloud / Gemini Integration Details
-
-### Story Generation
-
-Located in `supabase/functions/generate-story/index.ts`:
-
-```typescript
-// Gemini Configuration
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const GEMINI_MODEL = "gemini-2.0-flash";
-
-// Generate story with context
-const response = await fetch(
-  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": GEMINI_API_KEY,
-    },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.85,
-        topP: 0.9,
-        maxOutputTokens: 4096,
-      },
-    }),
-  }
-);
-```
-
-### Story Memory System
-- **Outline Generation**: Creates complete story structure upfront
-- **Character Consistency**: Maintains character traits across chapters
-- **Plot Threading**: Tracks and resolves narrative threads
-- **Image Context**: Ensures visual consistency in generated images
-
-## Voice Input Implementation
-
-Located in `src/hooks/useVoiceInput.ts`:
-
-```typescript
-// Browser Speech Recognition
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recognition = new SpeechRecognition();
-
-recognition.continuous = false;
-recognition.interimResults = true;
-recognition.lang = 'en-US'; // Supports multiple languages
-
-// Match spoken words to story choices
-function matchVoiceToChoice(transcript, choices) {
-  // Supports: "one", "first", "1", or keywords from choice text
-}
-```
-
-## Getting Started
+## Deployment Instructions
 
 ### Prerequisites
+
 - Node.js 18+
-- Supabase account
-- Google Cloud / Gemini API key
-- ElevenLabs API key and voice ID
-- Stripe account (for subscriptions)
+- pnpm 9.x
+- Supabase CLI
+- Datadog account (EU or US)
 
-### Installation
+### 1. Clone and Install
 
-1. Clone and install:
 ```bash
 git clone https://github.com/mohammadreza87/nexttale.git
 cd nexttale
-npm install
+pnpm install
 ```
 
-2. Configure environment variables (`.env`):
+### 2. Configure Environment Variables
+
+Create `.env` file:
+
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GA_MEASUREMENT_ID=your_ga_id
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
 
-3. Configure Supabase Edge Function secrets:
+### 3. Configure Supabase Secrets
+
 ```bash
+# AI Services
 supabase secrets set GEMINI_API_KEY=your_gemini_key
 supabase secrets set ELEVENLABS_API_KEY=your_elevenlabs_key
 supabase secrets set ELEVENLABS_VOICE_ID=your_voice_id
-supabase secrets set ELEVENLABS_MODEL_ID=eleven_flash_v2_5
+
+# Datadog (Required for observability)
+supabase secrets set DD_API_KEY=your_datadog_api_key
+supabase secrets set DD_SITE=datadoghq.eu  # or datadoghq.com for US
+
+# Optional
 supabase secrets set LEONARDO_API_KEY=your_leonardo_key
-supabase secrets set STRIPE_SECRET_KEY=your_stripe_secret
+supabase secrets set STRIPE_SECRET_KEY=your_stripe_key
 ```
 
-4. Deploy Edge Functions:
+### 4. Deploy Database Migrations
+
 ```bash
-supabase functions deploy
+supabase db push
 ```
 
-5. Start development server:
+### 5. Deploy Edge Functions
+
 ```bash
-npm run dev
+supabase functions deploy generate-story
+supabase functions deploy generate-music
+supabase functions deploy generate-interactive
+supabase functions deploy text-to-speech
 ```
+
+### 6. Start Development Server
+
+```bash
+pnpm dev
+```
+
+### 7. Build for Production
+
+```bash
+pnpm build
+```
+
+---
 
 ## Live Demo
 
 - **App URL**: https://nexttale.vercel.app
-- **Demo Video**: [Coming Soon]
+- **Demo Video**: [YouTube Link - Coming Soon]
+
+---
 
 ## Project Structure
 
@@ -221,46 +310,69 @@ npm run dev
 nexttale/
 ├── src/
 │   ├── components/           # React components
-│   │   ├── StoryReader.tsx  # Main reader with voice input
-│   │   ├── StoryCreator.tsx # Story creation interface
-│   │   └── ...
-│   ├── hooks/
-│   │   └── useVoiceInput.ts # Speech recognition hook
+│   ├── hooks/               # Custom React hooks
 │   ├── lib/                 # Services and utilities
-│   │   ├── supabase.ts     # Supabase client
-│   │   ├── storyService.ts # Story CRUD operations
-│   │   └── types.ts        # TypeScript interfaces
-│   └── App.tsx             # Main application
+│   └── App.tsx              # Main application
 ├── supabase/
-│   └── functions/          # Edge Functions
-│       ├── generate-story/ # Gemini story generation
-│       ├── text-to-speech/ # ElevenLabs TTS
-│       ├── generate-image/ # Leonardo image generation
-│       └── generate-video/ # Leonardo video generation
-└── LICENSE                 # MIT License
+│   └── functions/           # Edge Functions
+│       ├── _shared/
+│       │   └── datadog.ts   # Datadog observability module
+│       ├── generate-story/  # Gemini story generation
+│       ├── generate-music/  # ElevenLabs music
+│       └── text-to-speech/  # ElevenLabs TTS
+├── datadog/
+│   ├── dashboard.json       # Importable dashboard
+│   └── detection-rules.json # Detection rule configs
+├── scripts/
+│   └── traffic-generator.ts # Detection rules demo script
+└── LICENSE                  # MIT License
 ```
+
+---
 
 ## Scripts
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-npm run test         # Run tests
+pnpm dev          # Start development server
+pnpm build        # Build for production
+pnpm preview      # Preview production build
+pnpm lint         # Run ESLint
+pnpm test:run     # Run tests
+pnpm typecheck    # TypeScript check
 ```
+
+---
+
+## Evidence Documentation
+
+### Dashboard Screenshots
+
+[Include screenshots of your Datadog dashboard showing:
+
+- Request volume over time
+- Error rate trends
+- Latency percentiles
+- Cost tracking]
+
+### Detection Rule Triggers
+
+[Include evidence of detection rules triggering:
+
+- Screenshot of triggered monitor
+- Incident created with context
+- Timeline of symptoms → detection → incident]
+
+---
 
 ## License
 
 MIT License - See [LICENSE](./LICENSE) for details.
 
-## Team
-
-Built with passion for storytelling and AI innovation.
+---
 
 ## Acknowledgments
 
 - **Google Cloud / Gemini** - For powerful AI story generation
+- **Datadog** - For comprehensive LLM observability platform
 - **ElevenLabs** - For natural, expressive voice synthesis
-- **Leonardo AI** - For beautiful image and video generation
 - **Supabase** - For the excellent backend infrastructure
