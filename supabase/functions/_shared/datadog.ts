@@ -159,11 +159,96 @@ class DatadogClient {
   private getBaseUrl(endpoint: string): string {
     const { site } = this.config;
     const baseUrls: Record<string, string> = {
-      logs: `https://http-intake.logs.${site}/api/v2/logs`,
+      logs: `https://http-intake.logs.${site}/v1/input`,
       metrics: `https://api.${site}/api/v2/series`,
       events: `https://api.${site}/api/v1/events`,
+      llmobs: `https://api.${site}/api/intake/llm-obs/v1/trace/spans`,
     };
     return baseUrls[endpoint] || baseUrls.logs;
+  }
+
+  /**
+   * Send LLM Observability spans to Datadog
+   */
+  async sendLLMObsSpan(span: {
+    name: string;
+    spanId: string;
+    traceId: string;
+    parentId?: string;
+    startNs: bigint;
+    durationNs: bigint;
+    kind: 'llm' | 'workflow' | 'agent' | 'tool' | 'task';
+    input?: string;
+    output?: string;
+    model?: string;
+    provider?: string;
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+    error?: { message: string; type: string };
+    tags?: string[];
+  }): Promise<void> {
+    if (!this.isEnabled) return;
+
+    const spanData: Record<string, unknown> = {
+      name: span.name,
+      span_id: span.spanId,
+      trace_id: span.traceId,
+      start_ns: span.startNs.toString(),
+      duration: span.durationNs.toString(),
+      status: span.error ? 'error' : 'ok',
+      meta: {
+        kind: span.kind,
+        input: span.input ? { value: span.input } : undefined,
+        output: span.output ? { value: span.output } : undefined,
+        error: span.error,
+        metadata: {
+          model_name: span.model,
+          model_provider: span.provider,
+        },
+      },
+      metrics: {
+        input_tokens: span.inputTokens,
+        output_tokens: span.outputTokens,
+        total_tokens: span.totalTokens,
+      },
+      tags: [...this.getDefaultTags(), ...(span.tags || [])],
+    };
+
+    if (span.parentId) {
+      spanData.parent_id = span.parentId;
+    }
+
+    const payload = {
+      data: {
+        type: 'span',
+        attributes: {
+          ml_app: this.config.service,
+          spans: [spanData],
+          tags: this.getDefaultTags(),
+        },
+      },
+    };
+
+    const url = this.getBaseUrl('llmobs');
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'DD-API-KEY': this.config.apiKey!,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Datadog] LLM Obs span send failed: ${response.status} - ${errorText}`);
+      } else {
+        console.log('[Datadog] LLM Obs span sent successfully');
+      }
+    } catch (error) {
+      console.error('[Datadog] Failed to send LLM Obs span:', error);
+    }
   }
 
   private getDefaultTags(): string[] {
@@ -479,6 +564,9 @@ export async function withLLMTrace<T>(
   context?: LLMTraceContext
 ): Promise<T> {
   const startTime = Date.now();
+  const startNs = BigInt(startTime) * BigInt(1_000_000); // Convert to nanoseconds
+  const traceId = crypto.randomUUID().replace(/-/g, '');
+  const spanId = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
   let success = true;
   let errorType: string | undefined;
   let errorMessage: string | undefined;
@@ -494,6 +582,7 @@ export async function withLLMTrace<T>(
     throw error;
   } finally {
     const durationMs = Date.now() - startTime;
+    const durationNs = BigInt(durationMs) * BigInt(1_000_000);
     const model = context?.model || 'unknown';
 
     // Estimate tokens from prompt and response
@@ -510,7 +599,7 @@ export async function withLLMTrace<T>(
         ? estimateCostUsd(model, promptTokens, completionTokens)
         : undefined;
 
-    // Track the LLM call
+    // Track the LLM call (legacy metrics/logs)
     await datadog.trackLLM({
       model,
       provider,
@@ -523,6 +612,27 @@ export async function withLLMTrace<T>(
       success,
       errorType,
       errorMessage,
+    });
+
+    // Send to LLM Observability API
+    await client.sendLLMObsSpan({
+      name: `${provider}.${operation}`,
+      spanId,
+      traceId,
+      startNs,
+      durationNs,
+      kind: 'llm',
+      input: context?.prompt,
+      output: success && typeof result === 'string' ? (result as string).slice(0, 5000) : undefined,
+      model,
+      provider,
+      inputTokens: promptTokens,
+      outputTokens: completionTokens,
+      totalTokens,
+      error: !success
+        ? { message: errorMessage || 'Unknown error', type: errorType || 'Error' }
+        : undefined,
+      tags: [`operation:${operation}`, `provider:${provider}`],
     });
 
     // Log additional context if provided
