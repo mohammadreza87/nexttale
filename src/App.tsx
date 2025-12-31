@@ -20,7 +20,7 @@ import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
 import { Auth } from './components/Auth';
 import { Quests } from './components/Quests';
-import { LandingPage } from './components/LandingPage';
+import { LandingPageMinimal } from './components/LandingPageMinimal';
 import { TermsOfService, PrivacyPolicy } from './components/legal';
 import { TikTokFeed } from './components/feed';
 import { InteractiveViewer, InteractiveDetail } from './components/interactive';
@@ -312,12 +312,7 @@ function PublicProfileRoute() {
 
 function LandingRoute() {
   const navigate = useNavigate();
-  return (
-    <LandingPage
-      onGetStarted={() => navigate('/')}
-      onSelectStory={(storyId) => navigate(`/story/${storyId}`)}
-    />
-  );
+  return <LandingPageMinimal onGetStarted={() => navigate('/')} />;
 }
 
 function InteractiveDetailRoute() {
