@@ -24,7 +24,7 @@
     "typescript",
     "supabase"
   ],
-  "homepage": "https://nexttale.vercel.app",
+  "homepage": "https://nexttale.app",
   "repository": {
     "type": "git",
     "url": "https://github.com/mohammadreza87/nexttale.git"

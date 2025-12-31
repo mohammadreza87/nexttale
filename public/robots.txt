@@ -1,5 +1,5 @@
 # Next Tale - AI Interactive Content Creator
-# https://nexttale.vercel.app
+# https://nexttale.app
 
 # Allow all search engines
 User-agent: *
@@ -49,7 +49,7 @@ User-agent: Bingbot
 Allow: /
 
 # Sitemap location
-Sitemap: https://nexttale.vercel.app/sitemap.xml
+Sitemap: https://nexttale.app/sitemap.xml
 
 # LLMs.txt for AI assistants
-# See: https://nexttale.vercel.app/llms.txt
+# See: https://nexttale.app/llms.txt
