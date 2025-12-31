@@ -7,6 +7,13 @@ import {
   buildStoryContextPrompt,
   updateMemory,
 } from '../_shared/storyTypes.ts';
+import {
+  datadog,
+  withLLMTrace,
+  withTiming,
+  createLogger,
+  estimateTokens,
+} from '../_shared/datadog.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +23,9 @@ const corsHeaders = {
 
 const DEFAULT_GEMINI_MODEL = Deno.env.get('GEMINI_MODEL') || 'gemini-3-pro-preview';
 const MAX_RETRIES = 1;
+
+// Datadog logger for this function
+const log = createLogger('generate-story');
 
 async function callGemini(
   prompt: string,
@@ -30,61 +40,78 @@ async function callGemini(
     temperature?: number;
     maxOutputTokens?: number;
     responseMimeType?: string;
-  } = {}
+  } = {},
+  traceContext?: { operation?: string; storyId?: string; userId?: string }
 ): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const operation = traceContext?.operation || 'gemini-call';
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  // Use Datadog tracing wrapper for observability
+  return withLLMTrace(
+    'gemini',
+    operation,
+    async () => {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: prompt }],
+            },
+          ],
+          generationConfig: {
+            temperature,
+            maxOutputTokens,
+            responseMimeType,
+            // Disable thinking mode for faster responses and lower token usage
+            thinkingConfig: {
+              thinkingBudget: 0,
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        log.error('Gemini API error', { status: response.status, error: errorText });
+        throw new Error(`Gemini request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Log the response structure for debugging
+      log.info('Gemini response received', { candidates: data?.candidates?.length || 0 });
+
+      const text =
+        data?.candidates?.[0]?.content?.parts
+          ?.map((part: any) => part?.text || '')
+          .join('')
+          .trim() || '';
+
+      if (!text) {
+        log.error('No text in Gemini response', {
+          response_preview: JSON.stringify(data, null, 2).slice(0, 500),
+        });
+        throw new Error('Gemini returned no content');
+      }
+
+      log.info('Gemini text generated', { length: text.length });
+      return text;
     },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: {
-        temperature,
-        maxOutputTokens,
-        responseMimeType,
-        // Disable thinking mode for faster responses and lower token usage
-        thinkingConfig: {
-          thinkingBudget: 0,
-        },
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Gemini API error:', errorText);
-    throw new Error(`Gemini request failed with status ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  // Log the response structure for debugging
-  console.log('[callGemini] Response candidates:', data?.candidates?.length || 0);
-
-  const text =
-    data?.candidates?.[0]?.content?.parts
-      ?.map((part: any) => part?.text || '')
-      .join('')
-      .trim() || '';
-
-  if (!text) {
-    console.error(
-      '[callGemini] No text found in response:',
-      JSON.stringify(data, null, 2).slice(0, 500)
-    );
-    throw new Error('Gemini returned no content');
-  }
-
-  console.log('[callGemini] Text response length:', text.length);
-  return text;
+    {
+      prompt,
+      model,
+      temperature,
+      maxTokens: maxOutputTokens,
+      storyId: traceContext?.storyId,
+      userId: traceContext?.userId,
+    }
+  );
 }
 
 interface StoryRequest {
@@ -651,6 +678,8 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  const requestStartTime = Date.now();
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -819,6 +848,19 @@ Deno.serve(async (req: Request) => {
         chapterSummary: firstChapter.chapterSummary,
       };
 
+      // Track successful full story generation
+      const durationMs = Date.now() - requestStartTime;
+      log.info('Full story generated successfully', {
+        title,
+        duration_ms: durationMs,
+        chapters: outline.totalChapters,
+        user_id: user.id,
+      });
+      await datadog.trackRequest('generate-story', durationMs, true, [
+        'type:full_story',
+        `language:${detectedLanguage}`,
+      ]);
+
       return new Response(JSON.stringify(response), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -873,6 +915,20 @@ Deno.serve(async (req: Request) => {
 
         // Save updated memory to database
         await supabase.from('stories').update({ story_memory: updatedMemory }).eq('id', storyId);
+
+        // Track successful continuation generation
+        const durationMs = Date.now() - requestStartTime;
+        log.info('Continuation generated successfully', {
+          story_id: storyId,
+          chapter: updatedMemory.currentChapter,
+          is_ending: result.isEnding,
+          duration_ms: durationMs,
+        });
+        await datadog.trackRequest('generate-story', durationMs, true, [
+          'type:continuation',
+          `chapter:${updatedMemory.currentChapter}`,
+          `is_ending:${result.isEnding}`,
+        ]);
 
         return new Response(JSON.stringify(result), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -963,11 +1019,32 @@ Create opening with 2-3 choices in language: ${detectedLanguage}.`;
       throw new Error('Non-ending story must have at least 2 choices');
     }
 
+    // Track successful legacy generation
+    const durationMs = Date.now() - requestStartTime;
+    log.info('Legacy story generated successfully', {
+      chapter: currentChapter + 1,
+      is_ending: storyData.isEnding,
+      duration_ms: durationMs,
+    });
+    await datadog.trackRequest('generate-story', durationMs, true, [
+      'type:legacy',
+      `chapter:${currentChapter + 1}`,
+      `is_ending:${storyData.isEnding}`,
+    ]);
+
     return new Response(JSON.stringify(storyData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error:', error);
+    const durationMs = Date.now() - requestStartTime;
+    log.error('Request failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration_ms: durationMs,
+    });
+
+    // Track failed request
+    await datadog.trackRequest('generate-story', durationMs, false, ['error:true']);
+
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

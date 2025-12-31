@@ -1,0 +1,304 @@
+{
+  "title": "NextTale LLM Observability Dashboard",
+  "description": "End-to-end observability for NextTale's AI-powered story generation platform",
+  "widgets": [
+    {
+      "id": 1,
+      "definition": {
+        "title": "LLM Request Overview",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Total LLM Requests",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "sum:nexttale.llm.request.count{*}.as_count()",
+                  "aggregator": "sum"
+                }
+              ],
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "LLM Success Rate",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "sum:nexttale.llm.request.count{success:true}.as_count() / sum:nexttale.llm.request.count{*}.as_count() * 100",
+                  "aggregator": "avg"
+                }
+              ],
+              "precision": 1,
+              "custom_unit": "%"
+            }
+          },
+          {
+            "definition": {
+              "title": "Avg LLM Latency",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "avg:nexttale.llm.request.duration{*}",
+                  "aggregator": "avg"
+                }
+              ],
+              "precision": 0,
+              "custom_unit": "ms"
+            }
+          },
+          {
+            "definition": {
+              "title": "Estimated AI Cost (24h)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "sum:nexttale.llm.cost.usd{*}.as_count() / 1000000",
+                  "aggregator": "sum"
+                }
+              ],
+              "precision": 2,
+              "custom_unit": "$"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "definition": {
+        "title": "LLM Request Latency by Operation",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "avg:nexttale.llm.request.duration{*} by {operation}",
+            "display_type": "line"
+          }
+        ],
+        "yaxis": {
+          "label": "Latency (ms)"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "definition": {
+        "title": "LLM Requests by Provider",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:nexttale.llm.request.count{*} by {provider}.as_count()",
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "definition": {
+        "title": "Token Usage Over Time",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:nexttale.llm.tokens.total{*}.as_count()",
+            "display_type": "area"
+          }
+        ],
+        "yaxis": {
+          "label": "Tokens"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "definition": {
+        "title": "LLM Error Rate by Model",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:nexttale.llm.request.count{success:false} by {model}.as_count() / sum:nexttale.llm.request.count{*} by {model}.as_count() * 100",
+            "display_type": "line"
+          }
+        ],
+        "yaxis": {
+          "label": "Error Rate (%)"
+        },
+        "markers": [
+          {
+            "value": "y = 5",
+            "display_type": "error dashed",
+            "label": "Alert Threshold"
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "definition": {
+        "title": "Story Generation Performance",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Stories Generated (24h)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "sum:nexttale.request.count{operation:generate-story,type:full_story}.as_count()",
+                  "aggregator": "sum"
+                }
+              ],
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Chapters Generated (24h)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "sum:nexttale.request.count{operation:generate-story,type:continuation}.as_count()",
+                  "aggregator": "sum"
+                }
+              ],
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Avg Story Generation Time",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "avg:nexttale.request.duration{operation:generate-story,type:full_story}",
+                  "aggregator": "avg"
+                }
+              ],
+              "precision": 0,
+              "custom_unit": "ms"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "definition": {
+        "title": "Request Latency Distribution",
+        "type": "heatmap",
+        "requests": [
+          {
+            "q": "avg:nexttale.request.duration{*} by {operation}"
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "definition": {
+        "title": "P95 Latency by Operation",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "p95:nexttale.llm.request.duration{*} by {operation}",
+            "display_type": "line"
+          }
+        ],
+        "yaxis": {
+          "label": "P95 Latency (ms)"
+        },
+        "markers": [
+          {
+            "value": "y = 30000",
+            "display_type": "warning dashed",
+            "label": "30s Warning"
+          },
+          {
+            "value": "y = 60000",
+            "display_type": "error dashed",
+            "label": "60s Critical"
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "definition": {
+        "title": "Cost Analysis",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Hourly AI Spend",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:nexttale.llm.cost.usd{*}.as_count().rollup(sum, 3600) / 1000000",
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "label": "Cost ($)"
+              }
+            }
+          },
+          {
+            "definition": {
+              "title": "Cost by Model",
+              "type": "toplist",
+              "requests": [
+                {
+                  "q": "sum:nexttale.llm.cost.usd{*} by {model}.as_count() / 1000000"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "definition": {
+        "title": "Error Logs",
+        "type": "log_stream",
+        "query": "service:nexttale-edge status:error",
+        "columns": ["@timestamp", "@operation", "@error.message"],
+        "message_display": "expanded-md"
+      }
+    },
+    {
+      "id": 11,
+      "definition": {
+        "title": "Detection Signals",
+        "type": "event_stream",
+        "query": "tags:signal:* source:nexttale",
+        "event_size": "l"
+      }
+    }
+  ],
+  "template_variables": [
+    {
+      "name": "env",
+      "prefix": "env",
+      "default": "production"
+    },
+    {
+      "name": "operation",
+      "prefix": "operation",
+      "default": "*"
+    },
+    {
+      "name": "model",
+      "prefix": "model",
+      "default": "*"
+    }
+  ],
+  "layout_type": "ordered",
+  "notify_list": [],
+  "reflow_type": "fixed"
+}
