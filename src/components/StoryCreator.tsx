@@ -177,6 +177,15 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
 
       let storyInsertError: any = null;
       let storyResult: any = null;
+
+      // Helper to check if error is related to a column
+      const isColumnError = (error: any, columnName: string) =>
+        error &&
+        (error.message?.toLowerCase().includes(columnName) ||
+          error.details?.toLowerCase().includes(columnName) ||
+          error.hint?.toLowerCase().includes(columnName));
+
+      // First attempt with all data
       const storyResponse = await supabase
         .from('stories')
         .insert(storyInsertData as any)
@@ -185,10 +194,9 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
       storyResult = storyResponse.data;
       storyInsertError = storyResponse.error;
 
-      if (
-        storyInsertError?.code === 'PGRST204' &&
-        storyInsertError?.message?.includes('story_memory')
-      ) {
+      // Retry without story_memory if that column causes issues
+      if (storyInsertError && isColumnError(storyInsertError, 'story_memory')) {
+        console.log('Retrying without story_memory');
         delete storyInsertData.story_memory;
         const retry = await supabase
           .from('stories')
@@ -199,10 +207,9 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
         storyInsertError = retry.error;
       }
 
-      if (
-        storyInsertError?.code === 'PGRST204' &&
-        storyInsertError?.message?.includes('story_outline')
-      ) {
+      // Retry without story_outline if that column causes issues
+      if (storyInsertError && isColumnError(storyInsertError, 'story_outline')) {
+        console.log('Retrying without story_outline');
         delete storyInsertData.story_outline;
         const retry = await supabase
           .from('stories')
@@ -213,7 +220,10 @@ export function StoryCreator({ userId, onStoryCreated }: StoryCreatorProps) {
         storyInsertError = retry.error;
       }
 
-      if (storyInsertError) throw storyInsertError;
+      if (storyInsertError) {
+        console.error('Story insert failed:', storyInsertError);
+        throw storyInsertError;
+      }
       const story = storyResult;
 
       setProgress('Creating first chapter...');
