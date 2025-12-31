@@ -46,7 +46,7 @@ function getConfig(): DatadogConfig {
     apiKey,
     site,
     env: Deno.env.get('DD_ENV') || 'production',
-    service: Deno.env.get('DD_SERVICE') || 'nexttale-edge',
+    service: Deno.env.get('DD_SERVICE') || 'nexttale',
     version: Deno.env.get('DD_VERSION') || '1.0.0',
     enabled: !!apiKey,
   };

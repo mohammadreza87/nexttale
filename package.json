@@ -3,6 +3,37 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "description": "AI-powered interactive content creator. Generate games, stories, tools, quizzes and widgets with natural language prompts. No coding required. The TikTok for AI-generated content.",
+  "keywords": [
+    "ai",
+    "artificial-intelligence",
+    "game-generator",
+    "story-generator",
+    "interactive-content",
+    "no-code",
+    "ai-games",
+    "ai-stories",
+    "quiz-maker",
+    "widget-builder",
+    "prompt-to-game",
+    "text-to-game",
+    "gemini",
+    "claude",
+    "elevenlabs",
+    "react",
+    "typescript",
+    "supabase"
+  ],
+  "homepage": "https://nexttale.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mohammadreza87/nexttale.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mohammadreza87/nexttale/issues"
+  },
+  "author": "Next Tale Team",
+  "license": "MIT",
   "workspaces": [
     "packages/*"
   ],

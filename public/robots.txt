@@ -1,0 +1,55 @@
+# Next Tale - AI Interactive Content Creator
+# https://nexttale.vercel.app
+
+# Allow all search engines
+User-agent: *
+Allow: /
+
+# Allow AI crawlers explicitly
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Anthropic-AI
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Sitemap location
+Sitemap: https://nexttale.vercel.app/sitemap.xml
+
+# LLMs.txt for AI assistants
+# See: https://nexttale.vercel.app/llms.txt

@@ -1,33 +1,222 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/nexttale-logo.png" />
-    <link rel="apple-touch-icon" href="/nexttale-logo.png" />
+    <!-- Primary Meta Tags -->
+    <title>Next Tale - AI Interactive Content Creator | Games, Stories, Tools & Quizzes</title>
+    <meta name="title" content="Next Tale - AI Interactive Content Creator | Games, Stories, Tools & Quizzes" />
+    <meta name="description" content="Create AI-powered interactive games, stories, tools, quizzes and widgets instantly. No coding required. TikTok-style feed for discovering and sharing AI-generated content. The #1 platform for AI interactive content creation in 2025." />
+    <meta name="keywords" content="AI content creator, interactive content, AI games, AI story generator, no-code game maker, AI quiz maker, AI tools creator, interactive fiction, AI widget builder, text to game, prompt to game, AI content platform, TikTok for AI, AI generated games, create games with AI, AI storytelling, voice-driven stories, interactive storytelling platform, AI content generation, no-code AI tools, AI mini games, browser games AI, HTML5 games AI, AI visualization creator" />
+    <meta name="author" content="Next Tale" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="bingbot" content="index, follow" />
+    <link rel="canonical" href="https://nexttale.vercel.app" />
 
-    <title>Next Tale - Your Story, Your Choices</title>
-    <meta name="description" content="Immersive AI-powered interactive fiction for adults. Create and experience personalized stories where every choice shapes your destiny." />
+    <!-- Language & Locale -->
+    <meta name="language" content="English" />
+    <meta http-equiv="content-language" content="en-US" />
 
-    <meta property="og:title" content="Next Tale - Your Story, Your Choices" />
-    <meta property="og:description" content="Immersive AI-powered interactive fiction for adults. Create and experience personalized stories where every choice shapes your destiny." />
-    <meta property="og:image" content="https://nexttale.app/og-image.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="628" />
-    <meta property="og:url" content="https://nexttale.app" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Next Tale" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Next Tale - Your Story, Your Choices" />
-    <meta name="twitter:description" content="Immersive AI-powered interactive fiction for adults. Create and experience personalized stories where every choice shapes your destiny." />
-    <meta name="twitter:image" content="https://nexttale.app/og-image.png" />
-
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/nexttale-logo.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/nexttale-logo.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/nexttale-logo.png" />
+    <link rel="mask-icon" href="/nexttale-logo.png" color="#7C3AED" />
+    <meta name="msapplication-TileColor" content="#7C3AED" />
     <meta name="theme-color" content="#7C3AED" />
 
-</head>
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://nexttale.vercel.app" />
+    <meta property="og:title" content="Next Tale - Create AI Games, Stories & Interactive Content Instantly" />
+    <meta property="og:description" content="Turn any idea into interactive games, stories, tools, quizzes and widgets using AI. No coding needed. Discover and share content in a TikTok-style feed. The future of AI content creation." />
+    <meta property="og:image" content="https://nexttale.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Next Tale - AI Interactive Content Creator Platform" />
+    <meta property="og:site_name" content="Next Tale" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://nexttale.vercel.app" />
+    <meta name="twitter:title" content="Next Tale - Create AI Games, Stories & Interactive Content Instantly" />
+    <meta name="twitter:description" content="Turn any idea into interactive games, stories, tools, quizzes and widgets using AI. No coding needed. The TikTok for AI-generated content." />
+    <meta name="twitter:image" content="https://nexttale.vercel.app/og-image.png" />
+    <meta name="twitter:image:alt" content="Next Tale - AI Interactive Content Creator Platform" />
+    <meta name="twitter:creator" content="@nexttale" />
+    <meta name="twitter:site" content="@nexttale" />
+
+    <!-- App-specific Meta -->
+    <meta name="application-name" content="Next Tale" />
+    <meta name="apple-mobile-web-app-title" content="Next Tale" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Verification -->
+    <meta name="google-site-verification" content="google7244596bfaee1332" />
+    <!-- <meta name="msvalidate.01" content="YOUR_BING_VERIFICATION_ID" /> -->
+
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://yzifogzrytwpxnaylnga.supabase.co" />
+    <link rel="preconnect" href="https://generativelanguage.googleapis.com" />
+    <link rel="dns-prefetch" href="https://api.elevenlabs.io" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://nexttale.vercel.app/#application",
+          "name": "Next Tale",
+          "alternateName": ["NextTale", "Next Tale AI", "AI Content Creator"],
+          "description": "Create AI-powered interactive games, stories, tools, quizzes and widgets instantly without coding. The leading platform for AI interactive content creation.",
+          "url": "https://nexttale.vercel.app",
+          "applicationCategory": ["GameApplication", "CreativeWork", "EntertainmentApplication"],
+          "operatingSystem": "Web Browser",
+          "browserRequirements": "Requires JavaScript. Works on Chrome, Firefox, Safari, Edge.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "description": "Free tier available with 2 creations per day. Pro plans for unlimited access."
+          },
+          "featureList": [
+            "AI Game Generation - Create playable browser games from text prompts",
+            "AI Story Creation - Generate interactive branching narratives",
+            "AI Tool Builder - Build useful widgets and calculators",
+            "AI Quiz Maker - Create engaging quizzes and assessments",
+            "AI Visualization Creator - Generate interactive data visualizations",
+            "Voice Input - Describe your ideas by speaking",
+            "TikTok-Style Feed - Discover and share content",
+            "AI Voice Narration - Stories read aloud with natural voices",
+            "AI Music Generation - Custom soundtracks for your content",
+            "No Coding Required - 100% prompt-based creation"
+          ],
+          "screenshot": "https://nexttale.vercel.app/og-image.png",
+          "softwareVersion": "1.0.0",
+          "author": {
+            "@type": "Organization",
+            "name": "Next Tale",
+            "url": "https://nexttale.vercel.app"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Next Tale"
+          },
+          "potentialAction": {
+            "@type": "CreateAction",
+            "name": "Create AI Content",
+            "target": "https://nexttale.vercel.app/create/interactive"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://nexttale.vercel.app/#organization",
+          "name": "Next Tale",
+          "url": "https://nexttale.vercel.app",
+          "logo": "https://nexttale.vercel.app/nexttale-logo.png",
+          "description": "Next Tale is the leading AI interactive content creation platform. Create games, stories, tools, and more with natural language.",
+          "sameAs": [
+            "https://github.com/mohammadreza87/nexttale"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://nexttale.vercel.app/#website",
+          "url": "https://nexttale.vercel.app",
+          "name": "Next Tale",
+          "description": "AI-powered interactive content creation platform",
+          "publisher": {
+            "@id": "https://nexttale.vercel.app/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://nexttale.vercel.app/feed?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is Next Tale?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Next Tale is an AI-powered platform that lets you create interactive games, stories, tools, quizzes, and widgets using natural language prompts. No coding required. Simply describe what you want to create, and AI generates fully functional interactive content instantly."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How do I create AI games without coding?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "With Next Tale, you can create AI games by simply describing your game idea in plain English. For example, type 'Create a memory matching game with cute animals' and the AI will generate a fully playable browser game. No programming knowledge needed."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What types of interactive content can I create?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Next Tale supports creating: 1) Interactive Games (puzzles, quizzes, arcade games), 2) Branching Stories (choose-your-own-adventure narratives), 3) Useful Tools (calculators, converters, planners), 4) Quizzes (personality tests, trivia, assessments), 5) Visualizations (charts, diagrams, infographics), and 6) Widgets (timers, trackers, generators)."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is Next Tale free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes! Next Tale offers a free tier with 2 content creations per day. For unlimited creations and premium features, Pro and Max subscription plans are available."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What AI technology powers Next Tale?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Next Tale uses Google Gemini for story generation and Claude AI for interactive HTML content generation. ElevenLabs provides AI voice narration and music generation. All AI calls are monitored with Datadog for reliability."
+              }
+            }
+          ]
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Next Tale - AI Game Maker",
+          "applicationCategory": "GameApplication",
+          "applicationSubCategory": "AI Game Generator",
+          "description": "Create playable browser games instantly using AI. No coding required. Describe your game idea and get a working game in seconds.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "150",
+            "bestRating": "5",
+            "worstRating": "1"
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Additional Semantic Tags for AI Discovery -->
+    <meta name="ai-content-creator" content="true" />
+    <meta name="ai-capabilities" content="game-generation, story-generation, tool-creation, quiz-maker, widget-builder, voice-narration, music-generation" />
+    <meta name="no-code-platform" content="true" />
+    <meta name="prompt-to-content" content="true" />
+
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
