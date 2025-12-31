@@ -183,102 +183,79 @@ export function LandingPageMinimal({ onGetStarted }: LandingPageMinimalProps) {
               </div>
             </div>
 
-            {/* Right: Phone Mockup */}
+            {/* Right: Content Card */}
             <div className="flex justify-center lg:justify-end">
-              <div className="relative">
-                {/* Phone Frame */}
-                <div className="relative h-[600px] w-[300px] overflow-hidden rounded-[3rem] border-[8px] border-gray-800 bg-gray-900 shadow-2xl shadow-purple-500/10">
-                  {/* Notch */}
-                  <div className="absolute left-1/2 top-2 z-20 h-6 w-24 -translate-x-1/2 rounded-full bg-gray-800" />
-
-                  {/* Screen Content */}
-                  <div className="relative h-full w-full overflow-hidden bg-gray-950 pt-8">
-                    {loading ? (
-                      <div className="flex h-full items-center justify-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
-                      </div>
-                    ) : featuredContent ? (
-                      <div className="flex h-full flex-col">
-                        {/* Content Preview */}
-                        <div className="relative flex-1">
-                          {featuredContent.thumbnail_url ? (
-                            <img
-                              src={featuredContent.thumbnail_url}
-                              alt={featuredContent.title}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full flex-col items-center justify-center bg-gradient-to-br from-purple-900 via-gray-900 to-pink-900 p-6">
-                              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-sm">
-                                {featuredContent.feed_type === 'game' && (
-                                  <Gamepad2 className="h-10 w-10 text-purple-300" />
-                                )}
-                                {featuredContent.feed_type === 'story' && (
-                                  <BookOpen className="h-10 w-10 text-purple-300" />
-                                )}
-                                {(featuredContent.feed_type === 'tool' ||
-                                  featuredContent.feed_type === 'widget') && (
-                                  <Wrench className="h-10 w-10 text-purple-300" />
-                                )}
-                                {featuredContent.feed_type !== 'game' &&
-                                  featuredContent.feed_type !== 'story' &&
-                                  featuredContent.feed_type !== 'tool' &&
-                                  featuredContent.feed_type !== 'widget' && (
-                                    <Sparkles className="h-10 w-10 text-purple-300" />
-                                  )}
-                              </div>
-                              <p className="text-center text-sm font-medium text-white/70">
-                                {getContentTypeLabel(featuredContent.feed_type)}
-                              </p>
+              <div className="relative w-full max-w-sm">
+                {/* Card */}
+                <div
+                  onClick={onGetStarted}
+                  className="group cursor-pointer overflow-hidden rounded-3xl border border-gray-800 bg-gray-900 shadow-2xl shadow-purple-500/10 transition-all duration-300 hover:border-purple-500/50 hover:shadow-purple-500/20"
+                >
+                  {loading ? (
+                    <div className="flex aspect-[3/4] items-center justify-center">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+                    </div>
+                  ) : featuredContent ? (
+                    <div className="relative">
+                      {/* Image */}
+                      <div className="relative aspect-[3/4] overflow-hidden">
+                        {featuredContent.thumbnail_url ? (
+                          <img
+                            src={featuredContent.thumbnail_url}
+                            alt={featuredContent.title}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center bg-gradient-to-br from-purple-900 via-gray-900 to-pink-900">
+                            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10">
+                              {getContentTypeIcon(featuredContent.feed_type)}
                             </div>
-                          )}
-
-                          {/* Gradient overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent" />
-
-                          {/* Content type badge */}
-                          <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                            {getContentTypeIcon(featuredContent.feed_type)}
-                            {getContentTypeLabel(featuredContent.feed_type)}
                           </div>
-                        </div>
+                        )}
 
-                        {/* Content Info */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          <h3 className="mb-1 line-clamp-2 text-lg font-bold text-white">
-                            {featuredContent.title}
-                          </h3>
-                          {featuredContent.description && (
-                            <p className="mb-3 line-clamp-2 text-sm text-gray-400">
-                              {featuredContent.description}
-                            </p>
-                          )}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1 text-sm text-gray-400">
-                              <Heart className="h-4 w-4 fill-pink-500 text-pink-500" />
-                              <span>{featuredContent.likes_count}</span>
-                            </div>
-                            <button className="flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900">
-                              <Play className="h-3.5 w-3.5 fill-current" />
-                              {featuredContent.feed_type === 'story' ? 'Read' : 'Play'}
-                            </button>
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/20 to-transparent" />
+
+                        {/* Content type badge */}
+                        <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+                          {getContentTypeIcon(featuredContent.feed_type)}
+                          {getContentTypeLabel(featuredContent.feed_type)}
+                        </div>
+                      </div>
+
+                      {/* Content Info */}
+                      <div className="p-5">
+                        <h3 className="mb-2 text-xl font-bold text-white transition-colors group-hover:text-purple-300">
+                          {featuredContent.title}
+                        </h3>
+                        {featuredContent.description && (
+                          <p className="mb-4 line-clamp-2 text-sm text-gray-400">
+                            {featuredContent.description}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-sm text-gray-400">
+                            <Heart className="h-4 w-4 fill-pink-500 text-pink-500" />
+                            <span>{featuredContent.likes_count}</span>
+                          </div>
+                          <div className="flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white transition-all group-hover:shadow-lg group-hover:shadow-purple-500/25">
+                            <Play className="h-4 w-4 fill-current" />
+                            {featuredContent.feed_type === 'story' ? 'Read Now' : 'Try It'}
                           </div>
                         </div>
                       </div>
-                    ) : (
-                      <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-                        <Sparkles className="mb-4 h-12 w-12 text-purple-500" />
-                        <p className="text-sm text-gray-500">
-                          Create your first content and see it here!
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="flex aspect-[3/4] flex-col items-center justify-center p-6 text-center">
+                      <Sparkles className="mb-4 h-12 w-12 text-purple-500" />
+                      <p className="text-sm text-gray-500">Be the first to create!</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Decorative elements */}
-                <div className="absolute -bottom-4 -left-4 h-24 w-24 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 opacity-20 blur-xl" />
-                <div className="absolute -right-4 -top-4 h-24 w-24 rounded-2xl bg-gradient-to-br from-pink-600 to-rose-600 opacity-20 blur-xl" />
+                <div className="absolute -bottom-6 -left-6 -z-10 h-32 w-32 rounded-3xl bg-gradient-to-br from-purple-600 to-pink-600 opacity-30 blur-2xl" />
+                <div className="absolute -right-6 -top-6 -z-10 h-32 w-32 rounded-3xl bg-gradient-to-br from-pink-600 to-rose-600 opacity-30 blur-2xl" />
               </div>
             </div>
           </div>
