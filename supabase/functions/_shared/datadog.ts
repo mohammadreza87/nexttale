@@ -169,7 +169,7 @@ class DatadogClient {
 
   /**
    * Send LLM Observability spans to Datadog
-   * Using the official LLM Obs agentless HTTP API format from dd-trace-py
+   * Using the same format as vox project (which works)
    */
   async sendLLMObsSpan(span: {
     name: string;
@@ -186,8 +186,10 @@ class DatadogClient {
     inputTokens?: number;
     outputTokens?: number;
     totalTokens?: number;
+    estimatedCostUsd?: number;
     error?: { message: string; type: string };
     tags?: string[];
+    userId?: string;
   }): Promise<void> {
     if (!this.isEnabled) {
       console.log('[Datadog] LLM Obs disabled - no API key');
@@ -198,25 +200,34 @@ class DatadogClient {
     const startNsNum = Number(span.startNs);
     const durationNum = Number(span.durationNs);
 
-    // Build meta object
+    // Build meta object (matching vox format)
     const meta: Record<string, unknown> = {
       kind: span.kind,
-      model_name: span.model || 'unknown',
-      model_provider: span.provider || 'unknown',
+      input: {
+        messages: [
+          { role: 'user', content: span.input ? `[Prompt - ${span.input.length} chars]` : '' },
+        ],
+      },
+      output: {
+        messages: [
+          {
+            role: 'assistant',
+            content: span.output ? `[Response - ${span.output.length} chars]` : '',
+          },
+        ],
+      },
+      metadata: {
+        model_name: span.model || 'unknown',
+        model_provider: span.provider || 'unknown',
+      },
     };
-
-    // Add input/output in the format Datadog expects
-    if (span.input) {
-      meta['input'] = { value: span.input };
-    }
-    if (span.output) {
-      meta['output'] = { value: span.output };
-    }
 
     // Add error info if present
     if (span.error) {
-      meta['error.message'] = span.error.message;
-      meta['error.type'] = span.error.type;
+      meta['error'] = {
+        message: span.error.message,
+        type: span.error.type,
+      };
     }
 
     // Build metrics object
@@ -230,39 +241,46 @@ class DatadogClient {
     if (span.totalTokens !== undefined) {
       metrics['total_tokens'] = span.totalTokens;
     }
+    if (span.estimatedCostUsd !== undefined) {
+      metrics['total_cost'] = span.estimatedCostUsd;
+    }
 
-    // Build the span object according to Datadog LLM Obs API spec (from dd-trace-py _writer.py)
+    // Build tags array
+    const allTags = [
+      ...this.getDefaultTags(),
+      ...(span.tags || []),
+      span.userId ? `user_id:${span.userId}` : '',
+    ].filter(Boolean);
+
+    // Build the span object (matching vox format)
     const spanData: Record<string, unknown> = {
+      name: span.name,
       span_id: span.spanId,
       trace_id: span.traceId,
-      name: span.name,
+      parent_id: span.parentId || 'undefined',
       start_ns: startNsNum,
       duration: durationNum,
       status: span.error ? 'error' : 'ok',
       meta,
       metrics,
-      tags: [...this.getDefaultTags(), ...(span.tags || [])],
-      service: this.config.service,
-      session_id: span.traceId, // Use traceId as session for grouping
+      tags: allTags,
     };
 
-    if (span.parentId) {
-      spanData.parent_id = span.parentId;
-    }
-
-    // Payload format from dd-trace-py _writer.py - array of event objects
-    const payload = [
-      {
-        '_dd.stage': 'raw',
-        '_dd.tracer_version': '1.0.0',
-        event_type: 'span',
-        ml_app: this.config.service,
-        spans: [spanData],
+    // Payload format matching vox (data.attributes.spans structure)
+    const payload = {
+      data: {
+        type: 'span',
+        attributes: {
+          ml_app: this.config.service,
+          session_id: span.traceId,
+          tags: allTags,
+          spans: [spanData],
+        },
       },
-    ];
+    };
 
-    // Use llm-obs intake endpoint (agentless mode)
-    const url = `https://llmobs-intake.${this.config.site}/api/v2/llmobs/v1/spans`;
+    // Use the same endpoint as vox
+    const url = `https://api.${this.config.site}/api/intake/llm-obs/v1/trace/spans`;
     console.log(`[Datadog] Sending LLM Obs span to: ${url}`);
     console.log(`[Datadog] Span: ${span.name}, traceId: ${span.traceId}, model: ${span.model}`);
 
