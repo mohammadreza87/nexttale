@@ -261,8 +261,8 @@ class DatadogClient {
       },
     ];
 
-    // Use llm-obs intake endpoint
-    const url = `https://llmobs-intake.${this.config.site}/api/v2/llmobs`;
+    // Use llm-obs intake endpoint (agentless mode)
+    const url = `https://llmobs-intake.${this.config.site}/api/v2/llmobs/v1/spans`;
     console.log(`[Datadog] Sending LLM Obs span to: ${url}`);
     console.log(`[Datadog] Span: ${span.name}, traceId: ${span.traceId}, model: ${span.model}`);
 
