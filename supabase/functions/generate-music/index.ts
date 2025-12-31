@@ -1,5 +1,8 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
+import { withLLMTrace, createLogger, datadog } from '../_shared/datadog.ts';
+
+const log = createLogger('generate-music');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -281,29 +284,49 @@ Deno.serve(async (req: Request) => {
     const validDuration = Math.min(Math.max(durationSeconds, 3), 600);
     const durationMs = validDuration * 1000;
 
-    console.log(`Generating music for user ${user.id}: "${prompt.slice(0, 50)}"`);
-
-    // Step 1: Generate music plan with Gemini
-    console.log('Generating music plan...');
-    const musicPlan = await generateMusicPlanWithGemini(
-      prompt,
+    log.info(`Generating music for user ${user.id}`, {
+      prompt: prompt.slice(0, 50),
       genre,
       mood,
       instrumental,
-      voiceType,
-      geminiApiKey
+      durationSeconds: validDuration,
+    });
+
+    // Step 1: Generate music plan with Gemini
+    log.info('Generating music plan...');
+    const musicPlan = await withLLMTrace(
+      'gemini',
+      'music-plan',
+      () => generateMusicPlanWithGemini(prompt, genre, mood, instrumental, voiceType, geminiApiKey),
+      {
+        prompt,
+        model: 'gemini-2.0-flash-exp',
+        userId: user.id,
+        metadata: { genre, mood, instrumental },
+      }
     );
-    console.log(`Music plan generated: "${musicPlan.title}"`);
+    log.info(`Music plan generated: "${musicPlan.title}"`);
 
     // Step 2: Generate actual music with ElevenLabs Music API
-    console.log('Generating music audio...');
-    const audioBuffer = await generateMusicWithElevenLabs(
-      musicPlan.musicPrompt,
-      instrumental,
-      durationMs,
-      elevenLabsApiKey
+    log.info('Generating music audio...');
+    const audioBuffer = await withLLMTrace(
+      'elevenlabs',
+      'music-generation',
+      () =>
+        generateMusicWithElevenLabs(
+          musicPlan.musicPrompt,
+          instrumental,
+          durationMs,
+          elevenLabsApiKey
+        ),
+      {
+        prompt: musicPlan.musicPrompt,
+        model: 'music_v1',
+        userId: user.id,
+        metadata: { durationMs, instrumental },
+      }
     );
-    console.log(`Music generated: ${audioBuffer.byteLength} bytes`);
+    log.info(`Music generated: ${audioBuffer.byteLength} bytes`);
 
     // Step 3: Upload audio to storage
     const fileName = `music/${user.id}/${Date.now()}.mp3`;
@@ -357,7 +380,11 @@ Deno.serve(async (req: Request) => {
       })
       .eq('id', user.id);
 
-    console.log(`Music saved: ${savedMusic.id}`);
+    log.info(`Music saved: ${savedMusic.id}`, { genre: musicPlan.genre, mood: musicPlan.mood });
+    await datadog.metric('music.generated', 1, 'count', [
+      `genre:${musicPlan.genre}`,
+      `mood:${musicPlan.mood}`,
+    ]);
 
     return new Response(
       JSON.stringify({
@@ -367,7 +394,9 @@ Deno.serve(async (req: Request) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error:', error);
+    log.error('Music generation failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',

@@ -1,5 +1,8 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
+import { withLLMTrace, createLogger, datadog } from '../_shared/datadog.ts';
+
+const log = createLogger('generate-interactive');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -604,12 +607,17 @@ Deno.serve(async (req: Request) => {
 
     // Handle edit mode
     if (editMode && existingHtml && editPrompt) {
-      console.log(`Editing content for user ${user.id}: "${editPrompt.slice(0, 100)}"`);
+      log.info(`Editing content for user ${user.id}`, { editPrompt: editPrompt.slice(0, 100) });
 
-      const generated = await callGeminiEdit(existingHtml, editPrompt, geminiApiKey);
+      const generated = await withLLMTrace(
+        'gemini',
+        'interactive-edit',
+        () => callGeminiEdit(existingHtml, editPrompt, geminiApiKey),
+        { prompt: editPrompt, model: 'gemini-2.0-flash-exp', userId: user.id }
+      );
       const sanitizedHtml = sanitizeHtml(generated.html);
 
-      console.log(`Successfully edited: "${generated.title}"`);
+      log.info(`Successfully edited: "${generated.title}"`);
 
       return new Response(
         JSON.stringify({
@@ -650,18 +658,24 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log(
-      `Generating ${contentType} for user ${user.id}: "${sanitizedPrompt.slice(0, 100)}"${imageData ? ' (with image)' : ''}`
-    );
-
-    // Generate content with Gemini
-    const generated = await callGemini(
-      sanitizedPrompt,
+    log.info(`Generating ${contentType} for user ${user.id}`, {
+      prompt: sanitizedPrompt.slice(0, 100),
+      hasImage: !!imageData,
       contentType,
       style,
-      geminiApiKey,
-      imageData,
-      imageType
+    });
+
+    // Generate content with Gemini
+    const generated = await withLLMTrace(
+      'gemini',
+      `interactive-${contentType}`,
+      () => callGemini(sanitizedPrompt, contentType, style, geminiApiKey, imageData, imageType),
+      {
+        prompt: sanitizedPrompt,
+        model: 'gemini-3-pro-preview',
+        userId: user.id,
+        metadata: { contentType, style, hasImage: !!imageData },
+      }
     );
 
     // Sanitize the HTML
@@ -687,7 +701,8 @@ Deno.serve(async (req: Request) => {
       })
       .eq('id', user.id);
 
-    console.log(`Successfully generated: "${generated.title}"`);
+    log.info(`Successfully generated: "${generated.title}"`, { contentType });
+    await datadog.metric('interactive.generated', 1, 'count', [`type:${contentType}`]);
 
     return new Response(
       JSON.stringify({
@@ -697,7 +712,9 @@ Deno.serve(async (req: Request) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error:', error);
+    log.error('Generation failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Unknown error',
