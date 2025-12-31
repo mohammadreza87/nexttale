@@ -41,14 +41,20 @@ interface DatadogConfig {
 
 function getConfig(): DatadogConfig {
   const apiKey = Deno.env.get('DD_API_KEY') || null;
-  return {
+  const site = Deno.env.get('DD_SITE') || 'datadoghq.com';
+  const config = {
     apiKey,
-    site: Deno.env.get('DD_SITE') || 'datadoghq.com',
+    site,
     env: Deno.env.get('DD_ENV') || 'production',
     service: Deno.env.get('DD_SERVICE') || 'nexttale-edge',
     version: Deno.env.get('DD_VERSION') || '1.0.0',
     enabled: !!apiKey,
   };
+  // Log config on first load (without API key for security)
+  console.log(
+    `[Datadog] Config: site=${site}, enabled=${config.enabled}, service=${config.service}`
+  );
+  return config;
 }
 
 // ============================================
@@ -172,7 +178,10 @@ class DatadogClient {
    * Send logs to Datadog
    */
   async sendLogs(entries: LogEntry[]): Promise<void> {
-    if (!this.isEnabled) return;
+    if (!this.isEnabled) {
+      console.log('[Datadog] Disabled - no API key');
+      return;
+    }
 
     const logs = entries.map((entry) => ({
       ddsource: 'deno',
@@ -184,8 +193,9 @@ class DatadogClient {
       ...entry.attributes,
     }));
 
+    const url = this.getBaseUrl('logs');
     try {
-      await fetch(this.getBaseUrl('logs'), {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -193,6 +203,10 @@ class DatadogClient {
         },
         body: JSON.stringify(logs),
       });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Datadog] Log send failed: ${response.status} - ${errorText}`);
+      }
     } catch (error) {
       console.error('[Datadog] Failed to send logs:', error);
     }
@@ -698,11 +712,7 @@ export const DetectionSignals = {
   /**
    * Log service degradation
    */
-  async serviceDegraded(
-    service: string,
-    errorRate: number,
-    avgLatencyMs: number
-  ): Promise<void> {
+  async serviceDegraded(service: string, errorRate: number, avgLatencyMs: number): Promise<void> {
     await datadog.log(
       'error',
       `Service degradation: ${service}`,
