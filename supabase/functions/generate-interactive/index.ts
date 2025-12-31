@@ -227,7 +227,7 @@ Return ONLY the JSON object. No markdown, no explanation, no code blocks.`;
           },
         ],
         generationConfig: {
-          maxOutputTokens: 8192,
+          maxOutputTokens: 16384,
           temperature: 0.7,
         },
       }),
