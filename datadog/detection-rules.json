@@ -1,0 +1,206 @@
+{
+  "detection_rules": [
+    {
+      "name": "LLM High Error Rate",
+      "description": "Alert when LLM error rate exceeds 5% over 5 minutes",
+      "type": "log_detection",
+      "query": "service:nexttale-edge @llm.provider:* status:error",
+      "groupBy": ["@llm.provider", "@llm.model"],
+      "threshold": {
+        "timeWindow": "5m",
+        "count": 5,
+        "percentage": 5
+      },
+      "severity": "high",
+      "actions": [
+        {
+          "type": "incident",
+          "title": "LLM Error Rate Critical - {{@llm.provider}}",
+          "body": "Error rate for {{@llm.provider}}/{{@llm.model}} has exceeded 5%.\n\nAffected operations: {{@llm.operation}}\nRecent errors: {{@error.message}}"
+        }
+      ],
+      "tags": ["team:ai-engineering", "service:nexttale"]
+    },
+    {
+      "name": "LLM Latency Spike",
+      "description": "Alert when LLM requests exceed 30 seconds p95",
+      "type": "metric_alert",
+      "query": "p95:nexttale.llm.request.duration{*} by {operation}",
+      "threshold": {
+        "critical": 30000,
+        "warning": 20000
+      },
+      "evaluation_window": "5m",
+      "severity": "medium",
+      "actions": [
+        {
+          "type": "case",
+          "title": "LLM Latency Degradation",
+          "priority": "P3",
+          "description": "P95 latency for {{operation.name}} exceeded {{threshold.critical}}ms"
+        }
+      ],
+      "tags": ["team:ai-engineering", "service:nexttale"]
+    },
+    {
+      "name": "AI Cost Anomaly",
+      "description": "Alert when hourly AI spend exceeds baseline by 150%",
+      "type": "anomaly_detection",
+      "query": "sum:nexttale.llm.cost.usd{*}.as_count().rollup(sum, 3600) / 1000000",
+      "algorithm": "basic",
+      "threshold": {
+        "critical_bounds": "150%"
+      },
+      "evaluation_window": "1h",
+      "severity": "high",
+      "actions": [
+        {
+          "type": "incident",
+          "title": "AI Cost Anomaly Detected",
+          "body": "Hourly AI spend has exceeded normal baseline by 150%.\n\nCurrent spend: ${{value}}\nExpected range: ${{bounds.lower}} - ${{bounds.upper}}\n\nReview recent activity for potential abuse or misconfiguration."
+        }
+      ],
+      "tags": ["team:ai-engineering", "team:finance", "service:nexttale"]
+    },
+    {
+      "name": "Rate Limit Warning",
+      "description": "Alert when rate limit usage exceeds 80%",
+      "type": "log_detection",
+      "query": "service:nexttale-edge @signal:rate_limit_warning",
+      "groupBy": ["@service"],
+      "threshold": {
+        "count": 1
+      },
+      "severity": "medium",
+      "actions": [
+        {
+          "type": "case",
+          "title": "Rate Limit Approaching - {{@service}}",
+          "priority": "P4",
+          "description": "Rate limit for {{@service}} is at {{@percent_used}}%"
+        }
+      ],
+      "tags": ["team:ai-engineering", "service:nexttale"]
+    },
+    {
+      "name": "Rate Limit Critical",
+      "description": "Alert when rate limit usage exceeds 90%",
+      "type": "log_detection",
+      "query": "service:nexttale-edge @signal:rate_limit_critical",
+      "groupBy": ["@service"],
+      "threshold": {
+        "count": 1
+      },
+      "severity": "high",
+      "actions": [
+        {
+          "type": "incident",
+          "title": "Rate Limit Critical - {{@service}}",
+          "body": "Rate limit for {{@service}} has reached critical level ({{@percent_used}}%).\n\nImmediate action required to prevent service disruption."
+        }
+      ],
+      "tags": ["team:ai-engineering", "service:nexttale"]
+    },
+    {
+      "name": "Abuse Pattern Detected",
+      "description": "Alert on potential abuse patterns",
+      "type": "log_detection",
+      "query": "service:nexttale-edge @signal:abuse_detected",
+      "groupBy": ["@user_id", "@pattern"],
+      "threshold": {
+        "count": 1
+      },
+      "severity": "critical",
+      "actions": [
+        {
+          "type": "incident",
+          "title": "Security: Abuse Pattern Detected",
+          "body": "Potential abuse detected.\n\nPattern: {{@pattern}}\nUser ID: {{@user_id}}\n\nReview user activity and take appropriate action."
+        },
+        {
+          "type": "case",
+          "title": "Abuse Investigation: {{@pattern}}",
+          "priority": "P2",
+          "description": "Investigate user {{@user_id}} for {{@pattern}}"
+        }
+      ],
+      "tags": ["team:security", "team:ai-engineering", "service:nexttale"]
+    },
+    {
+      "name": "Content Safety Issue",
+      "description": "Alert on content safety violations",
+      "type": "log_detection",
+      "query": "service:nexttale-edge @signal:content_safety @severity:high",
+      "groupBy": ["@content_type", "@user_id"],
+      "threshold": {
+        "count": 1
+      },
+      "severity": "high",
+      "actions": [
+        {
+          "type": "incident",
+          "title": "Content Safety Violation",
+          "body": "High severity content safety issue detected.\n\nType: {{@content_type}}\nUser: {{@user_id}}\nStory: {{@story_id}}\n\nReview content and user account."
+        }
+      ],
+      "tags": ["team:trust-safety", "team:ai-engineering", "service:nexttale"]
+    },
+    {
+      "name": "Service Degradation",
+      "description": "Alert when a service shows degradation signals",
+      "type": "log_detection",
+      "query": "service:nexttale-edge @signal:service_degraded",
+      "groupBy": ["@service"],
+      "threshold": {
+        "count": 1
+      },
+      "severity": "high",
+      "actions": [
+        {
+          "type": "incident",
+          "title": "Service Degraded: {{@service}}",
+          "body": "Service {{@service}} is showing degradation.\n\nError Rate: {{@error_rate}}%\nAvg Latency: {{@avg_latency_ms}}ms\n\nInvestigate immediately."
+        }
+      ],
+      "tags": ["team:infrastructure", "team:ai-engineering", "service:nexttale"]
+    },
+    {
+      "name": "Story Generation Failure Spike",
+      "description": "Alert when story generation failures exceed threshold",
+      "type": "metric_alert",
+      "query": "sum:nexttale.request.count{operation:generate-story,success:false}.as_count() / sum:nexttale.request.count{operation:generate-story}.as_count() * 100",
+      "threshold": {
+        "critical": 10,
+        "warning": 5
+      },
+      "evaluation_window": "10m",
+      "severity": "high",
+      "actions": [
+        {
+          "type": "incident",
+          "title": "Story Generation Failure Spike",
+          "body": "Story generation failure rate has exceeded {{threshold.critical}}%.\n\nCheck Gemini API status and recent deployments."
+        }
+      ],
+      "tags": ["team:ai-engineering", "service:nexttale"]
+    },
+    {
+      "name": "Daily Cost Threshold",
+      "description": "Alert when daily AI costs exceed budget",
+      "type": "log_detection",
+      "query": "service:nexttale-edge @signal:cost_threshold_exceeded",
+      "threshold": {
+        "count": 1
+      },
+      "severity": "critical",
+      "actions": [
+        {
+          "type": "incident",
+          "title": "Daily AI Budget Exceeded",
+          "body": "Daily AI spending has exceeded the budget threshold.\n\nCurrent: ${{@current_cost_usd}}\nBudget: ${{@threshold_usd}}\n\nReview usage patterns and consider rate limiting."
+        }
+      ],
+      "tags": ["team:finance", "team:ai-engineering", "service:nexttale"]
+    }
+  ]
+}
