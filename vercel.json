@@ -5,7 +5,7 @@
   "installCommand": "npm install",
   "rewrites": [
     {
-      "source": "/((?!assets/|sitemap\\.xml|robots\\.txt|llms\\.txt|google.*\\.html).*)",
+      "source": "/((?!assets/|sitemap\\.xml|robots\\.txt|llms\\.txt|google.*\\.html|pitch-deck.*\\.html).*)",
       "destination": "/index.html"
     }
   ],
