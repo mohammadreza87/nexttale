@@ -1,11 +1,13 @@
 # NextTale
+
 ## Seed Pitch Deck (Realistic Version)
 
 ---
 
 # "Canva for Interactive Learning"
 
-### Seed Round: $750K
+### Seed Round: $1M
+
 ### January 2025
 
 ---
@@ -20,12 +22,12 @@ And most of it still puts students to sleep.
 
 # The Numbers
 
-| Stat | Source |
-|------|--------|
-| 3.7M teachers in the US | Bureau of Labor Statistics |
-| 5.2 hours/week on content creation | EdWeek Survey |
-| 68% say students are disengaged | Gallup |
-| $7.3B spent on edtech tools | HolonIQ |
+| Stat                               | Source                     |
+| ---------------------------------- | -------------------------- |
+| 3.7M teachers in the US            | Bureau of Labor Statistics |
+| 5.2 hours/week on content creation | EdWeek Survey              |
+| 68% say students are disengaged    | Gallup                     |
+| $7.3B spent on edtech tools        | HolonIQ                    |
 
 **Teachers are overworked, underpaid, and desperate for tools that actually work.**
 
@@ -42,11 +44,11 @@ Get a playable game in 60 seconds.
 
 # Demo
 
-*[Teacher types: "Photosynthesis quiz for 7th grade"]*
+_[Teacher types: "Photosynthesis quiz for 7th grade"]_
 
-*[60 seconds later: Fully playable interactive game appears]*
+_[60 seconds later: Fully playable interactive game appears]_
 
-*[Students can play immediately on any device]*
+_[Students can play immediately on any device]_
 
 **That's it. No coding. No design skills. No templates.**
 
@@ -70,11 +72,13 @@ Students play, teacher sees results
 # Why AI Changes Everything
 
 ### Before AI (Competitors):
+
 - Kahoot: Teacher manually creates each question
 - Nearpod: Teacher builds slides one by one
 - Blooket: Teacher imports or types content
 
 ### With NextTale:
+
 - Describe what you want
 - AI builds it
 - Edit if needed
@@ -88,16 +92,17 @@ Students play, teacher sees results
 
 ### What We've Built
 
-| Feature | Status |
-|---------|--------|
-| AI Game Generation | ✅ Live |
-| Quiz Generation | ✅ Live |
-| Interactive Widgets | ✅ Live |
-| Embed Anywhere | ✅ Live |
-| Basic Analytics | ✅ Live |
-| LMS Integration | 🔄 Q1 2025 |
+| Feature             | Status     |
+| ------------------- | ---------- |
+| AI Game Generation  | ✅ Live    |
+| Quiz Generation     | ✅ Live    |
+| Interactive Widgets | ✅ Live    |
+| Embed Anywhere      | ✅ Live    |
+| Basic Analytics     | ✅ Live    |
+| LMS Integration     | 🔄 Q1 2025 |
 
 ### Tech Stack
+
 - Frontend: React + TypeScript
 - Backend: Supabase (PostgreSQL)
 - AI: Google Gemini
@@ -107,14 +112,14 @@ Students play, teacher sees results
 
 # Traction
 
-| Metric | Current |
-|--------|---------|
-| Games Created | 10,000+ |
-| Beta Users | 500+ |
-| Weekly Active | 200+ |
-| Avg Games/User | 4.2 |
+| Metric         | Current |
+| -------------- | ------- |
+| Games Created  | 10,000+ |
+| Beta Users     | 500+    |
+| Weekly Active  | 200+    |
+| Avg Games/User | 4.2     |
 
-*Launched 3 months ago, no marketing spend*
+_Launched 3 months ago, no marketing spend_
 
 ---
 
@@ -135,12 +140,12 @@ Students play, teacher sees results
 
 ### Simple SaaS Pricing
 
-| Tier | Price | Features |
-|------|-------|----------|
-| **Free** | $0 | 5 games/month |
-| **Teacher Pro** | $9/mo | Unlimited, analytics |
-| **School** | $500/year | 50 teachers, LMS |
-| **District** | Custom | Unlimited, SSO |
+| Tier            | Price     | Features             |
+| --------------- | --------- | -------------------- |
+| **Free**        | $0        | 5 games/month        |
+| **Teacher Pro** | $9/mo     | Unlimited, analytics |
+| **School**      | $500/year | 50 teachers, LMS     |
+| **District**    | Custom    | Unlimited, SSO       |
 
 ---
 
@@ -148,18 +153,18 @@ Students play, teacher sees results
 
 ### Bottom-Up TAM
 
-| Segment | Size | Our Target |
-|---------|------|------------|
-| US Teachers | 3.7M | 100K (3%) |
-| At $100/year avg | | **$10M ARR** |
+| Segment          | Size | Our Target   |
+| ---------------- | ---- | ------------ |
+| US Teachers      | 3.7M | 100K (3%)    |
+| At $100/year avg |      | **$10M ARR** |
 
 ### Expansion Markets
 
-| Market | Size |
-|--------|------|
+| Market             | Size           |
+| ------------------ | -------------- |
 | Corporate Training | $370B globally |
-| Higher Education | $2.5T globally |
-| International K-12 | 70M teachers |
+| Higher Education   | $2.5T globally |
+| International K-12 | 70M teachers   |
 
 **Land in K-12, expand to enterprise.**
 
@@ -167,12 +172,12 @@ Students play, teacher sees results
 
 # Competition
 
-| Competitor | Revenue | Our Advantage |
-|------------|---------|---------------|
-| Kahoot | $100M+ | We generate content, they don't |
-| Nearpod (GoGuardian) | $100M+ | We're 10x faster to create |
-| Blooket | $10M+ | We make games, not just quizzes |
-| Genially | $20M+ | We're education-focused |
+| Competitor           | Revenue | Our Advantage                   |
+| -------------------- | ------- | ------------------------------- |
+| Kahoot               | $100M+  | We generate content, they don't |
+| Nearpod (GoGuardian) | $100M+  | We're 10x faster to create      |
+| Blooket              | $10M+   | We make games, not just quizzes |
+| Genially             | $20M+   | We're education-focused         |
 
 ### Why We Win
 
@@ -185,16 +190,19 @@ Students play, teacher sees results
 # Go-to-Market
 
 ### Phase 1: Organic (Now)
+
 - Education Twitter/TikTok
 - Teacher community seeding
 - Product Hunt for Education
 
 ### Phase 2: Partnerships (Q2)
+
 - Teacher influencer program
 - Education conference presence (ISTE)
 - LMS marketplace listings
 
 ### Phase 3: Sales (Q3+)
+
 - Inside sales for schools/districts
 - Channel partnerships
 
@@ -204,50 +212,58 @@ Students play, teacher sees results
 
 # Roadmap
 
-| Quarter | Milestone |
-|---------|-----------|
-| **Q1 2025** | LMS integrations, 100 paying teachers |
-| **Q2 2025** | School tier launch, 10 school pilots |
+| Quarter     | Milestone                                           |
+| ----------- | --------------------------------------------------- |
+| **Q1 2025** | LMS integrations, 100 paying teachers               |
+| **Q2 2025** | School tier launch, 10 school pilots                |
 | **Q3 2025** | Enterprise/training product, first enterprise deals |
-| **Q4 2025** | $75K MRR, Series A ready |
+| **Q4 2025** | $75K MRR, Series A ready                            |
 
 ---
 
 # Financial Projections
 
-| Metric | Year 1 | Year 2 | Year 3 |
-|--------|--------|--------|--------|
-| Customers | 500 | 2,000 | 8,000 |
-| ARR | $400K | $2.5M | $10M |
-| Gross Margin | 80% | 82% | 85% |
-| Team Size | 4 | 10 | 25 |
+| Metric       | Year 1 | Year 2 | Year 3 |
+| ------------ | ------ | ------ | ------ |
+| Customers    | 500    | 2,000  | 8,000  |
+| ARR          | $400K  | $2.5M  | $10M   |
+| Gross Margin | 80%    | 82%    | 85%    |
+| Team Size    | 4      | 10     | 25     |
 
 ---
 
 # Unit Economics
 
-| Metric | Target |
-|--------|--------|
-| CAC (Teacher) | $30 |
+| Metric        | Target            |
+| ------------- | ----------------- |
+| CAC (Teacher) | $30               |
 | LTV (Teacher) | $180 (18mo × $10) |
-| LTV:CAC | 6:1 |
-| Payback | 3 months |
+| LTV:CAC       | 6:1               |
+| Payback       | 3 months          |
 
-| Metric | Target |
-|--------|--------|
-| CAC (School) | $500 |
+| Metric       | Target              |
+| ------------ | ------------------- |
+| CAC (School) | $500                |
 | LTV (School) | $2,000 (4yr × $500) |
-| LTV:CAC | 4:1 |
-| Payback | 12 months |
+| LTV:CAC      | 4:1                 |
+| Payback      | 12 months           |
 
 ---
 
-# Team
+# Why Us?
 
-### Current
+### Proven Track Record
 
-**[Founder]** — CEO
-*[Background]*
+| Metric         | Achievement |
+| -------------- | ----------- |
+| Downloads      | 20M+        |
+| D1 Retention   | 50%         |
+| App Store Rank | #1 US       |
+| Experience     | 10+ Years   |
+
+- Published with Voodoo
+- 100+ prototypes tested in US market
+- From zero to launch, multiple times
 
 ### Hiring with This Round
 
@@ -258,15 +274,14 @@ Students play, teacher sees results
 
 # The Ask
 
-## $750K Seed Round
+## $1M Seed Round
 
-| Use | Amount |
-|-----|--------|
-| Engineering (18mo) | $350K |
-| Marketing/Growth | $150K |
-| AI/Infrastructure | $100K |
-| Operations | $100K |
-| Buffer | $50K |
+| Use                | Amount |
+| ------------------ | ------ |
+| Engineering (18mo) | $500K  |
+| Marketing/Growth   | $200K  |
+| AI/Infrastructure  | $150K  |
+| Operations         | $150K  |
 
 **18-month runway to Series A metrics**
 
@@ -285,12 +300,12 @@ Students play, teacher sees results
 
 To be transparent:
 
-| Shiny Object | Why Not |
-|--------------|---------|
+| Shiny Object | Why Not                                |
+| ------------ | -------------------------------------- |
 | Consumer app | Need network effects, hard to monetize |
-| NFTs/Crypto | Market dead, regulatory mess |
-| Music/Video | Distraction from core product |
-| "Platform" | Earn it, don't declare it |
+| NFTs/Crypto  | Market dead, regulatory mess           |
+| Music/Video  | Distraction from core product          |
+| "Platform"   | Earn it, don't declare it              |
 
 **Focus wins.**
 
@@ -299,12 +314,14 @@ To be transparent:
 # Success Looks Like
 
 ### 12 Months
+
 - 500 paying customers
 - $75K MRR
 - 50%+ month-over-month growth
 - Series A ready
 
 ### 36 Months
+
 - 10,000 customers
 - $10M ARR
 - Expansion to enterprise training
@@ -326,12 +343,12 @@ Canva is worth $26B.
 
 # Comparable Exits
 
-| Company | Exit | Multiple |
-|---------|------|----------|
-| Nearpod → GoGuardian | $650M | 6.5x revenue |
-| Kahoot IPO | $7B peak | 70x revenue |
-| Quizlet → private | $1B+ | 10x revenue |
-| Remind → Parentsquare | $100M+ | 5x revenue |
+| Company               | Exit     | Multiple     |
+| --------------------- | -------- | ------------ |
+| Nearpod → GoGuardian  | $650M    | 6.5x revenue |
+| Kahoot IPO            | $7B peak | 70x revenue  |
+| Quizlet → private     | $1B+     | 10x revenue  |
+| Remind → Parentsquare | $100M+   | 5x revenue   |
 
 **EdTech has real exits.**
 
@@ -348,22 +365,22 @@ Canva is worth $26B.
 
 # Summary
 
-| What | Answer |
-|------|--------|
-| **Problem** | Teachers waste hours on boring content |
-| **Solution** | AI generates games in 60 seconds |
-| **Market** | $7B edtech, 3.7M US teachers |
-| **Traction** | 10K games, 500 users, 3 months |
-| **Model** | SaaS: $9/teacher, $500/school |
-| **Ask** | $750K seed |
-| **Use** | Team + product for 18 months |
+| What         | Answer                                 |
+| ------------ | -------------------------------------- |
+| **Problem**  | Teachers waste hours on boring content |
+| **Solution** | AI generates games in 60 seconds       |
+| **Market**   | $7B edtech, 3.7M US teachers           |
+| **Traction** | 10K games, 500 users, 3 months         |
+| **Model**    | SaaS: $9/teacher, $500/school          |
+| **Ask**      | $1M seed                               |
+| **Use**      | Team + product for 18 months           |
 
 ---
 
 # Let's Talk
 
 **[Founder Name]**
-Email: founder@nexttale.com
+Email: reza@ludaxis.io
 Demo: nexttale.com
 
 ---
@@ -374,32 +391,35 @@ Demo: nexttale.com
 
 ## A1: Detailed Product Roadmap
 
-| Feature | Q1 | Q2 | Q3 | Q4 |
-|---------|----|----|----|----|
-| LMS: Google Classroom | ✓ | | | |
-| LMS: Canvas | ✓ | | | |
-| LMS: Schoology | | ✓ | | |
-| Student Progress Tracking | ✓ | | | |
-| Class Management | | ✓ | | |
-| SCORM Export | | | ✓ | |
-| Enterprise SSO | | | ✓ | |
-| API | | | | ✓ |
+| Feature                   | Q1  | Q2  | Q3  | Q4  |
+| ------------------------- | --- | --- | --- | --- |
+| LMS: Google Classroom     | ✓   |     |     |     |
+| LMS: Canvas               | ✓   |     |     |     |
+| LMS: Schoology            |     | ✓   |     |     |
+| Student Progress Tracking | ✓   |     |     |     |
+| Class Management          |     | ✓   |     |     |
+| SCORM Export              |     |     | ✓   |     |
+| Enterprise SSO            |     |     | ✓   |     |
+| API                       |     |     |     | ✓   |
 
 ---
 
 ## A2: Competitive Detail
 
 ### Kahoot
+
 - **Strength:** Brand, 9B cumulative users
 - **Weakness:** Manual question creation, no AI
 - **Our angle:** "Kahoot that writes itself"
 
 ### Nearpod
+
 - **Strength:** Comprehensive lesson builder
 - **Weakness:** Complex, time-consuming
 - **Our angle:** "Nearpod in 60 seconds"
 
 ### Blooket
+
 - **Strength:** Game variety, student favorite
 - **Weakness:** Teacher creates all content
 - **Our angle:** "Blooket + AI"
@@ -408,25 +428,25 @@ Demo: nexttale.com
 
 ## A3: Customer Acquisition Channels
 
-| Channel | CAC | Volume | Notes |
-|---------|-----|--------|-------|
-| Organic/SEO | $0 | Medium | Long-term investment |
-| Teacher TikTok | $10 | High | Viral potential |
-| Education conferences | $100 | Low | Brand building |
-| LMS marketplaces | $25 | Medium | High intent |
-| Teacher referral | $15 | Medium | Best quality |
-| Paid social | $50 | High | Scalable |
+| Channel               | CAC  | Volume | Notes                |
+| --------------------- | ---- | ------ | -------------------- |
+| Organic/SEO           | $0   | Medium | Long-term investment |
+| Teacher TikTok        | $10  | High   | Viral potential      |
+| Education conferences | $100 | Low    | Brand building       |
+| LMS marketplaces      | $25  | Medium | High intent          |
+| Teacher referral      | $15  | Medium | Best quality         |
+| Paid social           | $50  | High   | Scalable             |
 
 ---
 
 ## A4: Risk Factors
 
-| Risk | Probability | Mitigation |
-|------|-------------|------------|
-| AI quality issues | Medium | Multiple models, human review |
-| School sales cycles | High | Start with teachers, upsell |
-| Competitor AI features | High | Speed, focus, integrations |
-| Funding environment | Medium | Capital efficient, path to profit |
+| Risk                   | Probability | Mitigation                        |
+| ---------------------- | ----------- | --------------------------------- |
+| AI quality issues      | Medium      | Multiple models, human review     |
+| School sales cycles    | High        | Start with teachers, upsell       |
+| Competitor AI features | High        | Speed, focus, integrations        |
+| Funding environment    | Medium      | Capital efficient, path to profit |
 
 ---
 
@@ -444,5 +464,5 @@ This makes us better founders, not worse.
 
 ---
 
-*Confidential — For Investor Review Only*
-*NextTale, Inc. — January 2025*
+_Confidential — For Investor Review Only_
+_NextTale, Inc. — January 2025_
