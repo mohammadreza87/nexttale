@@ -722,13 +722,170 @@
     }
 
     @media (max-width: 768px) {
-      .slide { padding: 20px 20px; }
-      h1 { font-size: 2rem; }
-      .tagline { font-size: 1.5rem; }
-      .big-stat { font-size: 3rem; }
-      .timeline { flex-direction: column; gap: 1.5rem; }
+      .slide { padding: 8px 10px; padding-bottom: 50px; }
+      .slide-content { max-width: 100%; }
+      h1 { font-size: 1.1rem; margin-bottom: 0.4rem; }
+      h2 { font-size: 0.85rem; margin-bottom: 0.3rem; }
+      h3 { font-size: 0.55rem; margin-bottom: 0.3rem; }
+      .tagline { font-size: 0.9rem; }
+      .big-stat { font-size: 1.6rem; }
+      .big-label { font-size: 0.65rem; }
+      p { font-size: 0.6rem; line-height: 1.3; }
+      .stat-number { font-size: 0.9rem; margin-bottom: 0.1rem; }
+      .stat-label { font-size: 0.5rem; }
+      .stat-card { padding: 0.35rem 0.25rem; border-radius: 6px; }
+      .stats-grid { gap: 0.25rem; margin: 0.4rem 0; grid-template-columns: repeat(2, 1fr) !important; }
+      .glass-card { padding: 0.5rem; border-radius: 8px; margin: 0.15rem; }
+      .icon-box { width: 24px; height: 24px; border-radius: 6px; margin-bottom: 0.25rem; }
+      .icon-box i { width: 12px !important; height: 12px !important; }
+      .timeline { flex-direction: column; gap: 0.4rem; margin: 0.5rem 0; }
       .timeline::before { display: none; }
-      .pricing-grid { grid-template-columns: 1fr; }
+      .timeline-item { display: flex; flex-direction: row-reverse; align-items: center; gap: 0.4rem; text-align: right; }
+      .timeline-dot { width: 20px; height: 20px; margin: 0; flex-shrink: 0; }
+      .timeline-dot i { width: 10px !important; height: 10px !important; }
+      .timeline-title { font-size: 0.55rem; margin-bottom: 0; }
+      .timeline-desc { font-size: 0.45rem; max-width: 100%; margin: 0; }
+      .pricing-grid { grid-template-columns: repeat(4, 1fr); gap: 0.2rem; margin: 0.3rem 0; }
+      .pricing-card { padding: 0.3rem 0.2rem; border-radius: 6px; }
+      .pricing-card.featured { transform: scale(1.01); }
+      .pricing-name { font-size: 0.45rem; margin-bottom: 0.15rem; }
+      .pricing-price { font-size: 0.7rem; }
+      .pricing-period { font-size: 0.4rem; }
+      .comparison-row { grid-template-columns: 2fr 1fr 1fr; gap: 0.2rem; padding: 0.2rem 0; font-size: 0.5rem; }
+      .comparison-header { font-size: 0.45rem; }
+      .comparison-them, .comparison-us { font-size: 0.5rem; }
+      .quote-block { padding: 0.4rem 0.5rem; margin: 0.4rem 0; }
+      .quote-text { font-size: 0.55rem; line-height: 1.3; margin-bottom: 0.2rem; }
+      .quote-author { font-size: 0.5rem; }
+      .logo { margin-bottom: 0.3rem; }
+      .logo-icon { width: 28px; height: 28px; border-radius: 8px; }
+      .logo-icon i { width: 14px !important; height: 14px !important; }
+      .cta-btn { padding: 0.35rem 0.7rem; font-size: 0.55rem; margin-top: 0.4rem; }
+      .cta-btn i { width: 10px; height: 10px; }
+      .demo-input { font-size: 0.55rem; padding: 0.3rem 0.4rem; margin-bottom: 0.3rem; }
+      .demo-arrow { font-size: 0.55rem; margin: 0.25rem 0; }
+      .demo-arrow i { width: 10px; height: 10px; }
+      .demo-output { padding: 0.4rem; gap: 0.3rem; }
+      .demo-output p { font-size: 0.55rem !important; }
+      .demo-output i { width: 14px; height: 14px; }
+      .two-col { grid-template-columns: 1fr 1fr; gap: 0.3rem; }
+      .col-title { font-size: 0.5rem; margin-bottom: 0.3rem; }
+      ul li { font-size: 0.5rem; padding: 0.15rem 0; padding-right: 0.6rem; }
+      ul li::before { width: 2px; height: 2px; }
+      /* Bottom bar with nav and lang toggle */
+      .nav-controls {
+        padding: 0.25rem 0.5rem;
+        gap: 0.3rem;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .nav-btn { width: 24px; height: 24px; }
+      .nav-btn i { width: 12px !important; height: 12px !important; }
+      .slide-counter { font-size: 0.5rem; min-width: 30px; }
+      .slide-number { display: none; }
+      .contact-info { font-size: 0.5rem; top: 6px; right: 8px; }
+      .lang-toggle {
+        position: fixed;
+        bottom: 8px;
+        top: auto;
+        right: 8px;
+        left: auto;
+        transform: none;
+        width: 24px;
+        height: 24px;
+        font-size: 0.45rem;
+        border-radius: 50%;
+      }
+      .progress-bar { height: 2px; }
+      .team-grid { grid-template-columns: repeat(2, 1fr); gap: 0.3rem; }
+      .team-card { padding: 0.4rem; }
+      .team-avatar { width: 24px; height: 24px; margin-bottom: 0.25rem; }
+      .team-avatar i { width: 12px; height: 12px; }
+      .team-name { font-size: 0.55rem; }
+      .team-role { font-size: 0.45rem; margin-bottom: 0.2rem; }
+      .team-bio { font-size: 0.45rem; }
+      .highlight { font-size: inherit; }
+    }
+
+    @media (max-width: 480px) {
+      .slide { padding: 6px 8px; padding-bottom: 45px; }
+      h1 { font-size: 0.95rem; line-height: 1.2; margin-bottom: 0.3rem; }
+      h2 { font-size: 0.75rem; }
+      h3 { font-size: 0.5rem; margin-bottom: 0.25rem; }
+      .tagline { font-size: 0.8rem; }
+      .big-stat { font-size: 1.4rem; margin-bottom: 0.1rem; }
+      .big-label { font-size: 0.55rem; margin-bottom: 0.4rem !important; }
+      p { font-size: 0.55rem; line-height: 1.25; }
+      .stat-number { font-size: 0.8rem; }
+      .stat-label { font-size: 0.45rem; }
+      .stat-card { padding: 0.3rem 0.2rem; border-radius: 5px; }
+      .stat-card p { font-size: 0.4rem !important; margin-top: 0.15rem !important; }
+      .stats-grid { gap: 0.2rem; margin: 0.35rem 0; }
+      .glass-card { padding: 0.4rem; border-radius: 6px; }
+      .icon-box { width: 20px; height: 20px; border-radius: 5px; margin-bottom: 0.2rem; }
+      .icon-box i { width: 10px !important; height: 10px !important; }
+      .timeline { gap: 0.3rem; margin: 0.4rem 0; }
+      .timeline-dot { width: 18px; height: 18px; }
+      .timeline-dot i { width: 8px !important; height: 8px !important; }
+      .timeline-title { font-size: 0.5rem; }
+      .timeline-desc { font-size: 0.4rem; }
+      .pricing-grid { grid-template-columns: repeat(4, 1fr); gap: 0.15rem; }
+      .pricing-card { padding: 0.25rem 0.15rem; border-radius: 5px; }
+      .pricing-name { font-size: 0.4rem; margin-bottom: 0.1rem; }
+      .pricing-price { font-size: 0.6rem; }
+      .pricing-period { font-size: 0.35rem; }
+      .comparison-row { font-size: 0.45rem; padding: 0.15rem 0; }
+      .comparison-header { font-size: 0.4rem; }
+      .quote-block { padding: 0.3rem 0.4rem; margin: 0.3rem 0; }
+      .quote-text { font-size: 0.5rem; line-height: 1.25; }
+      .quote-author { font-size: 0.45rem; }
+      .logo { margin-bottom: 0.25rem; }
+      .logo-icon { width: 24px; height: 24px; border-radius: 6px; }
+      .logo-icon i { width: 12px !important; height: 12px !important; }
+      .cta-btn { padding: 0.3rem 0.6rem; font-size: 0.5rem; margin-top: 0.3rem; }
+      .cta-btn i { width: 8px; height: 8px; }
+      .demo-input { font-size: 0.5rem; padding: 0.25rem 0.35rem; margin-bottom: 0.25rem; }
+      .demo-arrow { font-size: 0.5rem; margin: 0.2rem 0; }
+      .demo-arrow i { width: 8px; height: 8px; }
+      .demo-output { padding: 0.35rem; gap: 0.25rem; }
+      .demo-output p { font-size: 0.5rem !important; }
+      .demo-output i { width: 12px; height: 12px; }
+      .two-col { gap: 0.25rem; }
+      .col-title { font-size: 0.45rem; margin-bottom: 0.2rem; }
+      ul li { font-size: 0.45rem; padding: 0.1rem 0; }
+      .nav-controls { padding: 0.2rem 0.4rem; gap: 0.25rem; bottom: 6px; }
+      .nav-btn { width: 22px; height: 22px; }
+      .nav-btn i { width: 10px !important; height: 10px !important; }
+      .slide-counter { font-size: 0.45rem; min-width: 26px; }
+      .contact-info { font-size: 0.45rem; top: 4px; right: 6px; }
+      .lang-toggle {
+        bottom: 6px;
+        right: 6px;
+        width: 22px;
+        height: 22px;
+        font-size: 0.4rem;
+      }
+      .team-card { padding: 0.3rem; }
+      .team-avatar { width: 20px; height: 20px; }
+      .team-avatar i { width: 10px; height: 10px; }
+      .team-name { font-size: 0.5rem; }
+      .team-role { font-size: 0.4rem; }
+      .team-bio { font-size: 0.4rem; }
+    }
+
+    /* Mobile-only: hide controls on middle slides */
+    .nav-controls, .lang-toggle, .contact-info, .slide-number {
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .nav-controls.hidden-mobile,
+    .lang-toggle.hidden-mobile,
+    .contact-info.hidden-mobile,
+    .slide-number.hidden-mobile {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -1232,7 +1389,17 @@
 
   </div>
 
-  
+  <!-- Navigation Controls -->
+  <div class="nav-controls">
+    <button class="nav-btn" id="prevBtn" aria-label="الشريحة السابقة">
+      <i data-lucide="chevron-right" style="width: 20px; height: 20px;"></i>
+    </button>
+    <span class="slide-counter" id="slideCounter">1 / 15</span>
+    <button class="nav-btn" id="nextBtn" aria-label="الشريحة التالية">
+      <i data-lucide="chevron-left" style="width: 20px; height: 20px;"></i>
+    </button>
+  </div>
+
   <script>
     function exportToPDF() {
       const modal = document.createElement('div');
@@ -1271,10 +1438,18 @@
         this.isAnimating = false;
         this.progressBar = document.getElementById('progressBar');
         this.slideNumber = document.getElementById('slideNumber');
+        this.slideCounter = document.getElementById('slideCounter');
+        this.prevBtn = document.getElementById('prevBtn');
+        this.nextBtn = document.getElementById('nextBtn');
+        this.navControls = document.querySelector('.nav-controls');
+        this.langToggle = document.querySelector('.lang-toggle');
+        this.contactInfo = document.querySelector('.contact-info');
         this.init();
       }
 
       init() {
+        this.prevBtn.addEventListener('click', () => this.prev());
+        this.nextBtn.addEventListener('click', () => this.next());
         document.addEventListener('keydown', (e) => this.handleKeydown(e));
 
         let touchStartX = 0;
@@ -1359,6 +1534,26 @@
         this.progressBar.style.width = `${progress}%`;
         const pad = n => String(n).padStart(2, '0');
         this.slideNumber.textContent = `${pad(this.currentSlide + 1)} / ${pad(this.totalSlides)}`;
+        this.slideCounter.textContent = `${this.currentSlide + 1} / ${this.totalSlides}`;
+
+        this.prevBtn.disabled = this.currentSlide === 0;
+        this.nextBtn.disabled = this.currentSlide === this.totalSlides - 1;
+
+        // Hide controls on middle slides for mobile
+        const isMobile = window.innerWidth <= 768;
+        const isFirstOrLast = this.currentSlide === 0 || this.currentSlide === this.totalSlides - 1;
+
+        if (isMobile && !isFirstOrLast) {
+          this.navControls.classList.add('hidden-mobile');
+          this.langToggle.classList.add('hidden-mobile');
+          this.contactInfo.classList.add('hidden-mobile');
+          this.slideNumber.classList.add('hidden-mobile');
+        } else {
+          this.navControls.classList.remove('hidden-mobile');
+          this.langToggle.classList.remove('hidden-mobile');
+          this.contactInfo.classList.remove('hidden-mobile');
+          this.slideNumber.classList.remove('hidden-mobile');
+        }
       }
     }
 
