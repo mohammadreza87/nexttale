@@ -1,6 +1,6 @@
 /**
  * File Browser Panel Component
- * Middle panel showing file tree and search in Code view (Lovable-style)
+ * Middle panel showing file tree and search in Code view
  */
 
 import { useState } from 'react';

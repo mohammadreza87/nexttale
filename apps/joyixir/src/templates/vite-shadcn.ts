@@ -1,6 +1,6 @@
 /**
  * Vite + React + shadcn/ui Template
- * Matches Lovable's project structure with full UI component library
+ * Modern project structure with full UI component library
  */
 
 import { FileSystemTree } from '@webcontainer/api';

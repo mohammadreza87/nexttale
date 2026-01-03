@@ -11,14 +11,14 @@ export { DependencyBanner } from './DependencyBanner';
 export { FileBrowserPanel } from './FileBrowserPanel';
 export { ChatHistory } from './ChatHistory';
 
-// Lovable-style UI components
+// modern UI components
 export { HeaderTabs, type BuilderViewMode } from './HeaderTabs';
 export { DeviceToggle, type DeviceMode } from './DeviceToggle';
 export { NextStepsCards } from './NextStepsCards';
 export { CreditsPanel } from './CreditsPanel';
 export { ProjectDropdown } from './ProjectDropdown';
 
-// Split layout components (Lovable-style)
+// Split layout components
 export { ResizablePanels } from './ResizablePanels';
 export { ChatHeader } from './ChatHeader';
 export { PreviewHeader } from './PreviewHeader';

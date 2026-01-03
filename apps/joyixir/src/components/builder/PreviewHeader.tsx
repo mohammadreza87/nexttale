@@ -1,6 +1,6 @@
 /**
  * Preview Header Component
- * Header for the preview panel with view tabs, device toggles, and action buttons (Lovable-style)
+ * Header for the preview panel with view tabs, device toggles, and action buttons
  */
 
 import type { User } from '@supabase/supabase-js';

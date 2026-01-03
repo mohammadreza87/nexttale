@@ -1,6 +1,6 @@
 /**
  * Project Dropdown Component
- * Shows project info, credits, and project-specific options (Lovable-style)
+ * Shows project info, credits, and project-specific options
  */
 
 import { useRef, useEffect, useState } from 'react';

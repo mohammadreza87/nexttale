@@ -1,6 +1,6 @@
 /**
  * Chat Messages Component
- * Displays chat message history with AI responses in Lovable-style UI
+ * Displays chat message history with AI responses in modern UI
  * Features bullet points, card-style "Next steps" suggestions, and styled messages
  */
 

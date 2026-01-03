@@ -1,6 +1,6 @@
 /**
  * Builder Header Component
- * Top navigation bar with project dropdown, view tabs, device toggles, and action buttons (Lovable-style)
+ * Top navigation bar with project dropdown, view tabs, device toggles, and action buttons
  */
 
 import type { User } from '@supabase/supabase-js';

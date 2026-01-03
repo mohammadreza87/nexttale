@@ -1,6 +1,6 @@
 /**
  * Device Toggle Component
- * Desktop/Tablet/Mobile toggle group for preview device mode (Lovable-style)
+ * Desktop/Tablet/Mobile toggle group for preview device mode
  */
 
 import { Monitor, Tablet, Smartphone, RefreshCw } from 'lucide-react';

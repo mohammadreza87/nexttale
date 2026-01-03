@@ -1,6 +1,6 @@
 /**
  * Chat Input Component
- * Text input for sending messages to the AI with suggestions (Lovable-style)
+ * Text input for sending messages to the AI with suggestions
  * Note: Credits indicator moved to CreditsPanel component
  */
 

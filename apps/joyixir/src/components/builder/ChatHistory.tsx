@@ -1,6 +1,6 @@
 /**
  * Chat History Component
- * Shows list of chat sessions for a project (Lovable-style)
+ * Shows list of chat sessions for a project
  */
 
 import { MessageSquare, Plus, Clock } from 'lucide-react';

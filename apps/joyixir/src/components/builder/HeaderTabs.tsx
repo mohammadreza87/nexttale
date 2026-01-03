@@ -1,6 +1,6 @@
 /**
  * Header Tabs Component
- * Preview/Code tab buttons for the builder header (Lovable-style)
+ * Preview/Code tab buttons for the builder header
  */
 
 import { Eye, Code2 } from 'lucide-react';

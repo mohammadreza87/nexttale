@@ -1,6 +1,6 @@
 /**
  * Resizable Panels Component
- * Two-panel layout with draggable divider for resizing (Lovable-style)
+ * Two-panel layout with draggable divider for resizing
  */
 
 import { useState, useRef, useCallback, type ReactNode } from 'react';

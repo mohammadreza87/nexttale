@@ -1,6 +1,6 @@
 /**
  * Workspace Dropdown Component
- * Shows workspace info, credits, upgrade option, and workspace switcher (Lovable-style)
+ * Shows workspace info, credits, upgrade option, and workspace switcher
  */
 
 import { useRef, useEffect, useState } from 'react';

@@ -1,6 +1,6 @@
 /**
  * Builder Page
- * Main game development IDE with Lovable-style UI:
+ * Main game development IDE with modern UI:
  * - Chat panel on left with AI suggestions
  * - Tab-based view (Preview OR Code) on right
  * - Device toggles and view tabs in header
@@ -135,7 +135,7 @@ export function BuilderPage({
     runCommand,
   } = useWebContainer();
 
-  // UI state - Lovable-style split view
+  // UI state - modern split view
   const [viewMode, setViewMode] = useState<BuilderViewMode>('preview');
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
   const [refreshKey, setRefreshKey] = useState(0);

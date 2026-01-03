@@ -1,6 +1,6 @@
 /**
  * Left Panel Component
- * Chat panel with project info, suggestions, and controls (Lovable-style)
+ * Chat panel with project info, suggestions, and controls
  */
 
 import { useState } from 'react';

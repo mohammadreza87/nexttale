@@ -1,6 +1,6 @@
 /**
  * Next Steps Cards Component
- * Card-style suggestion buttons with arrows (Lovable-style)
+ * Card-style suggestion buttons with arrows
  */
 
 import { ArrowRight, Wand2 } from 'lucide-react';

@@ -6,7 +6,7 @@ All notable changes to Joyixir.
 
 ### Jan 3, 2026
 
-#### Lovable-Style Split Layout
+#### Split Layout
 - **Resizable Panels**: Drag the divider between chat and preview to resize
 - **Separate Headers**: Chat and preview panels now have independent headers
 - **Chat Header**: Project dropdown with credits, history toggle, copy chat button
@@ -31,7 +31,7 @@ All notable changes to Joyixir.
 
 ### Jan 3, 2025
 
-#### New Lovable-Style UI
+#### New Modern UI
 - **AI Chat Redesign**: New chat interface with avatars, feature checkmarks, and "Next steps" suggestions
 - **Suggestion Chips**: Quick action buttons like "Add power-ups", "Sound effects"
 - **Credits Display**: See remaining credits in the chat input

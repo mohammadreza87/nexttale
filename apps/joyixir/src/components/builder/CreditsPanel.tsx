@@ -1,6 +1,6 @@
 /**
  * Credits Panel Component
- * Credits indicator with "Add credits" button (Lovable-style)
+ * Credits indicator with "Add credits" button
  */
 
 import { Zap, X } from 'lucide-react';

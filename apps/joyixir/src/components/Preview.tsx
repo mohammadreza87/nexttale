@@ -1,6 +1,6 @@
 /**
  * Preview Component
- * Displays the live preview of the game with device sizing (Lovable-style)
+ * Displays the live preview of the game with device sizing
  * Device toggles and refresh moved to BuilderHeader
  */
 

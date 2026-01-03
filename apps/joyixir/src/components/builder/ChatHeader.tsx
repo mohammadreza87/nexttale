@@ -1,6 +1,6 @@
 /**
  * Chat Header Component
- * Header for the chat panel with project dropdown, history and copy icons (Lovable-style)
+ * Header for the chat panel with project dropdown, history and copy icons
  */
 
 import { History, Copy } from 'lucide-react';
