@@ -1,0 +1,92 @@
+---
+title: 'Templates'
+description: 'Start faster with pre-built game templates'
+---
+
+## Available Templates
+
+Joyixir comes with several templates to help you get started quickly:
+
+<CardGroup cols={2}>
+  <Card title="Vite + shadcn/ui" icon="bolt">
+    **Default template** - Fast React app with beautiful UI components
+    - Vite for instant hot reload
+    - shadcn/ui components (Button, Card, Input, Progress)
+    - Tailwind CSS
+    - TypeScript
+  </Card>
+  <Card title="Canvas 2D" icon="gamepad">
+    **For 2D arcade games** - HTML5 Canvas with game loop
+    - Optimized rendering pipeline
+    - Input handling (keyboard, mouse)
+    - Collision detection helpers
+    - Score and UI overlays
+  </Card>
+  <Card title="Phaser 3" icon="ghost">
+    **Full game engine** - Professional 2D game development
+    - Physics engine
+    - Sprite animations
+    - Audio support
+    - Scene management
+  </Card>
+  <Card title="Three.js" icon="cube">
+    **For 3D experiences** - React Three Fiber
+    - 3D scene setup
+    - Orbit controls
+    - Lighting and materials
+    - Model loading
+  </Card>
+</CardGroup>
+
+## Template Structure
+
+All templates follow a consistent structure:
+
+```
+src/
+├── main.tsx          # Entry point
+├── App.tsx           # Root component
+├── index.css         # Global styles (Tailwind)
+├── pages/
+│   └── Index.tsx     # Main game/app page
+├── components/
+│   └── ui/           # UI components
+├── hooks/            # Custom hooks
+├── lib/
+│   └── utils.ts      # Utility functions
+└── types/            # TypeScript types
+```
+
+## Choosing a Template
+
+| Use Case | Recommended Template |
+|----------|---------------------|
+| Simple UI apps, tools | Vite + shadcn/ui |
+| 2D arcade games (Snake, Pong) | Canvas 2D |
+| Complex 2D games (platformers) | Phaser 3 |
+| 3D scenes, WebGL games | Three.js |
+
+<Tip>
+  **Not sure which to pick?** Start with the default **Vite + shadcn/ui** template. The AI will suggest upgrading to a specialized template if your game needs it.
+</Tip>
+
+## Auto-Upgrade to Three.js
+
+If you describe a 3D game, Joyixir automatically:
+
+1. Detects 3D requirements in your prompt
+2. Installs Three.js dependencies (`@react-three/fiber`, `@react-three/drei`, `three`)
+3. Sets up the 3D scene structure
+
+**Trigger words:**
+- "3D", "three.js", "WebGL"
+- "first-person", "third-person"
+- "3D models", "3D scene"
+- "orbit controls", "perspective camera"
+
+## Custom Templates (Coming Soon)
+
+We're working on:
+- Save your own templates
+- Community template gallery
+- Template versioning

@@ -1,0 +1,99 @@
+---
+title: 'Changelog'
+description: 'Latest updates and improvements to Joyixir'
+---
+
+## Jan 3, 2025
+
+### Upgraded to Gemini 3 Pro Preview
+
+We've upgraded our AI model to **Google Gemini 3 Pro Preview** for better code generation:
+
+- **Thinking capability** - Better reasoning for complex game logic
+- **Larger output** - Can generate bigger files (32K tokens)
+- **Newer knowledge** - Knows latest frameworks and libraries
+- **Better structured outputs** - More reliable JSON responses
+
+### Project Persistence
+
+Your projects now **save automatically** to the cloud:
+
+- Files are saved immediately after AI generation
+- Files persist across browser refreshes
+- Restore your project from any device
+- Auto-save on manual file edits
+
+<Note>
+  Projects created before this update may need to regenerate code once to enable persistence.
+</Note>
+
+### Avatar Fallback for WebContainer
+
+Fixed an issue where Google profile pictures were blocked by WebContainer's security policy. Now shows user initials as a fallback.
+
+---
+
+## Jan 2, 2025
+
+### Vite + shadcn/ui Template
+
+Switched from Next.js to **Vite + React** for faster builds:
+
+- ⚡ Faster hot module replacement
+- 📦 Smaller bundle sizes
+- 🎨 Pre-configured shadcn/ui components
+- 🔧 Simpler project structure
+
+### Search Modal (Cmd/Ctrl + K)
+
+Quickly find and open your projects with the new search modal:
+
+- Press `Cmd+K` (Mac) or `Ctrl+K` (Windows/Linux)
+- Search by project name
+- See recently edited projects
+
+### Terminal Fix
+
+Fixed the xterm "dimensions undefined" error that occurred during terminal initialization.
+
+---
+
+## Jan 1, 2025
+
+### Initial Release
+
+Joyixir is live! Build games and interactive experiences with AI.
+
+**Features:**
+- AI-powered code generation with Gemini
+- Live preview with WebContainer
+- Monaco code editor
+- Multiple templates (Vite, Canvas 2D, Phaser 3, Three.js)
+- Export to ZIP
+- Google authentication
+- Project management
+
+---
+
+## Coming Soon
+
+We're working on exciting new features:
+
+<CardGroup cols={2}>
+  <Card title="Dependency Checker" icon="check">
+    Automatically check and update project dependencies before AI generation
+  </Card>
+  <Card title="GitHub Integration" icon="github">
+    Push your projects directly to GitHub repositories
+  </Card>
+  <Card title="Collaboration" icon="users">
+    Share projects and work together in real-time
+  </Card>
+  <Card title="Asset Library" icon="image">
+    Built-in sprites, sounds, and assets for game development
+  </Card>
+</CardGroup>
+
+---
+
+Have a feature request? [Let us know](mailto:feedback@joyixir.app)!

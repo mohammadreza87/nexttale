@@ -1,0 +1,120 @@
+---
+title: 'AI Chat'
+description: 'How to communicate with Joyixir AI effectively'
+---
+
+## Overview
+
+Joyixir uses **Google Gemini 3 Pro** to understand your requests and generate code. The AI maintains context throughout your conversation, building on previous messages.
+
+## How It Works
+
+<Steps>
+  <Step title="You describe what you want">
+    Type your request in natural language. Be specific about features, visuals, and behavior.
+  </Step>
+  <Step title="AI analyzes your request">
+    Gemini 3 Pro processes your prompt along with the current project context.
+  </Step>
+  <Step title="Code is generated">
+    The AI returns a JSON response with file paths and complete file contents.
+  </Step>
+  <Step title="Files are applied">
+    Joyixir writes the files to WebContainer and updates the live preview.
+  </Step>
+</Steps>
+
+## Writing Good Prompts
+
+### Be Specific
+
+<CodeGroup>
+```text Bad
+Make a game
+```
+
+```text Good
+Create a snake game with:
+- Green snake on dark background
+- Red food that appears randomly
+- Arrow key controls
+- Score in top-right corner
+- Game over when hitting walls
+```
+</CodeGroup>
+
+### Describe Visual Details
+
+The AI can't see your screen. Describe exactly what you want:
+
+- Colors: "blue button", "dark gray background (#1a1a1a)"
+- Sizes: "large title", "32px font", "full-width container"
+- Layout: "centered on screen", "sidebar on left", "header at top"
+
+### Reference Existing Code
+
+When asking for changes, reference what exists:
+
+```text
+The player character in Index.tsx moves too fast.
+Reduce the speed from 5 to 3.
+```
+
+### Break Down Complex Features
+
+Instead of one huge prompt, build incrementally:
+
+1. "Create a basic game canvas with a player square"
+2. "Add keyboard controls to move the player"
+3. "Add obstacles that the player must avoid"
+4. "Add a score counter and game over screen"
+
+## Context Window
+
+The AI remembers:
+- Last 10 messages in conversation
+- Current file contents (important files)
+- Selected file (if any)
+- Whether Three.js is installed
+
+<Warning>
+  Very long conversations may lose early context. If the AI seems to forget something, remind it or start a new project.
+</Warning>
+
+## Response Format
+
+The AI returns structured JSON:
+
+```json
+{
+  "message": "Created snake game with controls and scoring",
+  "files": [
+    {
+      "path": "/src/pages/Index.tsx",
+      "content": "// Full file content..."
+    }
+  ],
+  "explanation": "Details about what was implemented",
+  "needsThreeJs": false
+}
+```
+
+## Tips for Better Results
+
+<AccordionGroup>
+  <Accordion title="Use game development terminology">
+    - "game loop", "sprite", "collision detection"
+    - "frame rate", "delta time", "physics"
+    - "state machine", "player input"
+  </Accordion>
+  <Accordion title="Mention the tech stack">
+    - "Use Canvas API for rendering"
+    - "Use React state for game state"
+    - "Use requestAnimationFrame for the loop"
+  </Accordion>
+  <Accordion title="Provide examples">
+    - "Like Flappy Bird but with..."
+    - "Similar to Space Invaders where..."
+    - "A match-3 game like Candy Crush"
+  </Accordion>
+</AccordionGroup>

@@ -64,7 +64,7 @@ export const Terminal = memo(function Terminal({ output, className = '' }: Termi
     requestAnimationFrame(() => {
       try {
         fitAddon.fit();
-      } catch (e) {
+      } catch {
         // Ignore fit errors during initialization
       }
     });

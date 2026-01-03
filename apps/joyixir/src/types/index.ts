@@ -25,12 +25,19 @@ export interface FileContent {
 
 export type ChatRole = 'user' | 'assistant' | 'system';
 
+export interface NextStep {
+  label: string;
+  prompt: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: ChatRole;
   content: string;
   timestamp?: Date;
   files?: FileContent[];
+  nextSteps?: NextStep[];
+  features?: string[];
 }
 
 export interface ConversationMessage {

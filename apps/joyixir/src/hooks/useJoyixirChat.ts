@@ -1,12 +1,68 @@
 import { useState, useCallback, useRef } from 'react';
 import { generateCode, type GenerateRequest } from '../lib/joyixirService';
+import type { ChatMessage, NextStep } from '../types';
 
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
+// Re-export ChatMessage for backwards compatibility
+export type { ChatMessage } from '../types';
+
+// Helper to parse AI response and extract features/next steps
+function parseAIResponse(message: string): {
   content: string;
-  timestamp: Date;
-  files?: Array<{ path: string; content: string }>;
+  features: string[];
+  nextSteps: NextStep[];
+} {
+  const features: string[] = [];
+  const nextSteps: NextStep[] = [];
+  const content = message;
+
+  // Extract bullet points that start with common bullet characters
+  const bulletRegex = /^[\s]*[-•*]\s*(.+)$/gmu;
+  const bullets = message.match(bulletRegex);
+  if (bullets) {
+    bullets.forEach(bullet => {
+      const cleaned = bullet.replace(/^[\s]*[-•*]\s*/, '').trim();
+      if (cleaned.length > 0 && cleaned.length < 100) {
+        features.push(cleaned);
+      }
+    });
+  }
+
+  // Generate smart next step suggestions based on content
+  const lowerContent = content.toLowerCase();
+
+  if (lowerContent.includes('game') || lowerContent.includes('created') || lowerContent.includes('built')) {
+    nextSteps.push(
+      { label: 'Add sound effects', prompt: 'Add sound effects for game actions like collecting items, jumping, and game over' },
+      { label: 'Add animations', prompt: 'Add smooth animations for player movement and transitions' },
+      { label: 'Add a leaderboard', prompt: 'Add a local leaderboard to track high scores' }
+    );
+  }
+
+  if (lowerContent.includes('player') || lowerContent.includes('character')) {
+    nextSteps.push(
+      { label: 'Add power-ups', prompt: 'Add power-up items that give the player special abilities' },
+      { label: 'Add enemies', prompt: 'Add enemies that the player must avoid or defeat' }
+    );
+  }
+
+  if (lowerContent.includes('score') || lowerContent.includes('points')) {
+    nextSteps.push(
+      { label: 'Add combo system', prompt: 'Add a combo multiplier system for consecutive actions' }
+    );
+  }
+
+  if (lowerContent.includes('level') || lowerContent.includes('stage')) {
+    nextSteps.push(
+      { label: 'Add more levels', prompt: 'Add 3 more levels with increasing difficulty' }
+    );
+  }
+
+  // Limit to 3 suggestions
+  return {
+    content,
+    features: features.slice(0, 5),
+    nextSteps: nextSteps.slice(0, 3),
+  };
 }
 
 interface UseJoyixirChatOptions {
@@ -33,8 +89,13 @@ export function useJoyixirChat(options: UseJoyixirChatOptions = {}): UseJoyixirC
       id: '1',
       role: 'assistant',
       content:
-        "Hi! I'm Joyixir, your AI game builder. Choose a template below to get started, then tell me what game you want to create!",
+        "Hi! I'm Joyixir, your AI game builder. Describe the game you want to create and I'll build it for you!",
       timestamp: new Date(),
+      nextSteps: [
+        { label: 'Create a snake game', prompt: 'Create a classic snake game with arrow key controls, food collection, and score tracking' },
+        { label: 'Build a platformer', prompt: 'Create a 2D platformer game with a jumping character, platforms, and collectible coins' },
+        { label: 'Make a puzzle game', prompt: 'Create a match-3 puzzle game like Candy Crush with colorful tiles and scoring' },
+      ],
     },
   ]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -43,11 +104,11 @@ export function useJoyixirChat(options: UseJoyixirChatOptions = {}): UseJoyixirC
   // Keep track of generated files for context
   const filesRef = useRef<Record<string, string>>({});
 
-  const addMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
+  const addMessage = useCallback((message: Omit<ChatMessage, 'id'> & { timestamp?: Date }) => {
     const newMessage: ChatMessage = {
       ...message,
       id: Date.now().toString() + Math.random().toString(36).slice(2),
-      timestamp: new Date(),
+      timestamp: message.timestamp || new Date(),
     };
     setMessages((prev) => [...prev, newMessage]);
     return newMessage;
@@ -134,18 +195,24 @@ export function useJoyixirChat(options: UseJoyixirChatOptions = {}): UseJoyixirC
           await onFilesGenerated(response.files);
         }
 
-        // Add assistant response
+        // Parse the AI response to extract features and next steps
+        const fullContent = response.message + (response.explanation ? `\n\n${response.explanation}` : '');
+        const parsed = parseAIResponse(fullContent);
+
+        // Add assistant response with parsed features and suggestions
         addMessage({
           role: 'assistant',
-          content: response.message + (response.explanation ? `\n\n${response.explanation}` : ''),
+          content: parsed.content,
           files: response.files,
+          features: parsed.features,
+          nextSteps: parsed.nextSteps,
         });
 
         // Add system message about files modified
         if (response.files.length > 0) {
           addMessage({
             role: 'system',
-            content: `Modified ${response.files.length} file(s): ${response.files.map((f) => f.path).join(', ')}`,
+            content: `Updated ${response.files.length} file${response.files.length > 1 ? 's' : ''}: ${response.files.map((f) => f.path.split('/').pop()).join(', ')}`,
           });
         }
       } catch (err) {

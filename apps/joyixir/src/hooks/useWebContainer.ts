@@ -12,6 +12,8 @@ import {
   installDependencies,
   startDevServer,
   getFileTree,
+  hasNodeModules,
+  resetNodeModulesState,
 } from '../lib/webcontainer';
 
 export type WebContainerStatus =
@@ -48,6 +50,8 @@ export interface UseWebContainerReturn {
   refreshFileTree: () => Promise<void>;
   runCommand: (command: string, args?: string[]) => Promise<number>;
   clearTerminal: () => void;
+  checkNodeModules: () => Promise<boolean>;
+  resetForNewProject: () => void;
 }
 
 export function useWebContainer(): UseWebContainerReturn {
@@ -67,6 +71,21 @@ export function useWebContainer(): UseWebContainerReturn {
   // Clear terminal
   const clearTerminal = useCallback(() => {
     setTerminalOutput([]);
+  }, []);
+
+  // Check if node_modules exists
+  const checkNodeModules = useCallback(async (): Promise<boolean> => {
+    return hasNodeModules();
+  }, []);
+
+  // Reset state for a new project (but keep WebContainer)
+  const resetForNewProject = useCallback(() => {
+    resetNodeModulesState();
+    setPreviewUrl(null);
+    setFileTree([]);
+    setTerminalOutput([]);
+    setError(null);
+    // Keep status as is - we want to keep WebContainer running
   }, []);
 
   // Boot the WebContainer
@@ -157,8 +176,17 @@ export function useWebContainer(): UseWebContainerReturn {
     }
   }, []);
 
-  // Install dependencies
+  // Install dependencies (skips if already installed)
   const install = useCallback(async () => {
+    // Check if we can skip install
+    const alreadyInstalled = await hasNodeModules();
+
+    if (alreadyInstalled) {
+      appendOutput('\nDependencies already installed, skipping npm install...\n');
+      setStatus('ready');
+      return;
+    }
+
     setStatus('installing');
     appendOutput('\n$ npm install\n');
 
@@ -263,5 +291,7 @@ export function useWebContainer(): UseWebContainerReturn {
     refreshFileTree,
     runCommand,
     clearTerminal,
+    checkNodeModules,
+    resetForNewProject,
   };
 }

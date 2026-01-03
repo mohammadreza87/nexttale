@@ -1,0 +1,166 @@
+---
+title: 'Prompt Tips'
+description: 'Write better prompts for better games'
+---
+
+## The Art of Prompting
+
+Getting great results from Joyixir starts with great prompts. Here's how to communicate effectively with the AI.
+
+## The SPEC Framework
+
+Use this framework for comprehensive prompts:
+
+<Steps>
+  <Step title="S - Scope">
+    What type of game/app? What's the main goal?
+  </Step>
+  <Step title="P - Player/User">
+    How do they interact? Controls, inputs, flow?
+  </Step>
+  <Step title="E - Elements">
+    What objects, characters, UI elements exist?
+  </Step>
+  <Step title="C - Conditions">
+    Win/lose conditions, rules, constraints?
+  </Step>
+</Steps>
+
+### Example Using SPEC
+
+```text
+Create a brick breaker game where:
+- [Scope] Classic arcade-style brick breaking
+- [Player] Mouse controls paddle, click to launch ball
+- [Elements] Paddle at bottom, ball, 5 rows of colored bricks
+- [Conditions] Win when all bricks broken, lose if ball falls 3 times
+```
+
+## Good vs Bad Prompts
+
+<Tabs>
+  <Tab title="Too Vague">
+    ```text
+    ❌ Make a game
+    ❌ Create something fun
+    ❌ Build an app
+    ```
+  </Tab>
+  <Tab title="Just Right">
+    ```text
+    ✅ Create a Tetris clone with:
+       - Standard 10x20 grid
+       - 7 tetromino shapes
+       - Arrow keys to move/rotate
+       - Score based on lines cleared
+       - Increasing speed as score rises
+    ```
+  </Tab>
+  <Tab title="Too Complex">
+    ```text
+    ❌ Create an MMO RPG with 100 quests,
+       50 character classes, multiplayer
+       with 1000 concurrent users, voice
+       chat, and blockchain integration
+    ```
+  </Tab>
+</Tabs>
+
+## Iteration Prompts
+
+After initial generation, use these patterns:
+
+### Bug Fixes
+```text
+The [specific thing] isn't working correctly.
+When I [action], it should [expected], but instead [actual].
+Please fix this in [filename].
+```
+
+### Adding Features
+```text
+Add [feature] to the game:
+- It should [behavior]
+- Triggered by [input/condition]
+- Display [visual feedback]
+```
+
+### Visual Changes
+```text
+Change the [element]:
+- Color from [current] to [new]
+- Size from [current] to [new]
+- Position to [location]
+```
+
+### Performance
+```text
+The game is running slowly. Please optimize:
+- Reduce re-renders
+- Use requestAnimationFrame efficiently
+- Minimize state updates
+```
+
+## Magic Phrases
+
+These phrases help the AI understand your intent:
+
+| Phrase | Effect |
+|--------|--------|
+| "Keep it simple" | Avoids over-engineering |
+| "Production ready" | Adds error handling, types |
+| "Like [game name]" | Uses familiar patterns |
+| "Mobile friendly" | Adds touch controls |
+| "Accessible" | Adds ARIA labels, keyboard nav |
+
+## Common Mistakes
+
+<AccordionGroup>
+  <Accordion title="Asking for too much at once">
+    Break complex games into phases. Build the core loop first, then add features.
+  </Accordion>
+  <Accordion title="Being too abstract">
+    "Make it look nice" doesn't help. Specify colors, fonts, layouts.
+  </Accordion>
+  <Accordion title="Forgetting context">
+    Reference existing files and features when asking for changes.
+  </Accordion>
+  <Accordion title="Not testing incrementally">
+    Test each change before adding more. It's easier to debug small changes.
+  </Accordion>
+</AccordionGroup>
+
+## Template Prompts
+
+Copy and customize these:
+
+<CodeGroup>
+```text Arcade Game
+Create a [game type] game with:
+- Canvas size: [width]x[height]
+- Player: [description], controlled by [input]
+- Enemies: [type], spawn every [interval]
+- Scoring: [points] per [action]
+- Game over when: [condition]
+- Visual style: [description]
+```
+
+```text Puzzle Game
+Build a [puzzle type] puzzle with:
+- Grid: [rows]x[cols]
+- Pieces: [types/colors]
+- Match rule: [how to match]
+- Win condition: [goal]
+- Moves/time limit: [limit]
+- Animations: [effects]
+```
+
+```text Interactive Tool
+Create a [tool type] that:
+- Input: [what user provides]
+- Process: [what it does]
+- Output: [what it shows]
+- Persist: [what to save]
+- UI style: [design notes]
+```
+</CodeGroup>

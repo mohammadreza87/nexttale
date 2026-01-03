@@ -3,6 +3,9 @@ import { WebContainer, FileSystemTree } from '@webcontainer/api';
 let webcontainerInstance: WebContainer | null = null;
 let bootPromise: Promise<WebContainer> | null = null;
 
+// Track if node_modules exists to avoid redundant installs
+let nodeModulesInstalled = false;
+
 /**
  * Boot the WebContainer instance (singleton).
  * Can only be called once - subsequent calls return the same instance.
@@ -92,11 +95,45 @@ export async function spawn(
 }
 
 /**
+ * Check if node_modules already exists and has content.
+ * Used to skip npm install when dependencies are already installed.
+ */
+export async function hasNodeModules(): Promise<boolean> {
+  if (nodeModulesInstalled) {
+    return true;
+  }
+
+  try {
+    const instance = await bootWebContainer();
+    const entries = await instance.fs.readdir('/node_modules');
+    // Check if there are actual packages (not just .bin or .cache)
+    const hasPackages = entries.some(
+      (entry) => !entry.startsWith('.') && entry !== 'node_modules'
+    );
+    if (hasPackages) {
+      nodeModulesInstalled = true;
+      return true;
+    }
+  } catch {
+    // node_modules doesn't exist
+  }
+  return false;
+}
+
+/**
  * Install npm dependencies.
+ * Skips if node_modules already exists.
  */
 export async function installDependencies(
-  onOutput?: (data: string) => void
+  onOutput?: (data: string) => void,
+  forceInstall = false
 ): Promise<number> {
+  // Check if already installed
+  if (!forceInstall && await hasNodeModules()) {
+    onOutput?.('Dependencies already installed, skipping npm install...\n');
+    return 0;
+  }
+
   const process = await spawn('npm', ['install']);
 
   if (onOutput) {
@@ -109,7 +146,20 @@ export async function installDependencies(
     );
   }
 
-  return process.exit;
+  const exitCode = await process.exit;
+
+  if (exitCode === 0) {
+    nodeModulesInstalled = true;
+  }
+
+  return exitCode;
+}
+
+/**
+ * Reset the installed state (useful when switching projects).
+ */
+export function resetNodeModulesState(): void {
+  nodeModulesInstalled = false;
 }
 
 /**

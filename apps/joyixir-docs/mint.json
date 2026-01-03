@@ -1,0 +1,95 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Joyixir",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#8B5CF6",
+    "light": "#A78BFA",
+    "dark": "#7C3AED",
+    "anchors": {
+      "from": "#8B5CF6",
+      "to": "#EC4899"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:support@joyixir.app"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Dashboard",
+    "url": "https://joyixir.app"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Community",
+      "icon": "discord",
+      "url": "https://discord.gg/joyixir"
+    },
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/nexttale/joyixir"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "plans-and-credits"
+      ]
+    },
+    {
+      "group": "Features",
+      "pages": [
+        "features/ai-chat",
+        "features/live-preview",
+        "features/code-editor",
+        "features/templates",
+        "features/three-js-support",
+        "features/export-deploy"
+      ]
+    },
+    {
+      "group": "Integrations",
+      "pages": [
+        "integrations/supabase",
+        "integrations/github",
+        "integrations/vercel"
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "guides/your-first-game",
+        "guides/prompt-tips",
+        "guides/troubleshooting",
+        "guides/best-practices"
+      ]
+    },
+    {
+      "group": "Changelog",
+      "pages": [
+        "changelog"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "twitter": "https://twitter.com/joyixir",
+    "github": "https://github.com/nexttale/joyixir",
+    "discord": "https://discord.gg/joyixir"
+  }
+}

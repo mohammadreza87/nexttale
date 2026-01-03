@@ -1,10 +1,14 @@
 /**
  * Builder Page
- * Main game development IDE with chat, file explorer, editor, preview, and terminal
+ * Main game development IDE with Lovable-style UI:
+ * - Chat panel on left with AI suggestions
+ * - Large preview panel on right
+ * - Collapsible code editor and terminal
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import type { User } from '@supabase/supabase-js';
+import { Code2, Terminal as TerminalIcon } from 'lucide-react';
 import { Preview, ExportModal } from '../components';
 import {
   BuilderHeader,
@@ -115,7 +119,8 @@ export function BuilderPage({
 
   // UI state
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
-  const [bottomPanelOpen, setBottomPanelOpen] = useState(true);
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [showTerminal, setShowTerminal] = useState(false);
   const [activeLeftTab, setActiveLeftTab] = useState<'chat' | 'files'>('chat');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState('');
@@ -285,7 +290,6 @@ export function BuilderPage({
       } else {
         addSystemMessage('Ready! Describe the game you want to build.');
       }
-      setActiveLeftTab('files');
     } catch (err) {
       setIsSettingUp(false);
       await updateProjectStatus(project.id, 'draft');
@@ -380,7 +384,7 @@ export function BuilderPage({
     [selectedFile, writeProjectFile, debouncedSaveFiles]
   );
 
-  // Handle send message
+  // Handle send message from input
   const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || isGenerating || isSettingUp) return;
 
@@ -389,9 +393,10 @@ export function BuilderPage({
 
     if (!projectReady) {
       await startProject();
-      if (projectReady) {
-        await sendAiMessage(prompt, selectedFile || undefined);
-      }
+      // Wait for project to be ready, then send message
+      setTimeout(() => {
+        sendAiMessage(prompt, selectedFile || undefined);
+      }, 100);
     } else {
       await sendAiMessage(prompt, selectedFile || undefined);
     }
@@ -404,6 +409,28 @@ export function BuilderPage({
     sendAiMessage,
     selectedFile,
   ]);
+
+  // Handle suggestion click - send the prompt directly
+  const handleSuggestionClick = useCallback(async (prompt: string) => {
+    if (isGenerating || isSettingUp) return;
+
+    if (!projectReady) {
+      await startProject();
+      setTimeout(() => {
+        sendAiMessage(prompt, selectedFile || undefined);
+      }, 100);
+    } else {
+      await sendAiMessage(prompt, selectedFile || undefined);
+    }
+  }, [isGenerating, isSettingUp, projectReady, startProject, sendAiMessage, selectedFile]);
+
+  // Show file in editor when selected from file tree
+  const handleSelectFile = useCallback((file: string | null) => {
+    setSelectedFile(file);
+    if (file) {
+      setShowCodeEditor(true);
+    }
+  }, []);
 
   // Show loading while fetching fresh project data
   if (isLoadingProject) {
@@ -424,9 +451,22 @@ export function BuilderPage({
         onBackToHome={onBackToHome}
         onExport={() => setShowExportModal(true)}
         onSignOut={onSignOut}
+        onShare={() => {
+          // TODO: Implement share functionality
+          console.log('Share clicked');
+        }}
+        onPublish={() => {
+          // TODO: Implement publish functionality
+          console.log('Publish clicked');
+        }}
+        onUpgrade={() => {
+          // TODO: Implement upgrade functionality
+          console.log('Upgrade clicked');
+        }}
       />
 
       <div className="flex flex-1 overflow-hidden">
+        {/* Left Panel - Chat and Files */}
         <LeftPanel
           isOpen={leftPanelOpen}
           onToggle={() => setLeftPanelOpen(!leftPanelOpen)}
@@ -439,21 +479,30 @@ export function BuilderPage({
           inputValue={inputValue}
           onInputChange={setInputValue}
           onSendMessage={handleSendMessage}
+          onSuggestionClick={handleSuggestionClick}
           fileTree={fileTree}
           selectedFile={selectedFile}
-          onSelectFile={setSelectedFile}
+          onSelectFile={handleSelectFile}
         />
 
+        {/* Main Content Area */}
         <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Preview and Editor Row */}
           <div className="flex flex-1 overflow-hidden">
-            <EditorPanel
-              selectedFile={selectedFile}
-              fileContent={fileContent}
-              isLoading={isFileLoading}
-              onChange={handleFileChange}
-            />
+            {/* Code Editor - Collapsible */}
+            {showCodeEditor && (
+              <div className="flex w-1/2 flex-col overflow-hidden border-r border-gray-800">
+                <EditorPanel
+                  selectedFile={selectedFile}
+                  fileContent={fileContent}
+                  isLoading={isFileLoading}
+                  onChange={handleFileChange}
+                />
+              </div>
+            )}
 
-            <div className="flex w-1/2 flex-col overflow-hidden">
+            {/* Preview Panel - Takes remaining space */}
+            <div className="flex flex-1 flex-col overflow-hidden">
               <Preview
                 url={previewUrl}
                 isLoading={status === 'installing' || status === 'booting'}
@@ -461,11 +510,45 @@ export function BuilderPage({
             </div>
           </div>
 
-          <TerminalPanel
-            output={terminalOutput}
-            isOpen={bottomPanelOpen}
-            onToggle={() => setBottomPanelOpen(!bottomPanelOpen)}
-          />
+          {/* Bottom Bar with Toggle Buttons */}
+          <div className="flex h-10 shrink-0 items-center justify-between border-t border-gray-800 bg-gray-900 px-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCodeEditor(!showCodeEditor)}
+                className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors ${
+                  showCodeEditor
+                    ? 'bg-violet-600/20 text-violet-300'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                <Code2 className="h-3.5 w-3.5" />
+                Code
+              </button>
+              <button
+                onClick={() => setShowTerminal(!showTerminal)}
+                className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs transition-colors ${
+                  showTerminal
+                    ? 'bg-violet-600/20 text-violet-300'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                <TerminalIcon className="h-3.5 w-3.5" />
+                Terminal
+              </button>
+            </div>
+            <div className="text-xs text-gray-600">
+              {status === 'running' ? 'Server running' : status}
+            </div>
+          </div>
+
+          {/* Terminal Panel - Collapsible */}
+          {showTerminal && (
+            <TerminalPanel
+              output={terminalOutput}
+              isOpen={true}
+              onToggle={() => setShowTerminal(false)}
+            />
+          )}
         </div>
       </div>
 

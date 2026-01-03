@@ -22,6 +22,8 @@ interface LeftPanelProps {
   inputValue: string;
   onInputChange: (value: string) => void;
   onSendMessage: () => void;
+  onSuggestionClick?: (prompt: string) => void;
+  creditsRemaining?: number;
   // Files props
   fileTree: FileNode[];
   selectedFile: string | null;
@@ -40,16 +42,27 @@ export function LeftPanel({
   inputValue,
   onInputChange,
   onSendMessage,
+  onSuggestionClick,
+  creditsRemaining = 50,
   fileTree,
   selectedFile,
   onSelectFile,
 }: LeftPanelProps) {
+  // Handle suggestion click - either from ChatMessages or ChatInput
+  const handleSuggestionClick = (prompt: string) => {
+    if (onSuggestionClick) {
+      onSuggestionClick(prompt);
+    } else {
+      onInputChange(prompt);
+    }
+  };
+
   return (
     <>
       {/* Panel content */}
       <div
         className={`flex shrink-0 flex-col border-r border-gray-800 bg-gray-900 transition-all ${
-          isOpen ? 'w-80' : 'w-0'
+          isOpen ? 'w-96' : 'w-0'
         }`}
       >
         {isOpen && (
@@ -58,18 +71,18 @@ export function LeftPanel({
             <div className="flex border-b border-gray-800">
               <button
                 onClick={() => onTabChange('chat')}
-                className={`flex flex-1 items-center justify-center gap-2 py-2.5 text-sm ${
+                className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'chat'
                     ? 'border-b-2 border-violet-500 text-white'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
                 <Sparkles className="h-4 w-4" />
-                Chat
+                AI Chat
               </button>
               <button
                 onClick={() => onTabChange('files')}
-                className={`flex flex-1 items-center justify-center gap-2 py-2.5 text-sm ${
+                className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'files'
                     ? 'border-b-2 border-violet-500 text-white'
                     : 'text-gray-400 hover:text-white'
@@ -89,12 +102,15 @@ export function LeftPanel({
                     isGenerating={isGenerating}
                     projectReady={projectReady}
                     isSettingUp={isSettingUp}
+                    onSuggestionClick={handleSuggestionClick}
                   />
                   <ChatInput
                     value={inputValue}
                     onChange={onInputChange}
                     onSend={onSendMessage}
                     disabled={isGenerating}
+                    creditsRemaining={creditsRemaining}
+                    onSuggestionClick={handleSuggestionClick}
                   />
                 </div>
               ) : (
@@ -112,7 +128,7 @@ export function LeftPanel({
       {/* Toggle button */}
       <button
         onClick={onToggle}
-        className="flex h-full w-5 items-center justify-center bg-gray-900 text-gray-500 hover:bg-gray-800 hover:text-white"
+        className="flex h-full w-5 items-center justify-center bg-gray-900 text-gray-500 transition-colors hover:bg-gray-800 hover:text-white"
       >
         {isOpen ? (
           <PanelLeftClose className="h-4 w-4" />
