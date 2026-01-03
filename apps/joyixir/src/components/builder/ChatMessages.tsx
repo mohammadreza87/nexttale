@@ -1,12 +1,13 @@
 /**
  * Chat Messages Component
  * Displays chat message history with AI responses in Lovable-style UI
- * Features bullet points, "Next steps" suggestions, and styled messages
+ * Features bullet points, card-style "Next steps" suggestions, and styled messages
  */
 
 import { useEffect, useRef } from 'react';
-import { Loader2, Sparkles, User, Check, Wand2 } from 'lucide-react';
-import type { ChatMessage, NextStep } from '../../types';
+import { Loader2, Sparkles, User, Check } from 'lucide-react';
+import type { ChatMessage } from '../../types';
+import { NextStepsCards } from './NextStepsCards';
 
 interface ChatMessagesProps {
   messages: ChatMessage[];
@@ -27,36 +28,6 @@ function FeatureList({ features }: { features: string[] }) {
           <span className="text-gray-300">{feature}</span>
         </div>
       ))}
-    </div>
-  );
-}
-
-function NextStepsSection({
-  nextSteps,
-  onSuggestionClick,
-}: {
-  nextSteps: NextStep[];
-  onSuggestionClick?: (prompt: string) => void;
-}) {
-  if (!nextSteps || nextSteps.length === 0) return null;
-
-  return (
-    <div className="mt-4 rounded-lg border border-gray-700 bg-gray-800/50 p-3">
-      <p className="mb-2 text-xs font-medium text-gray-400">
-        Next steps you might want
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {nextSteps.map((step, index) => (
-          <button
-            key={index}
-            onClick={() => onSuggestionClick?.(step.prompt)}
-            className="flex items-center gap-1.5 rounded-full bg-violet-600/20 px-3 py-1.5 text-xs text-violet-300 transition-colors hover:bg-violet-600/30 hover:text-violet-200"
-          >
-            <Wand2 className="h-3 w-3" />
-            {step.label}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
@@ -117,12 +88,14 @@ function MessageBubble({
           )}
         </div>
 
-        {/* Next steps suggestions */}
+        {/* Next steps suggestions - Card style */}
         {isAssistant && message.nextSteps && message.nextSteps.length > 0 && (
-          <NextStepsSection
-            nextSteps={message.nextSteps}
-            onSuggestionClick={onSuggestionClick}
-          />
+          <div className="mt-4">
+            <NextStepsCards
+              steps={message.nextSteps}
+              onStepClick={onSuggestionClick || (() => {})}
+            />
+          </div>
         )}
       </div>
     </div>

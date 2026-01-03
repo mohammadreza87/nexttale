@@ -1,106 +1,192 @@
 /**
  * Builder Header Component
- * Top navigation bar with project info, status, share, upgrade, publish, and user controls
+ * Top navigation bar with project dropdown, view tabs, device toggles, and action buttons (Lovable-style)
  */
 
 import type { User } from '@supabase/supabase-js';
 import {
-  Sparkles,
   Download,
   LogOut,
-  ArrowLeft,
   Share2,
   Rocket,
   Crown,
   ExternalLink,
+  HelpCircle,
 } from 'lucide-react';
 import type { WebContainerStatus } from '../../hooks/useWebContainer';
 import { Avatar } from '../Avatar';
+import { HeaderTabs, type BuilderViewMode } from './HeaderTabs';
+import { DeviceToggle, type DeviceMode } from './DeviceToggle';
+import { ProjectDropdown } from './ProjectDropdown';
 
 interface BuilderHeaderProps {
-  projectName: string;
   user: User;
   status: WebContainerStatus;
-  onBackToHome: () => void;
   onExport: () => void;
   onSignOut: () => void;
   onShare?: () => void;
   onPublish?: () => void;
   onUpgrade?: () => void;
+  onOpenHelp?: () => void;
   isPublished?: boolean;
   publishedUrl?: string;
+  // View mode and device toggles
+  viewMode: BuilderViewMode;
+  onViewModeChange: (mode: BuilderViewMode) => void;
+  deviceMode: DeviceMode;
+  onDeviceModeChange: (mode: DeviceMode) => void;
+  onRefresh: () => void;
+  isRefreshing?: boolean;
+  // Code mode specific
+  onCloseCodeView?: () => void;
+  // Project dropdown props
+  projectName: string;
+  studioName?: string;
+  creditsRemaining?: number;
+  totalCredits?: number;
+  showProjectDropdown?: boolean;
+  onToggleProjectDropdown?: () => void;
+  onGoToDashboard?: () => void;
+  onOpenSettings?: () => void;
+  onAddCredits?: () => void;
+  onRenameProject?: () => void;
+  onStarProject?: () => void;
+  onRemixProject?: () => void;
+  isProjectStarred?: boolean;
 }
 
 export function BuilderHeader({
-  projectName,
   user,
   status,
-  onBackToHome,
   onExport,
   onSignOut,
   onShare,
   onPublish,
   onUpgrade,
+  onOpenHelp,
   isPublished = false,
   publishedUrl,
+  viewMode,
+  onViewModeChange,
+  deviceMode,
+  onDeviceModeChange,
+  onRefresh,
+  isRefreshing = false,
+  onCloseCodeView,
+  // Project dropdown
+  projectName,
+  studioName = 'My Studio',
+  creditsRemaining = 50,
+  totalCredits = 50,
+  showProjectDropdown = false,
+  onToggleProjectDropdown,
+  onGoToDashboard,
+  onOpenSettings,
+  onAddCredits,
+  onRenameProject,
+  onStarProject,
+  onRemixProject,
+  isProjectStarred = false,
 }: BuilderHeaderProps) {
-  const getStatusText = () => {
-    switch (status) {
-      case 'idle':
-        return 'Ready';
-      case 'booting':
-        return 'Booting...';
-      case 'ready':
-        return 'Ready';
-      case 'installing':
-        return 'Installing...';
-      case 'running':
-        return 'Running';
-      case 'error':
-        return 'Error';
-      default:
-        return 'Unknown';
-    }
-  };
+  // Code mode header (simplified)
+  if (viewMode === 'code') {
+    return (
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-800 bg-gray-900 px-4">
+        {/* Left section - Project dropdown and View tabs */}
+        <div className="flex items-center gap-4">
+          {/* Project Dropdown */}
+          <div className="w-64">
+            <ProjectDropdown
+              projectName={projectName}
+              studioName={studioName}
+              creditsRemaining={creditsRemaining}
+              totalCredits={totalCredits}
+              isOpen={showProjectDropdown}
+              onToggle={onToggleProjectDropdown || (() => {})}
+              onGoToDashboard={onGoToDashboard || (() => {})}
+              onOpenSettings={onOpenSettings}
+              onAddCredits={onAddCredits}
+              onRenameProject={onRenameProject}
+              onStarProject={onStarProject}
+              onRemixProject={onRemixProject}
+              isStarred={isProjectStarred}
+            />
+          </div>
 
-  const getStatusColor = () => {
-    switch (status) {
-      case 'running':
-        return 'bg-green-500';
-      case 'error':
-        return 'bg-red-500';
-      case 'installing':
-      case 'booting':
-        return 'bg-yellow-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
+          {/* Separator */}
+          <div className="h-6 w-px bg-gray-700" />
 
+          <HeaderTabs viewMode={viewMode} onViewModeChange={onViewModeChange} />
+        </div>
+
+        {/* Right section - Simplified for Code mode */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">Read only</span>
+
+          {/* Upgrade button */}
+          <button
+            onClick={onUpgrade}
+            className="flex items-center gap-2 rounded-lg border border-yellow-600/30 bg-yellow-600/10 px-3 py-1.5 text-sm text-yellow-400 transition-colors hover:border-yellow-500/50 hover:bg-yellow-600/20"
+          >
+            Upgrade
+          </button>
+
+          {/* Close button */}
+          <button
+            onClick={onCloseCodeView || (() => onViewModeChange('preview'))}
+            className="flex items-center gap-2 rounded-lg bg-gray-800 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+          >
+            Close
+          </button>
+        </div>
+      </header>
+    );
+  }
+
+  // Preview mode header (full)
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-800 bg-gray-900 px-4">
-      {/* Left section - Logo and project name */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onBackToHome}
-          className="flex items-center gap-1 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
-          title="Back to home"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600">
-          <Sparkles className="h-4 w-4 text-white" />
+      {/* Left section - Project dropdown, View tabs and device toggles */}
+      <div className="flex items-center gap-4">
+        {/* Project Dropdown */}
+        <div className="w-64">
+          <ProjectDropdown
+            projectName={projectName}
+            studioName={studioName}
+            creditsRemaining={creditsRemaining}
+            totalCredits={totalCredits}
+            isOpen={showProjectDropdown}
+            onToggle={onToggleProjectDropdown || (() => {})}
+            onGoToDashboard={onGoToDashboard || (() => {})}
+            onOpenSettings={onOpenSettings}
+            onAddCredits={onAddCredits}
+            onRenameProject={onRenameProject}
+            onStarProject={onStarProject}
+            onRemixProject={onRemixProject}
+            isStarred={isProjectStarred}
+          />
         </div>
-        <div className="flex flex-col">
-          <span className="font-semibold text-white">{projectName}</span>
-          <div className="flex items-center gap-1.5">
-            <div className={`h-1.5 w-1.5 rounded-full ${getStatusColor()}`} />
-            <span className="text-xs text-gray-500">{getStatusText()}</span>
-          </div>
-        </div>
+
+        {/* Separator */}
+        <div className="h-6 w-px bg-gray-700" />
+
+        {/* Preview/Code tabs */}
+        <HeaderTabs viewMode={viewMode} onViewModeChange={onViewModeChange} />
+
+        {/* Separator */}
+        <div className="h-6 w-px bg-gray-700" />
+
+        {/* Device toggles with refresh */}
+        <DeviceToggle
+          mode={deviceMode}
+          onChange={onDeviceModeChange}
+          onRefresh={onRefresh}
+          isLoading={isRefreshing}
+          disabled={status !== 'running'}
+        />
       </div>
 
-      {/* Center section - Action buttons */}
+      {/* Right section - Action buttons and user */}
       <div className="flex items-center gap-2">
         {/* Share button */}
         <button
@@ -141,10 +227,21 @@ export function BuilderHeader({
             Publish
           </button>
         )}
-      </div>
 
-      {/* Right section - Export and user */}
-      <div className="flex items-center gap-3">
+        {/* Separator */}
+        <div className="ml-2 h-6 w-px bg-gray-700" />
+
+        {/* Help button */}
+        <button
+          onClick={onOpenHelp}
+          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+          title="Help & FAQ"
+          data-onboarding="help"
+        >
+          <HelpCircle className="h-5 w-5" />
+        </button>
+
+        {/* Export button */}
         <button
           onClick={onExport}
           disabled={status !== 'running'}
@@ -154,6 +251,7 @@ export function BuilderHeader({
           Export
         </button>
 
+        {/* User section */}
         <div className="ml-2 flex items-center gap-2 border-l border-gray-700 pl-4">
           <Avatar
             src={user.user_metadata?.avatar_url}
@@ -172,3 +270,4 @@ export function BuilderHeader({
     </header>
   );
 }
+

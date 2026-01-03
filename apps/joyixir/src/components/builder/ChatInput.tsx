@@ -1,9 +1,10 @@
 /**
  * Chat Input Component
- * Text input for sending messages to the AI with credits indicator and suggestions
+ * Text input for sending messages to the AI with suggestions (Lovable-style)
+ * Note: Credits indicator moved to CreditsPanel component
  */
 
-import { Send, Zap, Sparkles } from 'lucide-react';
+import { Send, Sparkles } from 'lucide-react';
 
 interface SuggestionChip {
   label: string;
@@ -16,7 +17,6 @@ interface ChatInputProps {
   onSend: () => void;
   disabled: boolean;
   placeholder?: string;
-  creditsRemaining?: number;
   suggestions?: SuggestionChip[];
   onSuggestionClick?: (prompt: string) => void;
 }
@@ -34,7 +34,6 @@ export function ChatInput({
   onSend,
   disabled,
   placeholder = 'Describe what you want to build...',
-  creditsRemaining = 50,
   suggestions = DEFAULT_SUGGESTIONS,
   onSuggestionClick,
 }: ChatInputProps) {
@@ -92,15 +91,9 @@ export function ChatInput({
         </div>
       </div>
 
-      {/* Credits indicator */}
-      <div className="mt-2 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1.5 text-gray-500">
-          <Zap className="h-3 w-3 text-yellow-500" />
-          <span>
-            <span className="font-medium text-gray-400">{creditsRemaining}</span> credits remaining
-          </span>
-        </div>
-        <span className="text-gray-600">Press Enter to send</span>
+      {/* Hint text */}
+      <div className="mt-2 text-right text-xs text-gray-600">
+        Press Enter to send
       </div>
     </div>
   );

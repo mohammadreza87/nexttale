@@ -45,6 +45,26 @@ export interface ConversationMessage {
   content: string;
 }
 
+export interface ChatSession {
+  id: string;
+  project_id: string;
+  title: string;
+  messages: ConversationMessage[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateChatSessionInput {
+  project_id: string;
+  title: string;
+  messages?: ConversationMessage[];
+}
+
+export interface UpdateChatSessionInput {
+  title?: string;
+  messages?: ConversationMessage[];
+}
+
 // ============================================================================
 // Project Types
 // ============================================================================
@@ -61,6 +81,7 @@ export interface JoyixirProject {
   status: ProjectStatus;
   files: Record<string, string>;
   conversation: ConversationMessage[];
+  active_chat_session_id: string | null;
   created_at: string;
   updated_at: string;
   last_opened_at: string;
@@ -78,6 +99,7 @@ export interface UpdateProjectInput {
   status?: ProjectStatus;
   files?: Record<string, string>;
   conversation?: ConversationMessage[];
+  active_chat_session_id?: string | null;
 }
 
 // ============================================================================

@@ -206,7 +206,10 @@ export async function getUsageStats(): Promise<{
   projectsCount: number;
   creditsUsed: number;
   creditsRemaining: number;
+  totalCredits: number;
   currentStreak: number;
+  dailyAverage: number;
+  daysEdited: number;
 }> {
   const supabase = getSupabase();
 
@@ -221,11 +224,24 @@ export async function getUsageStats(): Promise<{
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id);
 
-  // For now, return mock data for credits (would integrate with billing system)
+  // Get chat sessions count for credits used approximation
+  const { count: chatSessionsCount } = await supabase
+    .from('joyixir_chat_sessions')
+    .select('*', { count: 'exact', head: true });
+
+  // Calculate credits (for now, each chat session = 1 credit used)
+  const creditsUsed = chatSessionsCount || 0;
+  const totalCredits = 50; // Free tier limit
+  const creditsRemaining = Math.max(0, totalCredits - creditsUsed);
+
+  // For now, return mock data for streak/activity (would need activity tracking table)
   return {
     projectsCount: projectsCount || 0,
-    creditsUsed: 2,
-    creditsRemaining: 3,
+    creditsUsed,
+    creditsRemaining,
+    totalCredits,
     currentStreak: 1,
+    dailyAverage: creditsUsed > 0 ? parseFloat((creditsUsed / 7).toFixed(1)) : 0,
+    daysEdited: Math.min(creditsUsed, 7),
   };
 }

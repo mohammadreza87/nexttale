@@ -163,6 +163,88 @@ export function resetNodeModulesState(): void {
 }
 
 /**
+ * Outdated dependency info
+ */
+export interface OutdatedDependency {
+  name: string;
+  current: string;
+  wanted: string;
+  latest: string;
+  type: 'dependencies' | 'devDependencies';
+}
+
+/**
+ * Check for outdated dependencies
+ */
+export async function checkDependencies(): Promise<{
+  outdated: OutdatedDependency[];
+  hasUpdates: boolean;
+}> {
+  try {
+    const process = await spawn('npm', ['outdated', '--json']);
+
+    let output = '';
+    await process.output.pipeTo(
+      new WritableStream({
+        write(data) {
+          output += data;
+        },
+      })
+    );
+
+    // npm outdated returns exit code 1 if there are outdated packages
+    await process.exit;
+
+    if (!output.trim()) {
+      return { outdated: [], hasUpdates: false };
+    }
+
+    try {
+      const parsed = JSON.parse(output);
+      const outdated: OutdatedDependency[] = Object.entries(parsed).map(
+        ([name, info]: [string, unknown]) => {
+          const dep = info as { current: string; wanted: string; latest: string; type: string };
+          return {
+            name,
+            current: dep.current || 'unknown',
+            wanted: dep.wanted || dep.current,
+            latest: dep.latest || dep.current,
+            type: (dep.type === 'devDependencies' ? 'devDependencies' : 'dependencies') as 'dependencies' | 'devDependencies',
+          };
+        }
+      );
+      return { outdated, hasUpdates: outdated.length > 0 };
+    } catch {
+      return { outdated: [], hasUpdates: false };
+    }
+  } catch {
+    // npm outdated might not be available or fail
+    return { outdated: [], hasUpdates: false };
+  }
+}
+
+/**
+ * Update all dependencies
+ */
+export async function updateDependencies(
+  onOutput?: (data: string) => void
+): Promise<number> {
+  const process = await spawn('npm', ['update']);
+
+  if (onOutput) {
+    process.output.pipeTo(
+      new WritableStream({
+        write(data) {
+          onOutput(data);
+        },
+      })
+    );
+  }
+
+  return process.exit;
+}
+
+/**
  * Start the dev server.
  */
 export async function startDevServer(

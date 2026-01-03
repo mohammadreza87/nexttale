@@ -1,13 +1,20 @@
+/**
+ * Preview Component
+ * Displays the live preview of the game with device sizing (Lovable-style)
+ * Device toggles and refresh moved to BuilderHeader
+ */
+
 import { memo, useState } from 'react';
-import { RefreshCw, Maximize2, Minimize2, ExternalLink, Smartphone, Monitor, Tablet } from 'lucide-react';
+import { Maximize2, Minimize2, ExternalLink, Monitor } from 'lucide-react';
+import type { DeviceMode } from './builder/DeviceToggle';
 
 interface PreviewProps {
   url: string | null;
   isLoading?: boolean;
+  deviceMode?: DeviceMode;
+  refreshKey?: number;
   className?: string;
 }
-
-type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
 const DEVICE_SIZES: Record<DeviceMode, { width: string; height: string }> = {
   desktop: { width: '100%', height: '100%' },
@@ -18,15 +25,11 @@ const DEVICE_SIZES: Record<DeviceMode, { width: string; height: string }> = {
 export const Preview = memo(function Preview({
   url,
   isLoading = false,
+  deviceMode = 'desktop',
+  refreshKey = 0,
   className = '',
 }: PreviewProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const handleRefresh = () => {
-    setRefreshKey(prev => prev + 1);
-  };
 
   const handleOpenExternal = () => {
     if (url) {
@@ -35,7 +38,7 @@ export const Preview = memo(function Preview({
   };
 
   const handleFullscreen = () => {
-    setIsFullscreen(prev => !prev);
+    setIsFullscreen((prev) => !prev);
   };
 
   const deviceSize = DEVICE_SIZES[deviceMode];
@@ -43,86 +46,33 @@ export const Preview = memo(function Preview({
   return (
     <div
       className={`
-        flex flex-col bg-gray-900
+        relative flex flex-col bg-gray-900
         ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'}
         ${className}
       `}
     >
-      {/* Preview toolbar */}
-      <div className="flex items-center justify-between border-b border-gray-800 bg-gray-950 px-3 py-2">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-lg bg-gray-800 p-1">
-            <button
-              onClick={() => setDeviceMode('desktop')}
-              className={`rounded p-1.5 transition-colors ${
-                deviceMode === 'desktop'
-                  ? 'bg-violet-600 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-              title="Desktop"
-            >
-              <Monitor className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setDeviceMode('tablet')}
-              className={`rounded p-1.5 transition-colors ${
-                deviceMode === 'tablet'
-                  ? 'bg-violet-600 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-              title="Tablet"
-            >
-              <Tablet className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setDeviceMode('mobile')}
-              className={`rounded p-1.5 transition-colors ${
-                deviceMode === 'mobile'
-                  ? 'bg-violet-600 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-              title="Mobile"
-            >
-              <Smartphone className="h-4 w-4" />
-            </button>
-          </div>
-
-          {url && (
-            <span className="max-w-[200px] truncate text-xs text-gray-500">
-              {url}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleRefresh}
-            disabled={!url}
-            className="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-50"
-            title="Refresh"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
+      {/* Fullscreen toggle overlay - positioned in top-right corner */}
+      <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
+        {url && (
           <button
             onClick={handleOpenExternal}
-            disabled={!url}
-            className="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-50"
+            className="rounded bg-gray-800/80 p-1.5 text-gray-400 backdrop-blur-sm transition-colors hover:bg-gray-700 hover:text-white"
             title="Open in new tab"
           >
             <ExternalLink className="h-4 w-4" />
           </button>
-          <button
-            onClick={handleFullscreen}
-            className="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
-            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-          >
-            {isFullscreen ? (
-              <Minimize2 className="h-4 w-4" />
-            ) : (
-              <Maximize2 className="h-4 w-4" />
-            )}
-          </button>
-        </div>
+        )}
+        <button
+          onClick={handleFullscreen}
+          className="rounded bg-gray-800/80 p-1.5 text-gray-400 backdrop-blur-sm transition-colors hover:bg-gray-700 hover:text-white"
+          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        >
+          {isFullscreen ? (
+            <Minimize2 className="h-4 w-4" />
+          ) : (
+            <Maximize2 className="h-4 w-4" />
+          )}
+        </button>
       </div>
 
       {/* Preview content */}

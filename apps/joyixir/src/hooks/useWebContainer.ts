@@ -14,6 +14,9 @@ import {
   getFileTree,
   hasNodeModules,
   resetNodeModulesState,
+  checkDependencies,
+  updateDependencies,
+  type OutdatedDependency,
 } from '../lib/webcontainer';
 
 export type WebContainerStatus =
@@ -37,6 +40,9 @@ export interface UseWebContainerReturn {
   previewUrl: string | null;
   terminalOutput: string[];
   fileTree: FileNode[];
+  outdatedDeps: OutdatedDependency[];
+  isCheckingDeps: boolean;
+  isUpdatingDeps: boolean;
 
   // Actions
   boot: () => Promise<void>;
@@ -52,6 +58,9 @@ export interface UseWebContainerReturn {
   clearTerminal: () => void;
   checkNodeModules: () => Promise<boolean>;
   resetForNewProject: () => void;
+  checkOutdated: () => Promise<void>;
+  updateOutdated: () => Promise<void>;
+  dismissOutdated: () => void;
 }
 
 export function useWebContainer(): UseWebContainerReturn {
@@ -60,6 +69,9 @@ export function useWebContainer(): UseWebContainerReturn {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [terminalOutput, setTerminalOutput] = useState<string[]>([]);
   const [fileTree, setFileTree] = useState<FileNode[]>([]);
+  const [outdatedDeps, setOutdatedDeps] = useState<OutdatedDependency[]>([]);
+  const [isCheckingDeps, setIsCheckingDeps] = useState(false);
+  const [isUpdatingDeps, setIsUpdatingDeps] = useState(false);
 
   const containerRef = useRef<WebContainer | null>(null);
 
@@ -274,12 +286,49 @@ export function useWebContainer(): UseWebContainerReturn {
     }
   }, []);
 
+  // Check for outdated dependencies
+  const checkOutdated = useCallback(async () => {
+    setIsCheckingDeps(true);
+    try {
+      const result = await checkDependencies();
+      setOutdatedDeps(result.outdated);
+    } catch (err) {
+      console.error('Failed to check dependencies:', err);
+    } finally {
+      setIsCheckingDeps(false);
+    }
+  }, []);
+
+  // Update all outdated dependencies
+  const updateOutdated = useCallback(async () => {
+    setIsUpdatingDeps(true);
+    appendOutput('\n$ npm update\n');
+    try {
+      await updateDependencies(appendOutput);
+      setOutdatedDeps([]);
+      appendOutput('\nDependencies updated!\n');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update dependencies';
+      appendOutput(`\nError: ${message}\n`);
+    } finally {
+      setIsUpdatingDeps(false);
+    }
+  }, [appendOutput]);
+
+  // Dismiss outdated banner
+  const dismissOutdated = useCallback(() => {
+    setOutdatedDeps([]);
+  }, []);
+
   return {
     status,
     error,
     previewUrl,
     terminalOutput,
     fileTree,
+    outdatedDeps,
+    isCheckingDeps,
+    isUpdatingDeps,
     boot,
     mountProject,
     writeProjectFile,
@@ -293,5 +342,8 @@ export function useWebContainer(): UseWebContainerReturn {
     clearTerminal,
     checkNodeModules,
     resetForNewProject,
+    checkOutdated,
+    updateOutdated,
+    dismissOutdated,
   };
 }

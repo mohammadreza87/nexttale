@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, useNavigate, useLocation } from 'react-router-dom';
 import { getSupabase } from '@nexttale/shared';
 import type { User } from '@supabase/supabase-js';
 import { BuilderPage } from './pages/Builder';
 import { LandingPage } from './pages/Landing';
 import { HomePage } from './pages/Home';
+import { FeedbackPage } from './pages/Feedback';
 import { ErrorBoundary } from './components';
 import { createProject, type JoyixirProject } from './lib/projectService';
 
 type View = 'landing' | 'home' | 'builder';
 
-function AppContent() {
+function AppRoutes() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<View>('landing');
@@ -51,6 +55,7 @@ function AppContent() {
     setCurrentProject(null);
     setInitialPrompt(null);
     setCurrentView('landing');
+    navigate('/');
   };
 
   const handleSelectProject = (project: JoyixirProject) => {
@@ -81,6 +86,7 @@ function AppContent() {
     setCurrentProject(null);
     setInitialPrompt(null);
     setCurrentView('home');
+    navigate('/');
   };
 
   if (loading) {
@@ -89,6 +95,14 @@ function AppContent() {
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
       </div>
     );
+  }
+
+  // Handle /feedback route - accessible to authenticated users
+  if (location.pathname === '/feedback') {
+    if (!user) {
+      return <LandingPage onSignIn={handleSignIn} />;
+    }
+    return <FeedbackPage />;
   }
 
   // Show landing page for unauthenticated users
@@ -123,7 +137,9 @@ function AppContent() {
 function App() {
   return (
     <ErrorBoundary>
-      <AppContent />
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

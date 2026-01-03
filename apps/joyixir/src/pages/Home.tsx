@@ -1,31 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { User } from '@supabase/supabase-js';
 import {
-  Sparkles,
-  Home as HomeIcon,
   Search,
-  LayoutGrid,
-  Star,
-  Compass,
-  BookOpen,
-  Zap,
   Send,
-  LogOut,
-  ChevronDown,
   Gamepad2,
-  Settings,
   Plus,
   MoreHorizontal,
   Grid3X3,
   List,
-  Users,
 } from 'lucide-react';
 import {
   getProjects,
   createProject,
   type JoyixirProject,
 } from '../lib/projectService';
-import { SettingsModal, SearchModal, Avatar } from '../components';
+import { getUserSettings, getUsageStats } from '../lib/settingsService';
+import { SettingsModal, SearchModal, Avatar, Sidebar } from '../components';
+import { useSidebar } from '../hooks';
+import type { NavItem, UsageStats } from '../types';
 
 interface HomePageProps {
   user: User;
@@ -45,25 +37,18 @@ const TEMPLATES = [
 export function HomePage({ user, onSignOut, onSelectProject, onStartNewProject }: HomePageProps) {
   const [projects, setProjects] = useState<JoyixirProject[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [activeNav, setActiveNav] = useState('home');
+  const [activeNav, setActiveNav] = useState<NavItem>('home');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isCreatingProject, setIsCreatingProject] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
+  const [studioName, setStudioName] = useState('My Studio');
+  const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
 
-  // Close user menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // Sidebar collapse state
+  const { isCollapsed, toggle: toggleSidebar } = useSidebar();
 
   // Keyboard shortcut for search (Cmd/Ctrl + K)
   useEffect(() => {
@@ -80,6 +65,23 @@ export function HomePage({ user, onSignOut, onSelectProject, onStartNewProject }
   // Load projects
   useEffect(() => {
     loadProjects();
+  }, []);
+
+  // Load settings and usage stats
+  useEffect(() => {
+    const loadSettingsAndStats = async () => {
+      try {
+        const [settings, stats] = await Promise.all([
+          getUserSettings(),
+          getUsageStats(),
+        ]);
+        setStudioName(settings.studio_name || 'My Studio');
+        setUsageStats(stats);
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    };
+    loadSettingsAndStats();
   }, []);
 
   const loadProjects = async () => {
@@ -137,176 +139,25 @@ export function HomePage({ user, onSignOut, onSelectProject, onStartNewProject }
 
   return (
     <div className="flex h-screen bg-gray-950">
-      {/* Sidebar */}
-      <aside className="flex w-60 flex-col border-r border-gray-800 bg-gray-900">
-        {/* Logo */}
-        <div className="flex h-14 items-center gap-2 border-b border-gray-800 px-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-lg font-bold text-transparent">
-            Joyixir
-          </span>
-        </div>
-
-        {/* User dropdown */}
-        <div className="relative border-b border-gray-800 p-3" ref={userMenuRef}>
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex w-full items-center gap-2 rounded-lg bg-gray-800 px-3 py-2 text-left hover:bg-gray-700"
-          >
-            <Avatar
-              src={user.user_metadata?.avatar_url}
-              name={user.user_metadata?.full_name || user.email}
-              size="sm"
-              className="h-6 w-6"
-            />
-            <span className="flex-1 truncate text-sm text-white">
-              {user.user_metadata?.full_name || 'User'}
-            </span>
-            <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
-          </button>
-
-          {/* User menu dropdown */}
-          {showUserMenu && (
-            <div className="absolute left-3 right-3 top-full z-50 mt-1 overflow-hidden rounded-lg border border-gray-700 bg-gray-800 shadow-xl">
-              <button
-                onClick={() => {
-                  setShowUserMenu(false);
-                  setShowSettings(true);
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-              >
-                <Settings className="h-4 w-4" />
-                Settings
-              </button>
-              <div className="border-t border-gray-700" />
-              <button
-                onClick={() => {
-                  setShowUserMenu(false);
-                  onSignOut();
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-              >
-                <LogOut className="h-4 w-4" />
-                Sign out
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-3">
-          <div className="space-y-1">
-            <NavItem
-              icon={HomeIcon}
-              label="Home"
-              active={activeNav === 'home'}
-              onClick={() => setActiveNav('home')}
-            />
-            <NavItem
-              icon={Search}
-              label="Search"
-              active={showSearch}
-              onClick={() => setShowSearch(true)}
-            />
-          </div>
-
-          <div className="mt-6">
-            <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-gray-500">
-              Projects
-            </p>
-            <div className="space-y-1">
-              <NavItem
-                icon={LayoutGrid}
-                label="All projects"
-                active={activeNav === 'projects'}
-                onClick={() => setActiveNav('projects')}
-              />
-              <NavItem
-                icon={Star}
-                label="Starred"
-                active={activeNav === 'starred'}
-                onClick={() => setActiveNav('starred')}
-              />
-              <NavItem
-                icon={Users}
-                label="Shared with me"
-                active={activeNav === 'shared'}
-                onClick={() => setActiveNav('shared')}
-              />
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-gray-500">
-              Resources
-            </p>
-            <div className="space-y-1">
-              <NavItem
-                icon={Compass}
-                label="Discover"
-                active={activeNav === 'discover'}
-                onClick={() => setActiveNav('discover')}
-              />
-              <NavItem
-                icon={Gamepad2}
-                label="Templates"
-                active={activeNav === 'templates'}
-                onClick={() => setActiveNav('templates')}
-              />
-              <NavItem
-                icon={BookOpen}
-                label="Learn"
-                active={activeNav === 'learn'}
-                onClick={() => setActiveNav('learn')}
-              />
-            </div>
-          </div>
-
-          {/* Recent projects */}
-          {recentProjects.length > 0 && (
-            <div className="mt-6">
-              <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-gray-500">
-                Recent
-              </p>
-              <div className="space-y-1">
-                {recentProjects.map((project) => (
-                  <button
-                    key={project.id}
-                    onClick={() => onSelectProject(project)}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-400 hover:bg-gray-800 hover:text-white"
-                  >
-                    <Gamepad2 className="h-4 w-4" />
-                    <span className="truncate">{project.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </nav>
-
-        {/* Bottom section */}
-        <div className="border-t border-gray-800 p-3 space-y-2">
-          <button
-            onClick={() => setShowSettings(true)}
-            className="flex w-full items-center gap-3 rounded-lg bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 px-3 py-2.5 text-left hover:from-violet-600/30 hover:to-fuchsia-600/30"
-          >
-            <Zap className="h-4 w-4 text-violet-400" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">Upgrade to Pro</p>
-              <p className="text-xs text-gray-500">Unlock more features</p>
-            </div>
-          </button>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-white"
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </button>
-        </div>
-      </aside>
+      {/* Collapsible Sidebar */}
+      <Sidebar
+        user={user}
+        isCollapsed={isCollapsed}
+        onToggleCollapse={toggleSidebar}
+        activeNav={activeNav}
+        onNavChange={setActiveNav}
+        recentProjects={recentProjects}
+        onSelectProject={onSelectProject}
+        onOpenSettings={() => setShowSettings(true)}
+        onOpenSearch={() => setShowSearch(true)}
+        onSignOut={onSignOut}
+        showUserMenu={showUserMenu}
+        onToggleUserMenu={() => setShowUserMenu(!showUserMenu)}
+        studioName={studioName}
+        creditsRemaining={usageStats?.creditsRemaining ?? 50}
+        totalCredits={usageStats?.totalCredits ?? 50}
+        onUpgrade={() => setShowSettings(true)}
+      />
 
       {/* Main content */}
       <main className="flex flex-1 flex-col overflow-hidden">
@@ -533,32 +384,5 @@ export function HomePage({ user, onSignOut, onSelectProject, onStartNewProject }
         userName={user.user_metadata?.full_name}
       />
     </div>
-  );
-}
-
-// Navigation item component
-function NavItem({
-  icon: Icon,
-  label,
-  active,
-  onClick,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-        active
-          ? 'bg-gray-800 text-white'
-          : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-      }`}
-    >
-      <Icon className="h-4 w-4" />
-      {label}
-    </button>
   );
 }

@@ -10,6 +10,7 @@ export interface JoyixirProject {
   status: 'draft' | 'building' | 'ready' | 'published';
   files: Record<string, string>;
   conversation: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
+  active_chat_session_id: string | null;
   created_at: string;
   updated_at: string;
   last_opened_at: string;
@@ -27,6 +28,7 @@ export interface UpdateProjectInput {
   status?: JoyixirProject['status'];
   files?: Record<string, string>;
   conversation?: JoyixirProject['conversation'];
+  active_chat_session_id?: string | null;
 }
 
 /**
