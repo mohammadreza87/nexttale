@@ -6,8 +6,9 @@ Get up and running with Joyixir in under 5 minutes.
 
 1. **Go to [joyixir.app](https://joyixir.app)**
 2. **Sign in** with Google or GitHub
-3. **Describe your game** in the chat
-4. **Watch it come to life!**
+3. **Create a new project** from the dashboard
+4. **Describe your game** in the chat panel
+5. **Watch it come to life!**
 
 ## Your First Prompt
 
@@ -26,13 +27,29 @@ The AI will generate a complete, working game in seconds.
 
 ## Interface Overview
 
-| Panel | Description |
-|-------|-------------|
-| **Chat** | Talk to the AI, see responses and suggestions |
-| **Preview** | Live preview of your game |
-| **Code** | Monaco editor to view/edit code |
-| **Files** | Browse project files |
+Joyixir uses a modern split-panel layout inspired by the best AI code editors:
+
+### Left Panel - Chat
+| Feature | Description |
+|---------|-------------|
+| **Project Dropdown** | Switch projects, manage credits, access settings |
+| **Chat History** | Browse and switch between chat sessions |
+| **AI Chat** | Talk to the AI, see responses and next step suggestions |
+| **Credits Panel** | Track your remaining credits |
+| **Chat Input** | Type prompts or click suggested actions |
+
+### Right Panel - Preview & Code
+| Feature | Description |
+|---------|-------------|
+| **View Tabs** | Switch between Preview and Code views |
+| **Device Toggles** | Preview on Desktop, Tablet, or Mobile sizes |
+| **Live Preview** | Real-time preview of your game |
+| **Code Editor** | Monaco editor with syntax highlighting |
+| **File Browser** | Browse and edit project files (in Code view) |
 | **Terminal** | View build output and logs |
+
+### Resizable Panels
+Drag the divider between the chat and preview panels to adjust their widths to your preference.
 
 ## Tips for Better Results
 
@@ -46,6 +63,10 @@ Start simple, then add features one at a time. "Add a double jump" works better 
 
 ::: tip Reference Existing Games
 "Like Flappy Bird but with a rocket ship" gives the AI a clear mental model.
+:::
+
+::: tip Use Device Preview
+Test your game on different screen sizes using the device toggles (Desktop, Tablet, Mobile).
 :::
 
 ## Next Steps

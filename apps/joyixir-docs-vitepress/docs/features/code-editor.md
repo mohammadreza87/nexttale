@@ -1,6 +1,15 @@
 # Code Editor
 
-Full Monaco editor with syntax highlighting.
+Full Monaco editor with syntax highlighting and file browser.
+
+## Accessing Code View
+
+Click the **Code** tab in the preview header to switch from Preview to Code view. The Code view shows:
+
+- **File Browser** (left) - Browse all project files
+- **Code Editor** (right) - Edit the selected file
+
+Click **Preview** tab to return to the live preview.
 
 ## Features
 
@@ -8,7 +17,16 @@ Full Monaco editor with syntax highlighting.
 - IntelliSense autocomplete
 - Error highlighting
 - Line numbers and minimap
-- Multiple file tabs
+- File browser with folder navigation
+- Auto-save on edit
+
+## File Browser
+
+The file browser panel shows your project structure:
+
+- Click a file to open it in the editor
+- Files are organized by folders
+- Common files: `src/`, `package.json`, `index.html`
 
 ## Keyboard Shortcuts
 
@@ -27,3 +45,8 @@ Most of the time, just talk to the AI. But manual editing is useful for:
 - Small tweaks (colors, sizes, text)
 - Debugging issues
 - Learning how the code works
+- Fine-tuning AI-generated code
+
+::: tip Read-Only Warning
+In Code view, you'll see a "Read only" indicator. This is a reminder that the AI generates code - you can still edit, but changes may be overwritten by AI responses.
+:::

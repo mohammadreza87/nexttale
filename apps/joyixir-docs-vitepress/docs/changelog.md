@@ -2,6 +2,31 @@
 
 All notable changes to Joyixir.
 
+## January 2026
+
+### Jan 3, 2026
+
+#### Lovable-Style Split Layout
+- **Resizable Panels**: Drag the divider between chat and preview to resize
+- **Separate Headers**: Chat and preview panels now have independent headers
+- **Chat Header**: Project dropdown with credits, history toggle, copy chat button
+- **Preview Header**: View tabs (Preview/Code), device toggles, action buttons
+- **Chat History**: Browse and switch between past chat sessions
+- **Device Toggles**: Preview your game on Desktop, Tablet, or Mobile sizes
+
+#### Project Management
+- **Project Dropdown**: Quick access to dashboard, credits, settings
+- **Star Projects**: Mark projects as favorites
+- **Rename Projects**: Change project names from the dropdown
+- **Remix Projects**: Create a copy of any project
+
+#### Credits System
+- **Credits Panel**: Track remaining credits in the chat panel
+- **Usage Tracking**: Monitor your credit consumption
+- **Add Credits**: Easy access to get more credits
+
+---
+
 ## January 2025
 
 ### Jan 3, 2025
