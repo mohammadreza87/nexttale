@@ -26,9 +26,9 @@
   ],
   "scripts": {
     "dev": "pnpm --filter @nexttale/web dev",
-    "dev:forge": "pnpm --filter @nexttale/forge dev",
+    "dev:joyixir": "pnpm --filter @joyixir/app dev",
     "build": "pnpm --filter @nexttale/web build",
-    "build:forge": "pnpm --filter @nexttale/forge build",
+    "build:joyixir": "pnpm --filter @joyixir/app build",
     "build:all": "pnpm -r build",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
