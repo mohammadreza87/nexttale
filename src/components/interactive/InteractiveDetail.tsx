@@ -41,6 +41,7 @@ import type {
 import { getSafeDisplayName } from '../../lib/displayName';
 import { InteractiveCommentSection } from './InteractiveCommentSection';
 import { InteractiveViewer } from './InteractiveViewer';
+import { usePostHog } from '../../hooks/usePostHog';
 
 interface InteractiveDetailProps {
   contentId: string;
@@ -107,6 +108,7 @@ export function InteractiveDetail({
   const [showEditModal, setShowEditModal] = useState(false);
   const [editPrompt, setEditPrompt] = useState('');
   const [editing, setEditing] = useState(false);
+  const posthog = usePostHog();
 
   useEffect(() => {
     loadContentDetails();
@@ -126,6 +128,12 @@ export function InteractiveDetail({
         if (userId) {
           trackInteractiveView(contentId, userId);
         }
+        // Track content view in PostHog
+        posthog.contentView(
+          contentData.content_type === 'game' ? 'game' : 'interactive',
+          contentId,
+          contentData.title
+        );
       }
 
       setLikesCount(contentData.likes_count || 0);
@@ -202,6 +210,12 @@ export function InteractiveDetail({
           text: content.description,
           url: shareUrl,
         });
+        // Track share via native
+        posthog.contentShared(
+          content.content_type === 'game' ? 'game' : 'interactive',
+          contentId,
+          'native'
+        );
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
           console.error('Error sharing:', error);
@@ -211,6 +225,12 @@ export function InteractiveDetail({
       try {
         await navigator.clipboard.writeText(shareUrl);
         alert('Link copied to clipboard!');
+        // Track share via copy
+        posthog.contentShared(
+          content.content_type === 'game' ? 'game' : 'interactive',
+          contentId,
+          'copy'
+        );
       } catch (error) {
         console.error('Error copying to clipboard:', error);
       }
@@ -490,7 +510,13 @@ export function InteractiveDetail({
             </div>
 
             <button
-              onClick={onStart}
+              onClick={() => {
+                posthog.contentPlayed(
+                  content.content_type === 'game' ? 'game' : 'interactive',
+                  contentId
+                );
+                onStart();
+              }}
               className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 py-4 text-lg font-bold text-white shadow-lg transition-all duration-200 hover:opacity-90 hover:shadow-xl"
             >
               <Play className="h-6 w-6 fill-white" />

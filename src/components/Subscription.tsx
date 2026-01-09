@@ -9,6 +9,7 @@ import {
 import type { UserProfile } from '../lib/types';
 import { useAuth } from '../lib/authContext';
 import { trackSubscriptionView, trackSubscriptionCheckoutStart } from '../lib/analytics';
+import { usePostHog } from '../hooks/usePostHog';
 
 interface SubscriptionProps {
   userId: string;
@@ -20,11 +21,13 @@ export function Subscription({ userId }: SubscriptionProps) {
   const [subscription, setSubscription] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const posthog = usePostHog();
 
   useEffect(() => {
     loadSubscription();
     // Track subscription page view
     trackSubscriptionView('monthly');
+    posthog.subscription('viewed', 'monthly');
   }, [userId]);
 
   const loadSubscription = async () => {
@@ -54,6 +57,7 @@ export function Subscription({ userId }: SubscriptionProps) {
     // Track checkout start
     const plan = priceId === STRIPE_PRICES.PRO_MONTHLY ? 'monthly' : 'annual';
     trackSubscriptionCheckoutStart(plan);
+    posthog.subscription('checkout_started', plan);
 
     try {
       const url = await createCheckoutSession(priceId);

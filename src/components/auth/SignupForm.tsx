@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { AppleIcon, GoogleIcon } from './SocialIcons';
+import { usePostHog } from '../../hooks/usePostHog';
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -15,6 +16,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const posthog = usePostHog();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +37,7 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
       if (error) {
         setError(error.message);
       } else {
+        posthog.signUp('email');
         onSuccess?.();
       }
     } catch {
@@ -56,6 +59,8 @@ export function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormProps) {
         },
       });
       if (error) throw error;
+      // Track signup attempt (actual success tracked after redirect)
+      posthog.signUp(provider);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
       setLoading(false);

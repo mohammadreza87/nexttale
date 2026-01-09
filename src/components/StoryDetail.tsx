@@ -20,6 +20,7 @@ import type { Story } from '../lib/types';
 import { getSafeDisplayName } from '../lib/displayName';
 import { CommentSection } from './CommentSection';
 import { trackStoryView, trackStoryStart, trackReaction } from '../lib/analytics';
+import { usePostHog } from '../hooks/usePostHog';
 
 interface StoryDetailProps {
   storyId: string;
@@ -49,6 +50,7 @@ export function StoryDetail({
   const [deleting, setDeleting] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const posthog = usePostHog();
 
   useEffect(() => {
     loadStoryDetails();
@@ -107,6 +109,7 @@ export function StoryDetail({
         setStory(storyData);
         // Track story view
         trackStoryView(storyData.id, storyData.title, storyData.created_by ?? undefined);
+        posthog.contentView('story', storyData.id, storyData.title);
       }
       setLikesCount(storyData.likes_count || 0);
       setDislikesCount(storyData.dislikes_count || 0);
@@ -517,6 +520,7 @@ export function StoryDetail({
                         text: `Check out this interactive story: ${story.title}`,
                         url: shareUrl,
                       });
+                      posthog.contentShared('story', storyId, 'native');
                     } catch (error) {
                       if ((error as Error).name !== 'AbortError') {
                         console.error('Error sharing:', error);
@@ -526,6 +530,7 @@ export function StoryDetail({
                     try {
                       await navigator.clipboard.writeText(shareUrl);
                       alert('Link copied to clipboard!');
+                      posthog.contentShared('story', storyId, 'copy');
                     } catch (error) {
                       console.error('Error copying to clipboard:', error);
                     }
@@ -540,6 +545,7 @@ export function StoryDetail({
             <button
               onClick={() => {
                 trackStoryStart(storyId, story.title);
+                posthog.contentPlayed('story', storyId);
                 onStartStory();
               }}
               className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 py-4 text-lg font-bold text-white shadow-lg transition-all duration-200 hover:opacity-90 hover:shadow-xl"

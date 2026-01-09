@@ -24,6 +24,7 @@ import { getSubscriptionUsage, type SubscriptionUsage } from '../../lib/subscrip
 import UsageBadge from '../UsageBadge';
 import UpgradeModal from '../UpgradeModal';
 import { InteractiveViewer } from './InteractiveViewer';
+import { usePostHog } from '../../hooks/usePostHog';
 import type {
   InteractiveContentType,
   ContentStyle,
@@ -126,6 +127,7 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
   const [usage, setUsage] = useState<SubscriptionUsage | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isPublic, setIsPublic] = useState(true); // Default to public
+  const posthog = usePostHog();
 
   // Image upload state
   const [imageData, setImageData] = useState<string | null>(null);
@@ -203,6 +205,7 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
     }
 
     if (usage && !usage.canGenerate) {
+      posthog.freeLimitHit('ai_calls');
       setShowUpgradeModal(true);
       return;
     }
@@ -213,6 +216,9 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
       imageData ? 'Analyzing image and generating content...' : 'Generating your content with AI...'
     );
     setGeneratedContent(null);
+
+    // Track creation started
+    posthog.creationStarted(contentType === 'game' ? 'game' : 'interactive');
 
     try {
       const result = await generateInteractiveContent({
@@ -230,9 +236,11 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
     } catch (err) {
       console.error('Error generating content:', err);
       if (err instanceof Error && err.message === 'daily_limit_reached') {
+        posthog.freeLimitHit('ai_calls');
         setShowUpgradeModal(true);
       } else {
         setError(err instanceof Error ? err.message : 'Failed to generate. Please try again.');
+        posthog.error('generation_failed', err instanceof Error ? err.message : 'Unknown error');
       }
     } finally {
       setIsGenerating(false);
@@ -258,6 +266,12 @@ export function InteractiveCreator({ userId, onCreated }: InteractiveCreatorProp
         tags: generatedContent.tags,
         is_public: finalIsPublic,
         estimated_interaction_time: generatedContent.estimatedTime,
+      });
+
+      // Track creation completed
+      posthog.creationCompleted(contentType === 'game' ? 'game' : 'interactive', content.id, {
+        title: generatedContent.title,
+        prompt_length: prompt.length,
       });
 
       onCreated(content.id);
