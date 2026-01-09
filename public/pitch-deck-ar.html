@@ -705,22 +705,140 @@
       stroke-width: 2;
     }
 
-    /* Print Styles */
+    /* Print Styles for PDF Export */
     @media print {
       @page { size: landscape; margin: 0; }
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      body { overflow: visible !important; height: auto !important; }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        box-shadow: none !important;
+      }
+
+      html, body {
+        overflow: visible !important;
+        height: auto !important;
+        background: var(--bg-primary) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
       .deck-container { height: auto !important; overflow: visible !important; }
+
+      /* Hide all UI elements */
+      .nav-controls, .progress-bar, .slide-number, .contact-info, .lang-toggle,
+      #export-modal, button[onclick="exportToPDF()"], .cta-btn[onclick="exportToPDF()"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+      }
+
+      /* Slide layout */
       .slide {
         position: relative !important;
         opacity: 1 !important;
         visibility: visible !important;
         transform: none !important;
         page-break-after: always !important;
+        page-break-inside: avoid !important;
+        break-after: page !important;
         height: 100vh !important;
         width: 100vw !important;
+        padding: 60px 80px !important;
+        background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
       }
-      .nav-controls, .progress-bar, .slide-number, .contact-info, .lang-toggle, button[onclick="exportToPDF()"] { display: none !important; visibility: hidden !important; }
+
+      .slide:last-child { page-break-after: avoid !important; }
+
+      /* Content container */
+      .slide-content {
+        max-width: 1100px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 40px !important;
+        box-sizing: border-box !important;
+      }
+
+      /* Cards */
+      .glass-card, .stat-card, .pricing-card, .team-card, .quote-block {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        page-break-inside: avoid !important;
+      }
+
+      /* Typography */
+      .stat-number, h1 {
+        background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+      }
+
+      h1 { font-size: 2.5rem !important; margin-bottom: 1rem !important; }
+      h3 { font-size: 0.9rem !important; letter-spacing: 0.15em !important; }
+
+      /* Grids */
+      .stats-grid { display: grid !important; gap: 1rem !important; }
+      .two-col { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 2rem !important; }
+      .pricing-grid { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 1rem !important; }
+
+      /* Timeline - horizontal for print */
+      .timeline {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        gap: 1.5rem !important;
+        margin: 1.5rem 0 !important;
+        position: relative !important;
+      }
+
+      .timeline::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 20px !important;
+        left: 30px !important;
+        right: 30px !important;
+        height: 2px !important;
+        background: linear-gradient(90deg, var(--purple), var(--pink)) !important;
+      }
+
+      .timeline-item {
+        flex: 1 !important;
+        text-align: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+      }
+
+      .timeline-dot { width: 40px !important; height: 40px !important; margin-bottom: 0.75rem !important; z-index: 1 !important; }
+      .timeline-title { font-size: 0.85rem !important; margin-bottom: 0.25rem !important; }
+      .timeline-desc { font-size: 0.7rem !important; max-width: 140px !important; }
+
+      /* Animations off */
+      .stagger > * { opacity: 1 !important; transform: none !important; animation: none !important; }
+      .float { animation: none !important; }
+
+      /* Big stats */
+      .big-stat { font-size: 4rem !important; }
+      .big-label { font-size: 1.25rem !important; }
+
+      /* Quote block */
+      .quote-block { margin: 1.5rem auto !important; max-width: 700px !important; }
+      .quote-text { font-size: 1rem !important; }
+
+      /* Team card */
+      .team-card { padding: 1.5rem !important; }
+
+      /* Feature list */
+      ul li { font-size: 0.85rem !important; padding: 0.35rem 0 !important; }
     }
 
     @media (max-width: 1024px) {
