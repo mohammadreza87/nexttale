@@ -27,6 +27,8 @@ import { InteractiveViewer, InteractiveDetail } from './components/interactive';
 import { getInteractiveContent } from './lib/interactiveService';
 import { AuthProvider, useAuth } from './lib/authContext';
 import { useAnalytics } from './hooks/useAnalytics';
+import { PostHogProvider } from './providers/PostHogProvider';
+import { usePostHog } from './hooks/usePostHog';
 import { getSubscriptionUsage } from './lib/subscriptionService';
 
 type ViewKey = 'home' | 'profile' | 'create' | 'subscription' | 'quests';
@@ -126,23 +128,31 @@ function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const analytics = useAnalytics();
+  const posthog = usePostHog();
   const [isPro, setIsPro] = useState(false);
 
   const userId = user?.id || '';
   const currentView = pathToView(location.pathname);
 
-  // Subscription status
+  // Subscription status & PostHog identification
   useEffect(() => {
     const checkProStatus = async () => {
       if (!user?.id) {
         setIsPro(false);
+        posthog.reset();
         return;
       }
       const usage = await getSubscriptionUsage(user.id);
       setIsPro(usage.isPro);
+
+      // Identify user in PostHog
+      posthog.identify(user.id, {
+        email: user.email,
+        subscription_tier: usage.isPro ? 'pro' : 'free',
+      });
     };
     checkProStatus();
-  }, [user?.id]);
+  }, [user?.id, user?.email, posthog]);
 
   // Analytics
   useEffect(() => {
@@ -456,7 +466,9 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <AppRoutes />
+        <PostHogProvider>
+          <AppRoutes />
+        </PostHogProvider>
       </BrowserRouter>
     </AuthProvider>
   );
