@@ -44,7 +44,8 @@
 
 - **Role:** Investment Team, Pre-screening
 - **Email:** (via Kjøller website)
-- **Notes:** Very helpful rejection with detailed VC recommendations. Keep updated on progress.
+- **Notes:** Very helpful rejection with detailed VC recommendations. Followed up with encouragement and review request.
+- **Action:** Submitted review at kjoller.com (do-follow backlink to nexttale.app)
 
 ---
 
